@@ -1,0 +1,811 @@
+<div class="patient-card-container">
+  <h2>Patient Card Management</h2>
+
+  <div class="notification-btn-container">
+    <button type="button" class="notification-btn" (click)="openNotificationDialog()">Send Notification</button>
+  </div>
+
+  <!-- Search Form -->
+  <div class="search-container">
+    <form [formGroup]="searchForm" (ngSubmit)="onSearch()" class="search-form">
+      <div class="form-group">
+        <label for="patientID">Patient ID:</label>
+        <input type="text" id="patientID" formControlName="patientID" class="form-control"
+          placeholder="Enter patient ID">
+        <div class="error-message" *ngIf="searchForm.get('patientID')?.invalid && searchForm.get('patientID')?.touched">
+          Patient ID is required
+        </div>
+      </div>
+      <button type="submit" class="search-btn" [disabled]="searchForm.invalid || isSearching">
+        {{ isSearching ? 'Searching...' : 'Search Patient' }}
+      </button>
+    </form>
+  </div>
+
+  <div class="active-patients-section" *ngIf="!isSearchMode && activePatients.length > 0">
+    <h3>Active Patients</h3>
+    <div class="table-container">
+      <table class="active-patients-table">
+        <thead>
+          <tr>
+            <th>Patient ID</th>
+            <th>Card Number</th>
+            <th>Full Name</th>
+            <th>Age</th>
+            <th>Gender</th>
+            <th>Last Visit</th>
+            <th>Registration Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let patient of activePatients" (click)="onPatientRowClick(patient)" class="clickable-row">
+            <td>{{ patient.PatientID }}</td>
+            <td>{{ patient.CardNumber }}</td>
+            <td>{{ patient.FullName }}</td>
+            <td>{{ patient.Age }}</td>
+            <td>{{ patient.Gender }}</td>
+            <td>{{ patient.LastVisitDate | date:'medium' }}</td>
+            <td>{{ patient.RegistrationDate | date:'medium' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- No Active Patients Message -->
+  <div class="no-results" *ngIf="!isSearchMode && !searched && activePatients.length === 0 && !isSearching">
+    No active patients found.
+  </div>
+
+  <!-- Tabs Navigation -->
+  <div class="tabs-container" *ngIf="patient">
+    <div class="tabs">
+      <button type="button" class="tab-button" [class.active]="selectedTab === 'patient-info'"
+        (click)="selectTab('patient-info')">
+        Patient Information
+      </button>
+      <button type="button" class="tab-button" [class.active]="selectedTab === 'laboratory-tests'"
+        (click)="selectTab('laboratory-tests')">
+        Laboratory
+      </button>
+      <button type="button" class="tab-button" [class.active]="selectedTab === 'prescriptions'"
+        (click)="selectTab('prescriptions')">
+        Pharmacy
+      </button>
+      <button type="button" class="tab-button" [class.active]="selectedTab === 'referrals'"
+        (click)="selectTab('referrals')">
+        Referrals
+      </button>
+      <button type="button" class="tab-button" [class.active]="selectedTab === 'injections'"
+        (click)="selectTab('injections')">
+        Injection
+      </button>
+      <!-- <button 
+        class="tab-button" 
+        [class.active]="selectedTab === 'patient-assignment'"
+        (click)="selectTab('patient-assignment')">
+        Room Assignment
+      </button> -->
+      <button type="button" class="tab-button" [class.active]="selectedTab === 'sick-leave'"
+        (click)="selectTab('sick-leave')">
+        Sick Leave
+      </button>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+      <!-- Patient Information Tab -->
+      <div *ngIf="selectedTab === 'patient-info'">
+        <!-- Patient Card Display -->
+        <app-patient-card [patient]="patient" [showEditButton]="true" (editClick)="onEditClick()">
+        </app-patient-card>
+
+        <!-- Edit Form -->
+        <div class="edit-form">
+          <h3>Edit Patient Information</h3>
+          <form [formGroup]="editForm" (ngSubmit)="onEditSubmit()" class="patient-form">
+            <!-- Existing Fields -->
+            <div class="form-group">
+              <label for="allergies">Allergies:</label>
+              <textarea id="allergies" formControlName="allergies" class="form-control" rows="4"></textarea>
+            </div>
+            <!-- Medical History Toggleable Panel -->
+            <div class="medical-history-panel">
+              <h4>Medical History Records</h4>
+              <div class="history-item" *ngFor="let history of medicalHistories; let i = index">
+                <div class="history-header" (click)="toggleHistory(i)">
+                  <span>{{ history.CreatedDate | date:'medium' }}</span>
+                  <span class="toggle-icon">{{ showHistoryIndex === i ? '▼' : '▶' }}</span>
+                </div>
+                <div class="history-content" *ngIf="showHistoryIndex === i">
+                  <p>{{ history.MedicalHistory || 'No medical history recorded' }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="medicalHistory">Medical History</label>
+              <textarea id="medicalHistory" formControlName="medicalHistory" class="form-control" rows="4"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="lastDiagnosis">Diagnosis:</label>
+              <input type="text" id="lastDiagnosis" formControlName="lastDiagnosis" class="form-control">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="registrationDate">Registration Date:</label>
+                <input type="date" id="registrationDate" formControlName="RegistrationDate" class="form-control"
+                  [readonly]="true">
+              </div>
+              <div class="form-group">
+                <label for="bloodType">Blood Type:</label>
+                <input type="text" id="bloodType" formControlName="bloodType" class="form-control"
+                  [readonly]="patient?.bloodType">
+                <div class="error-message"
+                  *ngIf="editForm.get('bloodType')?.invalid && editForm.get('bloodType')?.touched">
+                  Blood Type is required
+                </div>
+              </div>
+            </div>
+            <!-- New Fields -->
+            <div class="form-row">
+              <div class="form-group">
+                <label for="weight">Weight (kg):</label>
+                <input type="number" id="weight" formControlName="weight" class="form-control" step="0.1"
+                  placeholder="Enter weight in kg">
+                <div class="error-message" *ngIf="editForm.get('weight')?.invalid && editForm.get('weight')?.touched">
+                  Valid weight is required
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="height">Height (cm):</label>
+                <input type="number" id="height" formControlName="height" class="form-control" step="0.1"
+                  placeholder="Enter height in cm">
+                <div class="error-message" *ngIf="editForm.get('height')?.invalid && editForm.get('height')?.touched">
+                  Valid height is required
+                </div>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="bloodPressure">Blood Pressure (mmHg):</label>
+                <input type="text" id="bloodPressure" formControlName="bloodPressure" class="form-control"
+                  placeholder="e.g., 120/80">
+                <div class="error-message"
+                  *ngIf="editForm.get('bloodPressure')?.invalid && editForm.get('bloodPressure')?.touched">
+                  Valid blood pressure is required
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="pulseRate">Pulse Rate (bpm):</label>
+                <input type="text" id="pulseRate" formControlName="pulseRate" class="form-control"
+                  placeholder="Enter pulse rate">
+                <div class="error-message"
+                  *ngIf="editForm.get('pulseRate')?.invalid && editForm.get('pulseRate')?.touched">
+                  Valid pulse rate is required
+                </div>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="temperature">Temperature (°C):</label>
+                <input type="number" id="temperature" formControlName="temperature" class="form-control" step="0.1"
+                  placeholder="Enter temperature">
+                <div class="error-message"
+                  *ngIf="editForm.get('temperature')?.invalid && editForm.get('temperature')?.touched">
+                  Valid temperature is required
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="bmi">BMI:</label>
+                <input type="text" id="bmi" formControlName="bmi" class="form-control" placeholder="Enter BMI"
+                  [readonly]="true">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="chiefComplaint">Chief Complaint:</label>
+              <textarea id="chiefComplaint" formControlName="chiefComplaint" class="form-control" rows="4"
+                placeholder="Enter chief complaint"></textarea>
+              <div class="error-message"
+                *ngIf="editForm.get('chiefComplaint')?.invalid && editForm.get('chiefComplaint')?.touched">
+                Chief complaint is required
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="treatmentPlan">Treatment Plan:</label>
+              <textarea id="treatmentPlan" formControlName="treatmentPlan" class="form-control" rows="4"
+                placeholder="Enter treatment plan"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="nextAppointment">Next Appointment:</label>
+              <input type="date" id="nextAppointment" formControlName="nextAppointment" class="form-control">
+            </div>
+            <button type="submit" class="submit-btn" [disabled]="isEditing">
+              {{ isEditing ? 'Updating...' : 'Update Patient' }}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Laboratory Tests Tab -->
+      <div *ngIf="selectedTab === 'laboratory-tests'">
+        <!-- Laboratory Test Request Form -->
+        <div class="lab-request-form">
+          <h3>Request Laboratory Test</h3>
+          <form [formGroup]="labRequestForm" (ngSubmit)="onLabRequestSubmit()" class="lab-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="testNumber">Test Number:</label>
+                <input type="text" id="testNumber" formControlName="testNumber" class="form-control"
+                  placeholder="Auto-generated test number">
+                <div class="error-message"
+                  *ngIf="labRequestForm.get('testNumber')?.invalid && labRequestForm.get('testNumber')?.touched">
+                  Test number is required
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="testCategory">Test Category:</label>
+                <select id="testCategory" formControlName="testCategory" class="form-control">
+                  <option value="Chemistry">Chemistry</option>
+                  <option value="Bacteriology">Bacteriology</option>
+                  <option value="Fluid_Analysis">Fluid Analysis</option>
+                  <option value="Hematology">Hematology</option>
+                  <option value="Serology">Serology</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="priority">Priority:</label>
+                <select id="priority" formControlName="priority" class="form-control">
+                  <option value="Normal">Normal</option>
+                  <option value="Urgent">Urgent</option>
+                  <option value="STAT">STAT</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="clinicalNotes">Clinical Notes:</label>
+                <textarea id="clinicalNotes" formControlName="clinicalNotes" class="form-control" rows="4"></textarea>
+              </div>
+            </div>
+            <div class="tests-section">
+              <h4>Test Details</h4>
+              <div *ngIf="filteredTests && filteredTests.length > 0" class="test-checkboxes">
+                <label *ngFor="let test of filteredTests; let idx = index">
+                  <input type="checkbox" [checked]="isTestSelected(test.name)"
+                    (change)="onTestCheckboxChange($event, test)" />
+                  {{ test.name }}
+                </label>
+              </div>
+              <div formArrayName="tests">
+                <div *ngFor="let test of testsFormArray.controls; let i = index" [formGroupName]="i" class="test-item">
+                  <div class="form-group">
+                    <label>Test Name:</label>
+                    <input type="text" formControlName="testName" class="form-control" readonly />
+                  </div>
+                  <div class="form-group">
+                    <label>Normal Range:</label>
+                    <input type="text" formControlName="normalRange" class="form-control" readonly />
+                  </div>
+                  <button type="button" class="action-btn remove" (click)="removeTest(i)">Remove</button>
+                </div>
+              </div>
+            </div>
+            <button type="submit" class="submit-btn" [disabled]="labRequestForm.invalid || isRequestingLab">
+              {{ isRequestingLab ? 'Requesting...' : 'Request Laboratory Test' }}
+            </button>
+          </form>
+        </div>
+
+        <!-- Laboratory Tests List -->
+        <div class="tests-list">
+          <h3>Patient Laboratory Tests</h3>
+          <div class="table-container">
+            <table class="tests-table">
+              <thead>
+                <tr>
+                  <th>Test Number</th>
+                  <th>Test Category</th>
+                  <th>Test Date</th>
+                  <th>Priority</th>
+                  <th>Status</th>
+                  <th>Physician</th>
+                  <th>Technician</th>
+                  <th>Reported By</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let test of laboratoryTests">
+                  <td>{{ test.testNumber }}</td>
+                  <td>{{ test.testCategory }}</td>
+                  <td>{{ test.testDate | date:'short' }}</td>
+                  <td>{{ test.priority }}</td>
+                  <td>{{ test.status }}</td>
+                  <td>{{ test.orderingPhysicianName }}</td>
+                  <td>{{ test.technicianName || 'N/A' }}</td>
+                  <td>{{ test.reportedByName || 'N/A' }}</td>
+                  <td>
+                    <button type="button" class="action-btn view" (click)="viewTestDetails(test.testID)">View
+                      Results</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Laboratory Report Dialog - Replace the inline dialog with this -->
+        <app-laboratory-report-dialog [showDialog]="showTestDetailsDialog" [testNumber]="selectedTestNumber"
+          [testData]="selectedTestData" [testDetails]="selectedTestDetails" (close)="closeTestDetailsDialog()">
+        </app-laboratory-report-dialog>
+      </div>
+      <!-- <td>
+                    <button type="button" class="action-btn view" (click)="viewTestDetails(test.testID)">View
+                      Details</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div> -->
+      <!-- Laboratory Test Details Dialog -->
+      <!-- <div class="test-details-dialog" *ngIf="showTestDetailsDialog">
+          <div class="dialog-backdrop" (click)="closeTestDetailsDialog()"></div>
+          <div class="dialog-content">
+            <h3>Test Results for Test #{{ selectedTestNumber }}</h3>
+            <div *ngIf="selectedTestDetails.length > 0; else noDetails">
+              <div class="test-detail-card" *ngFor="let detail of selectedTestDetails">
+                <div><strong>Test Name:</strong> {{ detail.testName }}</div>
+                <div><strong>Result:</strong> {{ detail.result || 'N/A' }}</div>
+                <div><strong>Normal Range:</strong> {{ detail.normalRange || 'N/A' }}</div>
+                <div><strong>Unit:</strong> {{ detail.unit || 'N/A' }}</div>
+                <div><strong>Is Abnormal:</strong> {{ detail.isAbnormal ? 'Yes' : 'No' }}</div>
+                <div><strong>Comments:</strong> {{ detail.comments || 'N/A' }}</div>
+              </div>
+            </div>
+            <ng-template #noDetails>
+              <div>No test details found.</div>
+            </ng-template>
+            <button type="button" class="close-btn" (click)="closeTestDetailsDialog()">Close</button>
+          </div>
+        </div> -->
+      <!-- </div> -->
+
+      <!-- Prescriptions Tab -->
+      <div *ngIf="selectedTab === 'prescriptions'">
+        <!-- Prescription Request Form -->
+        <div class="prescription-request-form">
+          <h3>Request Prescription</h3>
+          <form [formGroup]="prescriptionForm" (ngSubmit)="onPrescriptionSubmit()" class="prescription-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="prescriptionNumber">Prescription Number:</label>
+                <input type="text" id="prescriptionNumber" formControlName="prescriptionNumber" class="form-control"
+                  placeholder="Auto-generated prescription number" [disabled]="true">
+                <div class="error-message"
+                  *ngIf="prescriptionForm.get('prescriptionNumber')?.invalid && prescriptionForm.get('prescriptionNumber')?.touched">
+                  Prescription number is required
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="notes">Notes:</label>
+                <textarea id="notes" formControlName="notes" class="form-control" rows="4"></textarea>
+              </div>
+            </div>
+            <div class="medications-section">
+              <h4>Medications</h4>
+              <div formArrayName="medications">
+                <div *ngFor="let medication of medicationsFormArray.controls; let i = index" [formGroupName]="i"
+                  class="medication-item">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="medicationID-{{i}}">Medication:</label>
+                      <app-medication-tree-dropdown [medications]="categorizedMedications"
+                        [placeholder]="'Select medication'" [formControlName]="'medicationID'"
+                        (selectionChange)="onMedicationSelection($event, i)"
+                        [error]="medication.get('medicationID')?.invalid && medication.get('medicationID')?.touched ? 'Medication is required' : ''">
+                      </app-medication-tree-dropdown>
+                      <div class="error-message"
+                        *ngIf="medication.get('medicationID')?.invalid && medication.get('medicationID')?.touched">
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label for="dose-{{i}}">Dose:</label>
+                      <input type="text" id="dose-{{i}}" formControlName="dose" class="form-control"
+                        placeholder="e.g., 1 tablet">
+                      <div class="error-message"
+                        *ngIf="medication.get('dose')?.invalid && medication.get('dose')?.touched">
+                        Dose is required
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="frequency-{{i}}">Frequency:</label>
+                      <select id="frequency-{{i}}" formControlName="frequency" class="form-control">
+                        <option value="">Select frequency</option>
+                        <option value="Once daily">Once daily</option>
+                        <option value="Twice daily">Twice daily</option>
+                        <option value="Three times daily">Three times daily</option>
+                        <option value="Four times daily">Four times daily</option>
+                        <option value="As needed">As needed</option>
+                      </select>
+                      <div class="error-message"
+                        *ngIf="medication.get('frequency')?.invalid && medication.get('frequency')?.touched">
+                        Frequency is required
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label for="duration-{{i}}">Duration:</label>
+                      <input type="text" id="duration-{{i}}" formControlName="duration" class="form-control"
+                        placeholder="e.g., 7 days">
+                      <div class="error-message"
+                        *ngIf="medication.get('duration')?.invalid && medication.get('duration')?.touched">
+                        Duration is required
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="quantity-{{i}}">Quantity:</label>
+                      <input type="number" id="quantity-{{i}}" formControlName="quantity" class="form-control"
+                        placeholder="Enter quantity">
+                      <div class="error-message"
+                        *ngIf="medication.get('quantity')?.invalid && medication.get('quantity')?.touched">
+                        Valid quantity is required
+                      </div>
+                    </div>
+                    <!-- <div class="form-group">
+                <label for="unitPrice-{{i}}">Unit Price (ETB):</label>
+                <input 
+                  type="number" 
+                  step="0.01" 
+                  id="unitPrice-{{i}}" 
+                  formControlName="unitPrice"
+                  class="form-control"
+                  placeholder="Enter unit price">
+                <div class="error-message" *ngIf="medication.get('unitPrice')?.invalid && medication.get('unitPrice')?.touched">
+                  Valid unit price is required
+                </div>
+              </div> -->
+                  </div>
+                  <div class="form-group">
+                    <label for="instructions-{{i}}">Instructions:</label>
+                    <textarea id="instructions-{{i}}" formControlName="instructions" class="form-control" rows="2"
+                      placeholder="How to use and other information"></textarea>
+                  </div>
+                  <button type="button" class="action-btn remove" (click)="removeMedication(i)">Remove</button>
+                </div>
+              </div>
+              <button type="button" class="action-btn add" (click)="addMedication()">Add Medication</button>
+            </div>
+            <button type="submit" class="submit-btn" [disabled]="prescriptionForm.invalid || isRequestingPrescription">
+              {{ isRequestingPrescription ? 'Requesting...' : 'Request Prescription' }}
+            </button>
+          </form>
+        </div>
+
+        <!-- Prescriptions List -->
+        <div class="prescriptions-list">
+          <h3>Patient Prescriptions</h3>
+          <div class="table-container">
+            <table class="prescriptions-table">
+              <thead>
+                <tr>
+                  <th>Prescription Number</th>
+                  <th>Prescription Date</th>
+                  <th>Total Amount</th>
+                  <th>Status</th>
+                  <th>Prescriber</th>
+                  <th>Pharmacist</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let prescription of prescriptions">
+                  <td>{{ prescription.prescriptionNumber }}</td>
+                  <td>{{ prescription.prescriptionDate | date:'short' }}</td>
+                  <td>{{ prescription.totalAmount | currency:'ETB':'symbol':'1.2-2' }}</td>
+                  <td>{{ prescription.status }}</td>
+                  <td>{{ prescription.prescriberName }}</td>
+                  <td>{{ prescription.pharmacistName || 'N/A' }}</td>
+                  <td>
+                    <button type="button" class="action-btn view"
+                      (click)="viewPrescriptionDetails(prescription.prescriptionID)">View Details</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Prescription Paper Component - Replace the inline dialog with this -->
+          <app-prescription-paper *ngIf="showPrescriptionDetailsDialog" [cardNumber]="selectedCardNumber"
+            (close)="closePrescriptionDetailsDialog()">
+          </app-prescription-paper>
+        </div>
+        <!-- <td>
+                    <button type="button" class="action-btn view"
+                      (click)="viewPrescriptionDetails(prescription.prescriptionID)">View Details</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div> -->
+        <!-- Prescription Details Dialog -->
+        <!-- <div class="prescription-details-dialog" *ngIf="showPrescriptionDetailsDialog">
+    <div class="dialog-backdrop" (click)="closePrescriptionDetailsDialog()"></div>
+    <div class="dialog-content">
+      <h3>Prescription Details for #{{ selectedPrescriptionNumber }}</h3>
+      <div *ngIf="selectedPrescriptionDetails.length > 0; else noPrescriptionDetails">
+        <div class="prescription-detail-card" *ngFor="let detail of selectedPrescriptionDetails">
+          <div><strong>Medication:</strong> {{ detail.medicationName }}</div>
+          <div><strong>Dose:</strong> {{ detail.dose }}</div>
+          <div><strong>Frequency:</strong> {{ detail.frequency }}</div>
+          <div><strong>Duration:</strong> {{ detail.duration }}</div>
+          <div><strong>Quantity:</strong> {{ detail.quantity }}</div>
+          <div><strong>Unit Price:</strong> {{ detail.unitPrice | currency:'ETB':'symbol':'1.2-2' }}</div>
+          <div><strong>Instructions:</strong> {{ detail.instructions || 'N/A' }}</div>
+        </div>
+      </div>
+      <ng-template #noPrescriptionDetails>
+        <div>No prescription details found.</div>
+      </ng-template>
+      <button class="close-btn" (click)="closePrescriptionDetailsDialog()">Close</button>
+    </div>
+  </div>  -->
+        <div class="prescription-details-dialog" *ngIf="showPrescriptionDetailsDialog">
+          <div class="dialog-backdrop" (click)="closePrescriptionDetailsDialog()"></div>
+          <div class="dialog-content">
+            <!-- <h3>Prescription Details for #{{ selectedPrescriptionNumber }}</h3> -->
+            <!-- <app-prescription-paper [prescriptionData]="selectedPrescriptionDetails[0]"></app-prescription-paper> -->
+            <app-prescription-paper [cardNumber]="cardNumber"></app-prescription-paper>
+
+            <button type="button" class="close-btn" (click)="closePrescriptionDetailsDialog()">Close</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Injections Tab -->
+      <div *ngIf="selectedTab === 'injections'">
+        <!-- Injection Request Form -->
+        <div class="injection-request-form">
+          <h3>Request Injection</h3>
+          <form [formGroup]="injectionForm" (ngSubmit)="onInjectionSubmit()" class="injection-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="injectionNumber">Injection Number:</label>
+                <input type="text" id="injectionNumber" formControlName="injectionNumber" class="form-control"
+                  [readonly]="true" placeholder="Auto-generated injection number">
+                <div class="error-message"
+                  *ngIf="injectionForm.get('injectionNumber')?.invalid && injectionForm.get('injectionNumber')?.touched">
+                  Injection number is required
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="medicationID">Medication:</label>
+                <app-medication-tree-dropdown [medications]="categorizedInjectableMedications"
+                  [placeholder]="'Select injectable medication'" formControlName="medicationID"
+                  (selectionChange)="onInjectionMedicationSelection($event)"
+                  [error]="injectionForm.get('medicationID')?.invalid && injectionForm.get('medicationID')?.touched ? 'Medication is required' : ''">
+                </app-medication-tree-dropdown>
+                <div class="error-message"
+                  *ngIf="injectionForm.get('medicationID')?.invalid && injectionForm.get('medicationID')?.touched">
+                </div>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="dose">Dose:</label>
+                <input type="text" id="dose" formControlName="dose" class="form-control" placeholder="e.g., 2 mL">
+                <div class="error-message"
+                  *ngIf="injectionForm.get('dose')?.invalid && injectionForm.get('dose')?.touched">
+                  Dose is required
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="route">Route:</label>
+                <select id="route" formControlName="route" class="form-control">
+                  <option value="">Select route</option>
+                  <option value="IV">Intravenous (IV)</option>
+                  <option value="IM">Intramuscular (IM)</option>
+                  <option value="SC">Subcutaneous (SC)</option>
+                  <option value="ID">Intradermal (ID)</option>
+                </select>
+                <div class="error-message"
+                  *ngIf="injectionForm.get('route')?.invalid && injectionForm.get('route')?.touched">
+                  Route is required
+                </div>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="site">Site:</label>
+                <input type="text" id="site" formControlName="site" class="form-control" placeholder="e.g., Left arm">
+                <div class="error-message"
+                  *ngIf="injectionForm.get('site')?.invalid && injectionForm.get('site')?.touched">
+                  Site is required
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="frequency">Frequency:</label>
+                <select id="frequency" formControlName="frequency" class="form-control">
+                  <option value="">Select frequency</option>
+                  <option value="Once">Once</option>
+                  <option value="Daily">Daily</option>
+                  <option value="Every 12 hours">Every 12 hours</option>
+                  <option value="Every 8 hours">Every 8 hours</option>
+                </select>
+                <div class="error-message"
+                  *ngIf="injectionForm.get('frequency')?.invalid && injectionForm.get('frequency')?.touched">
+                  Frequency is required
+                </div>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="duration">Duration:</label>
+                <input type="text" id="duration" formControlName="duration" class="form-control"
+                  placeholder="e.g., 1 day">
+                <div class="error-message"
+                  *ngIf="injectionForm.get('duration')?.invalid && injectionForm.get('duration')?.touched">
+                  Duration is required
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="instructions">Instructions:</label>
+                <textarea id="instructions" formControlName="instructions" class="form-control" rows="2"
+                  placeholder="Additional administration instructions"></textarea>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="notes">Notes:</label>
+              <textarea id="notes" formControlName="notes" class="form-control" rows="4"></textarea>
+            </div>
+            <button type="submit" class="submit-btn" [disabled]="injectionForm.invalid || isRequestingInjection">
+              {{ isRequestingInjection ? 'Requesting...' : 'Request Injection' }}
+            </button>
+          </form>
+        </div>
+
+        <!-- Injections List -->
+        <div class="injections-list">
+          <h3>Patient Injections</h3>
+          <div class="table-container">
+            <table class="injections-table">
+              <thead>
+                <tr>
+                  <th>Injection Number</th>
+                  <th>Injection Date</th>
+                  <th>Medication</th>
+                  <th>Dose</th>
+                  <th>Route</th>
+                  <th>Site</th>
+                  <th>Status</th>
+                  <th>Physician</th>
+                  <th>Administered By</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let injection of injections">
+                  <td>{{ injection.injectionNumber }}</td>
+                  <td>{{ injection.injectionDate | date:'short' }}</td>
+                  <td>{{ injection.medicationName }} ({{ injection.strength }} {{ injection.dosageForm }})</td>
+                  <td>{{ injection.dose }}</td>
+                  <td>{{ injection.route }}</td>
+                  <td>{{ injection.site }}</td>
+                  <td>{{ injection.status }}</td>
+                  <td>{{ injection.orderingPhysicianName }}</td>
+                  <td>{{ injection.administeredByName || 'N/A' }}</td>
+                  <td>
+                    <button type="button" class="action-btn view"
+                      (click)="viewInjectionDetails(injection.injectionID)">View Details</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Patient Assignment Tab -->
+      <!-- <div *ngIf="selectedTab === 'patient-assignment'">
+        <div class="assignment-form">
+          <h3>Assign Patient to Room</h3>
+          <form [formGroup]="assignmentForm" (ngSubmit)="onAssignmentSubmit()" class="assignment-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="assignedRoom">Room:</label>
+                <select id="assignedRoom" formControlName="assignedRoom" class="form-control">
+                  <option value="">Select a room</option>
+                  <option *ngFor="let room of rooms" [value]="room.roomID">
+                    {{ room.roomNumber }} - {{ room.roomName }} ({{ room.roomType }})
+                  </option>
+                </select>
+                <div class="error-message" *ngIf="assignmentForm.get('assignedRoom')?.invalid && assignmentForm.get('assignedRoom')?.touched">
+                  Room selection is required
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="doctorID">Doctor ID:</label>
+                <input 
+                  type="text" 
+                  id="doctorID" 
+                  formControlName="doctorID"
+                  class="form-control"
+                  placeholder="Enter doctor ID">
+                <div class="error-message" *ngIf="assignmentForm.get('doctorID')?.invalid && assignmentForm.get('doctorID')?.touched">
+                  Doctor ID is required
+                </div>
+              </div>
+            </div>
+
+            <button 
+              type="submit" 
+              class="submit-btn"
+              [disabled]="assignmentForm.invalid || isAssigning">
+              {{ isAssigning ? 'Assigning...' : 'Assign Patient' }}
+            </button>
+          </form>
+        </div>  -->
+
+      <!-- Current Assignments -->
+      <!-- <div class="assignments-list">
+          <h3>Current Patient Assignments</h3>
+          <div class="table-container">
+            <table class="assignments-table">
+              <thead>
+                <tr>
+                  <th>Assignment ID</th>
+                  <th>Room</th>
+                  <th>Doctor ID</th>
+                  <th>Assignment Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let assignment of patientAssignments">
+                  <td>{{ assignment.assignmentID }}</td>
+                  <td>{{ getRoomName(assignment.assignedRoom) }}</td>
+                  <td>{{ assignment.doctorID }}</td>
+                  <td>{{ assignment.assignmentDate | date:'medium' }}</td>
+                  <td>
+                    <span class="status-badge" [class]="assignment.status.toLowerCase()">
+                      {{ assignment.status }}
+                    </span>
+                  </td>
+                  <td>
+                    <button 
+                      class="action-btn"
+                      (click)="updateAssignmentStatus(assignment.assignmentID, 'Completed')"
+                      *ngIf="assignment.status === 'Active'">
+                      Complete
+                    </button>
+                    <button 
+                      class="action-btn"
+                      (click)="updateAssignmentStatus(assignment.assignmentID, 'Cancelled')"
+                      *ngIf="assignment.status === 'Active'">
+                      Cancel
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>  -->
+
+      <!-- Sick Leave Tab -->
+      <div *ngIf="selectedTab === 'sick-leave'">
+        <app-sick-leave [patientID]="patient?.CardNumber" [createdBy]="createdBy">
+        </app-sick-leave>
+      </div>
+      <div *ngIf="selectedTab === 'referrals'">
+        <app-referral-tab [patient]="patient" [createdBy]="createdBy"></app-referral-tab>
+      </div>
+    </div>
+  </div>
+</div>

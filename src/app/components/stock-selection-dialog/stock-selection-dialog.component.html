@@ -1,0 +1,20 @@
+<div class="stock-selection-dialog">
+    <h2>Select Medication Stock Status</h2>
+    <div class="button-container">
+      <button 
+        class="stock-btn in-stock" 
+        (click)="openPrescriptionDialog(data.inStockMedications, 'In-Stock Medications')"
+        [disabled]="data.inStockMedications.length === 0"
+      >
+        In-Stock Medications
+      </button>
+      <button 
+        class="stock-btn out-of-stock" 
+        (click)="openPrescriptionDialog(data.outOfStockMedications, 'Out-of-Stock Medications')"
+        [disabled]="data.outOfStockMedications.length === 0"
+      >
+        Out-of-Stock Medications
+      </button>
+    </div>
+    <button class="close-btn" (click)="closeDialog()">Close</button>
+  </div>

@@ -1,0 +1,153 @@
+.injection-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .injection-container h2 {
+    color: #2c3e50;
+    margin-bottom: 30px;
+    font-size: 2em;
+    font-weight: 500;
+  }
+  
+  .search-container, .patient-info, .injections-list {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+  }
+  
+  .search-form {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+  
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .form-group {
+    margin-bottom: 20px;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+  }
+  
+  .form-group span {
+    color: #333;
+    font-size: 16px;
+  }
+  
+  .form-control {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+  }
+  
+  .form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+  
+  .error-message {
+    color: #e74c3c;
+    font-size: 14px;
+    margin-top: 5px;
+  }
+  
+  .submit-btn, .action-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  .action-btn.view {
+    background: #17a2b8;
+  }
+  
+  .action-btn.administer {
+    background: #28a745;
+  }
+  
+  .submit-btn:hover:not(:disabled), .action-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+  
+  .submit-btn:disabled, .action-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .patient-info h3, .injections-list h3 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    font-size: 1.5em;
+    font-weight: 500;
+  }
+  
+  .table-container {
+    overflow-x: auto;
+  }
+  
+  .injections-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  
+  .injections-table th,
+  .injections-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+  .injections-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+  }
+  
+  .injections-table tr:hover {
+    background-color: #f8f9fa;
+  }
+  
+  @media (max-width: 768px) {
+    .injection-container {
+      padding: 10px;
+    }
+  
+    .search-container, .patient-info, .injections-list {
+      padding: 20px;
+    }
+  
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+  
+    .search-form {
+      flex-direction: column;
+      align-items: start;
+    }
+  }

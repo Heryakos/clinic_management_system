@@ -1,0 +1,114 @@
+<div class="medical-request-container">
+  <!-- Supervisor Table -->
+  <div class="table-section">
+    <h2>Medical Requests</h2>
+    <div class="table-container">
+      <table class="requests-table">
+        <thead>
+          <tr>
+            <th>Request ID</th>
+            <th>Employee Name</th>
+            <th>Department</th>
+            <th>Request Type</th>
+            <th>Request Date</th>
+            <th>Preferred Date</th>
+            <th>Preferred Time</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let request of medicalRequests">
+            <td>{{ request.requestID }}</td>
+            <td>{{ request.employeeName }}</td>
+            <td>{{ request.department }}</td>
+            <td>{{ request.requestType | titlecase }}</td>
+            <td>{{ request.requestDate | date:'short' }}</td>
+            <td>{{ request.preferredDate | date:'shortDate' }}</td>
+            <td>{{ request.preferredTime }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="request.status.toLowerCase()">
+                {{ request.status | titlecase }}
+              </span>
+            </td>
+            <td>
+              <button type="button"
+                *ngIf="request.reason"
+                class="action-btn view-reason"
+                (click)="openReasonModalinfo(request.reason)">
+                View Reason
+              </button>
+              <button type="button"
+                *ngIf="request.reason"
+                class="action-btn clinic-request"
+                (click)="openReasonModal(request.employeeCode)">
+                ክሊኒክ ህክምና መጠየቂያ
+              </button>
+              <button type="button"
+                *ngIf="request.status === 'Pending'"
+                class="action-btn approve"
+                (click)="updateRequestStatus(request.requestID, 'Approved')">
+                Approve
+              </button>
+              <button type="button"
+                *ngIf="request.status === 'Pending'"
+                class="action-btn reject"
+                (click)="openRejectModal(request.requestID)">
+                Reject
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Reason Modal -->
+  <div class="modal" *ngIf="showReasonModal">
+    <div class="modal-content">
+      <h3>ክሊኒክ ህክምና መጠየቂያ</h3>
+      <app-clinic-form [employeeCode]="currentEmployeeCode"></app-clinic-form>
+      <div class="modal-actions">
+        <button type="button" class="close-btn" (click)="closeReasonModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reason Info Modal -->
+  <div class="modal" *ngIf="showReasonModalinfo">
+    <div class="modal-content">
+      <h3>Reason for Clinic Visit</h3>
+      <div class="reason-content">
+        <p>{{ currentReason || 'N/A' }}</p>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="close-btn" (click)="closeReasonModalinfo()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rejection Modal -->
+  <div class="modal" *ngIf="showRejectModal">
+    <div class="modal-content">
+      <h3>Reject Request</h3>
+      <form [formGroup]="rejectForm" (ngSubmit)="submitRejection()">
+        <div class="form-group">
+          <label for="comments">Reason for Rejection:</label>
+          <textarea
+            id="comments"
+            formControlName="comments"
+            class="form-control"
+            rows="4"
+            placeholder="Enter reason for rejection"></textarea>
+          <div class="error-message" *ngIf="rejectForm.get('comments')?.invalid && rejectForm.get('comments')?.touched">
+            Rejection reason is required
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="submit" class="submit-btn" [disabled]="rejectForm.invalid">Submit Rejection</button>
+          <button type="button" class="cancel-btn" (click)="closeRejectModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

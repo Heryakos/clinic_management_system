@@ -1,0 +1,97 @@
+<div class="medical-request-container">
+  <!-- Employee Form -->
+  <div class="form-section">
+    <h2>Medical Request Form</h2>
+    <form [formGroup]="medicalRequestForm" (ngSubmit)="onSubmit()" class="request-form">
+      <div class="form-group">
+        <label for="requestType">Request Type:</label>
+        <select id="requestType" formControlName="requestType" class="form-control">
+          <option value="">Select request type</option>
+          <option value="Examination">Examination</option>
+          <option value="Emergency">Emergency</option>
+          <option value="Follow_Up">Follow-up</option>
+        </select>
+        <div class="error-message" *ngIf="medicalRequestForm.get('requestType')?.invalid && medicalRequestForm.get('requestType')?.touched">
+          Request type is required
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="reason">Reason for Clinic Visit:</label>
+        <textarea
+          id="reason"
+          formControlName="reason"
+          class="form-control"
+          placeholder="Enter reason for clinic visit"
+          rows="4"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="preferredDate">Preferred Date:</label>
+        <input
+          type="date"
+          id="preferredDate"
+          formControlName="preferredDate"
+          class="form-control"
+          placeholder="Select preferred date">
+        <div class="error-message" *ngIf="medicalRequestForm.get('preferredDate')?.hasError('pastDate') && medicalRequestForm.get('preferredDate')?.touched">
+          Preferred date cannot be in the past
+        </div>
+        <div class="error-message" *ngIf="medicalRequestForm.get('preferredDate')?.hasError('required') && medicalRequestForm.get('preferredDate')?.touched">
+          Preferred date is required
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="preferredTime">Preferred Time:</label>
+        <input
+          type="time"
+          id="preferredTime"
+          formControlName="preferredTime"
+          class="form-control"
+          placeholder="Select preferred time">
+        <div class="error-message" *ngIf="medicalRequestForm.get('preferredTime')?.hasError('invalidTime') && medicalRequestForm.get('preferredTime')?.touched">
+          Preferred time must be between 9:00 AM and 5:00 PM
+        </div>
+        <div class="error-message" *ngIf="medicalRequestForm.get('preferredTime')?.hasError('required') && medicalRequestForm.get('preferredTime')?.touched">
+          Preferred time is required
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="submit"
+          class="submit-btn"
+          [disabled]="medicalRequestForm.invalid || isSubmitting">
+          {{ isSubmitting ? 'Submitting...' : 'Submit Request' }}
+        </button>
+        <button
+          type="button"
+          class="messages-btn"
+          (click)="showMessages()">
+          View Messages
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Messages Modal -->
+  <div class="modal" *ngIf="showMessagesModal">
+    <div class="modal-content">
+      <h3>Request Messages</h3>
+      <div class="messages-list">
+        <div *ngFor="let request of medicalRequests" class="message-item">
+          <p><strong>Request ID:</strong> {{ request.requestID }}</p>
+          <p><strong>Employee:</strong> {{ request.employeeName }}</p>
+          <p><strong>Status:</strong> {{ request.status | titlecase }}</p>
+          <p *ngIf="request.supervisorComments"><strong>Comments:</strong> {{ request.supervisorComments }}</p>
+          <p *ngIf="request.approvedByName"><strong>Approved By:</strong> {{ request.approvedByName }}</p>
+          <p><strong>Request Date:</strong> {{ request.requestDate | date:'short' }}</p>
+          <p><strong>Preferred Date:</strong> {{ request.preferredDate | date:'shortDate' }}</p>
+          <p><strong>Preferred Time:</strong> {{ request.preferredTime }}</p>
+        </div>
+      </div>
+      <button type="button" class="close-btn" (click)="closeMessages()">Close</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,119 @@
+<div class="injection-container">
+    <h2>Injection Management</h2>
+    
+    <div class="injections-list" *ngIf="globalActiveInjections && globalActiveInjections.length > 0">
+      <h3>Active Injections (My Tasks)</h3>
+      <div class="table-container">
+        <table class="injections-table">
+          <thead>
+            <tr>
+              <th>Injection #</th>
+              <th>Date</th>
+              <th>Patient</th>
+              <th>Medication</th>
+              <th>Dose</th>
+              <th>Route</th>
+              <th>Site</th>
+              <th>Physician</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let inj of globalActiveInjections">
+              <td>{{ inj.InjectionNumber || inj.injectionNumber }}</td>
+              <td>{{ (inj.InjectionDate || inj.injectionDate) | date:'short' }}</td>
+              <td>{{ inj.PatientName || inj.patientName }}</td>
+              <td>{{ inj.MedicationName || inj.medicationName }} ({{ inj.Strength || inj.strength }} {{ inj.DosageForm || inj.dosageForm }})</td>
+              <td>{{ inj.Dose || inj.dose }}</td>
+              <td>{{ inj.Route || inj.route }}</td>
+              <td>{{ inj.Site || inj.site }}</td>
+              <td>{{ inj.OrderingPhysicianName || inj.orderingPhysicianName }}</td>
+              <td>
+                <button type="button" class="action-btn administer" (click)="administerInjection(inj.InjectionID || inj.injectionID)">Administer</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="search-container">
+      <form [formGroup]="searchForm" (ngSubmit)="onSearchPatient()" class="search-form">
+        <div class="form-group">
+          <label for="patientID">Card Number:</label>
+          <input 
+            type="text" 
+            id="patientID" 
+            formControlName="patientID"
+            class="form-control"
+            placeholder="Enter card number">
+          <div class="error-message" *ngIf="searchForm.get('patientID')?.invalid && searchForm.get('patientID')?.touched">
+            Card number is required
+          </div>
+        </div>
+        <button 
+          type="submit" 
+          class="submit-btn"
+          [disabled]="searchForm.invalid || isSearching">
+            {{ isSearching ? 'Searching...' : 'Search Patient' }}
+          </button>
+      </form>
+    </div>
+  
+    <div class="patient-info" *ngIf="patient">
+      <h3>Patient Information</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Patient Name:</label>
+          <span>{{ patient.firstName }} {{ patient.lastName }}</span>
+        </div>
+        <div class="form-group">
+          <label>Card Number:</label>
+          <span>{{ patient.cardNumber }}</span>
+        </div>
+        <div class="form-group">
+          <label>Age:</label>
+          <span>{{ patient.age }}</span>
+        </div>
+        <div class="form-group">
+          <label>Gender:</label>
+          <span>{{ patient.gender }}</span>
+        </div>
+      </div>
+    </div>
+  
+    <div class="injections-list" *ngIf="patient">
+      <h3>Injection Requests</h3>
+      <div class="table-container">
+        <table class="injections-table">
+          <thead>
+            <tr>
+              <th>Injection Number</th>
+              <th>Injection Date</th>
+              <th>Status</th>
+              <th>Physician</th>
+              <th>Administered By</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let injection of injections">
+              <td>{{ injection.injectionNumber }}</td>
+              <td>{{ injection.injectionDate | date:'short' }}</td>
+              <td>{{ injection.status }}</td>
+              <td>{{ injection.orderingPhysicianName }}</td>
+              <td>{{ injection.administeredByName || 'N/A' }}</td>
+              <td>
+                <button type="button" class="action-btn view" (click)="viewInjectionDetails(injection.injectionID)">View Details</button>
+                <button type="button" class="action-btn administer" (click)="administerInjection(injection.injectionID)" *ngIf="injection.status === 'Active'">Administer</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!-- <div class="modal-overlay" *ngIf="selectedInjection" (click)="closeDialog()"></div>
+    <div class="modal-dialog" *ngIf="selectedInjection">
+      <app-injection-details-dialog [injection]="selectedInjection" (closeDialog)="closeDialog()"></app-injection-details-dialog>
+    </div> -->
+  </div>

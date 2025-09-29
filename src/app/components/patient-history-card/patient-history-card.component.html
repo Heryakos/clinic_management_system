@@ -1,0 +1,225 @@
+<div class="patient-history-container">
+  <h2>Patient History</h2>
+
+  <!-- Notification Button -->
+  <div class="notification-btn-container">
+    <button type="button" class="notification-btn" (click)="openNotificationDialog()">Send Notification</button>
+  </div>
+
+  <div class="no-results" *ngIf="searched && !patient && !isSearching">
+    No patient found for the provided card number.
+  </div>
+  <div class="no-results" *ngIf="searched && patient && patientHistory.length === 0 && !isSearching">
+    No history found for this patient.
+  </div>
+
+  <!-- Search Form -->
+  <div class="search-container">
+    <form [formGroup]="searchForm" (ngSubmit)="onSearch()" class="search-form">
+      <div class="form-group">
+        <label for="cardNumber">Card Number:</label>
+        <input 
+          type="text" 
+          id="cardNumber" 
+          formControlName="cardNumber"
+          class="form-control"
+          placeholder="Enter card number">
+        <div class="error-message" *ngIf="searchForm.get('cardNumber')?.invalid && searchForm.get('cardNumber')?.touched">
+          Card number is required
+        </div>
+      </div>
+      <button 
+        type="submit" 
+        class="search-btn"
+        [disabled]="searchForm.invalid || isSearching">
+        {{ isSearching ? 'Searching...' : 'Search Patient' }}
+      </button>
+      <button 
+        type="button" 
+        class="clear-btn"
+        (click)="resetSearch()"
+        [disabled]="isSearching">
+        Clear
+      </button>
+    </form>
+  </div>
+
+  <!-- Initial Table Grid (Shown by Default) -->
+  <div class="active-patients-section" *ngIf="!isSearchMode && activePatients.length > 0">
+    <h3>Active Patients</h3>
+    <div class="table-container">
+      <table class="active-patients-table">
+        <thead>
+          <tr>
+            <th>Patient ID</th>
+            <th>Card Number</th>
+            <th>Full Name</th>
+            <th>Age</th>
+            <th>Gender</th>
+            <th>Last Visit</th>
+            <th>Registration Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let patient of activePatients" (click)="onPatientRowClick(patient)" class="clickable-row">
+            <td>{{ patient.PatientID }}</td>
+            <td>{{ patient.CardNumber }}</td>
+            <td>{{ patient.FullName }}</td>
+            <td>{{ patient.Age }}</td>
+            <td>{{ patient.Gender }}</td>
+            <td>{{ patient.LastVisitDate | date:'medium' }}</td>
+            <td>{{ patient.RegistrationDate | date:'medium' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- No Active Patients Message -->
+  <div class="no-results" *ngIf="!isSearchMode && activePatients.length === 0 && !isSearching">
+    No active patients found.
+  </div>
+
+  <!-- Patient Info and Assignment (Shown when a row is clicked) -->
+  <div *ngIf="patient && !isSearchMode">
+    <app-patient-info-card [patient]="patient"></app-patient-info-card>
+
+    <div class="card-actions">
+      <button 
+        type="button" 
+        class="assignment-btn"
+        (click)="toggleAssignmentForm()">
+        {{ showAssignmentForm ? 'Cancel Assignment' : 'Assign to Room' }}
+      </button>
+    </div>
+
+    <div class="assignment-form-container" *ngIf="showAssignmentForm && patient">
+      <h3>Assign Patient to Room</h3>
+      <form [formGroup]="assignmentForm" (ngSubmit)="onAssignmentSubmit()" class="assignment-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="assignedRoom">Room:</label>
+            <select 
+              id="assignedRoom" 
+              formControlName="assignedRoom" 
+              class="form-control"
+              (change)="onRoomChange($event)">
+              <option value="">Select a room</option>
+              <option *ngFor="let roomType of uniqueRoomTypes" [value]="roomType">
+                {{ roomType }}
+              </option>
+            </select>
+            <div class="error-message" *ngIf="assignmentForm.get('assignedRoom')?.invalid && assignmentForm.get('assignedRoom')?.touched">
+              Room selection is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="doctorID">Doctor:</label>
+            <select 
+              id="doctorID" 
+              formControlName="doctorID" 
+              class="form-control"
+              [disabled]="!assignmentForm.get('assignedRoom')?.value">
+              <option value="">Select a doctor</option>
+              <option *ngFor="let doctor of availableDoctors" [value]="doctor.userId">
+                {{ doctor.fName }} {{ doctor.mName }} ({{ doctor.userName }})
+              </option>
+            </select>
+            <div class="error-message" *ngIf="assignmentForm.get('doctorID')?.invalid && assignmentForm.get('doctorID')?.touched">
+              Doctor selection is required
+            </div>
+          </div>
+        </div>
+
+        <button 
+          type="submit" 
+          class="submit-btn"
+          [disabled]="assignmentForm.invalid || isAssigning">
+          {{ isAssigning ? 'Assigning...' : 'Assign Patient' }}
+        </button>
+      </form>
+    </div>
+
+    <div class="patient-history-section" *ngIf="patientHistory.length > 0">
+      <h3>Patient History</h3>
+      <div class="table-container">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Visit Date</th>
+              <th>Request Type</th>
+              <th>Chief Complaint</th>
+              <th>Diagnosis</th>
+              <th>Treatment Plan</th>
+              <th>Room</th>
+              <th>Doctor</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let history of patientHistory">
+              <td>{{ history.visitDate | date:'medium' }}</td>
+              <td>{{ history.requestType || 'N/A' }}</td>
+              <td>{{ history.chiefComplaint || 'N/A' }}</td>
+              <td>{{ history.diagnosis || 'N/A' }}</td>
+              <td>{{ history.treatmentPlan || 'N/A' }}</td>
+              <td>{{ history.roomNumber ? getRoomName(history.roomID!) : 'N/A' }}</td>
+              <td>{{ history.doctorName || 'N/A' }}</td>
+              <td>
+                <span class="status-badge" [class]="history.assignmentStatus?.toLowerCase()">
+                  {{ history.assignmentStatus || 'N/A' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search Results (Shown when searching) -->
+  <div *ngIf="isSearchMode && patient">
+    <app-patient-info-card [patient]="patient"></app-patient-info-card>
+    <div class="patient-history-section" *ngIf="patientHistory.length > 0">
+      <h3>Patient History</h3>
+      <div class="table-container">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Visit Date</th>
+              <th>Request Type</th>
+              <th>Chief Complaint</th>
+              <th>Diagnosis</th>
+              <th>Treatment Plan</th>
+              <th>Room</th>
+              <th>Doctor</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let history of patientHistory">
+              <td>{{ history.visitDate | date:'medium' }}</td>
+              <td>{{ history.requestType || 'N/A' }}</td>
+              <td>{{ history.chiefComplaint || 'N/A' }}</td>
+              <td>{{ history.diagnosis || 'N/A' }}</td>
+              <td>{{ history.treatmentPlan || 'N/A' }}</td>
+              <td>{{ history.roomNumber ? getRoomName(history.roomID!) : 'N/A' }}</td>
+              <td>{{ history.doctorName || 'N/A' }}</td>
+              <td>
+                <span class="status-badge" [class]="history.assignmentStatus?.toLowerCase()">
+                  {{ history.assignmentStatus || 'N/A' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- No Results Message for Search -->
+  <div class="no-results" *ngIf="isSearchMode && searched && !patient">
+    No record found for the provided card number.
+  </div>
+</div>

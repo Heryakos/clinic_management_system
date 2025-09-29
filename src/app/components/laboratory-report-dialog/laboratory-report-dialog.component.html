@@ -1,0 +1,141 @@
+<div class="test-details-dialog" *ngIf="showDialog">
+    <div class="dialog-backdrop" (click)="closeDialog()"></div>
+    <div class="dialog-content">
+      <div class="lab-report" id="labReport">
+        <!-- Report Header -->
+        <div class="lab-report-header">
+          <h2>LABORATORY REPORT</h2>
+          <p class="subtitle">Federal Housing Corporation Medium Clinic</p>
+        </div>
+  
+        <!-- Report Content -->
+        <div class="report-content">
+          <!-- Patient and Test Information -->
+          <div class="patient-info-section">
+            <div class="patient-details">
+              <h4>Patient Information</h4>
+              <div class="info-row">
+                <span class="info-label">Patient Name:</span>
+                <span class="info-value">{{ testData?.patientName || 'N/A' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Patient ID:</span>
+                <span class="info-value">{{ testData?.patientID || 'N/A' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Card Number:</span>
+                <span class="info-value">{{ testData?.cardNumber || 'N/A' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Age/Gender:</span>
+                <span class="info-value">{{ testData?.age || 'N/A' }} / {{ testData?.gender || 'N/A' }}</span>
+              </div>
+            </div>
+  
+            <div class="test-info">
+              <h4>Test Information</h4>
+              <div class="info-row">
+                <span class="info-label">Test Number:</span>
+                <span class="info-value">{{ testNumber }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Test Category:</span>
+                <span class="info-value">{{ testData?.testCategory || 'N/A' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Ordering Physician:</span>
+                <span class="info-value">{{ testData?.orderingPhysicianName || 'N/A' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Test Date:</span>
+                <span class="info-value">{{ testData?.testDate | date:'medium' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Reported By:</span>
+                <span class="info-value">{{ testData?.reportedBy || 'N/A' }}</span>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Test Results -->
+          <div class="results-section">
+            <h4>LABORATORY TEST RESULTS</h4>
+            <div *ngIf="testDetails.length > 0; else noDetails">
+              <table class="results-table">
+                <thead>
+                  <tr>
+                    <th>Test Name</th>
+                    <th>Result</th>
+                    <th>Unit</th>
+                    <th>Reference Range</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let detail of testDetails">
+                    <td>{{ detail.testName }}</td>
+                    <td>
+                      <span class="result-value"
+                            [ngClass]="detail.isAbnormal ? 'result-abnormal' : 'result-normal'">
+                        {{ detail.result || 'N/A' }}
+                      </span>
+                    </td>
+                    <td>{{ detail.unit || '' }}</td>
+                    <td class="reference-range">{{ detail.normalRange || 'N/A' }}</td>
+                    <td>
+                      <span *ngIf="detail.isAbnormal" class="abnormal-indicator">ABNORMAL</span>
+                      <span *ngIf="!detail.isAbnormal" class="normal-indicator">NORMAL</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+  
+              <!-- Comments Section -->
+              <div class="comments-section" *ngIf="hasComments()">
+                <h5>Comments & Observations:</h5>
+                <div *ngFor="let detail of testDetails">
+                  <div class="comment-item" *ngIf="detail.comments">
+                    <strong>{{ detail.testName }}:</strong> {{ detail.comments }}
+                  </div>
+                </div>
+              </div>
+            </div>
+  
+            <ng-template #noDetails>
+              <div style="text-align: center; padding: 40px; color: #6c757d;">
+                <p>No test details found for this report.</p>
+              </div>
+            </ng-template>
+          </div>
+        </div>
+  
+        <!-- Report Footer -->
+        <div class="report-footer">
+          <div class="footer-info">
+            <div>
+              <strong>Laboratory Contact:</strong> lab@hospital.com | Phone: (555) 123-4567
+            </div>
+            <div>
+              <strong>Report Generated:</strong> {{ getCurrentDateTime() }}
+            </div>
+          </div>
+          <div style="margin-top: 10px; text-align: center; font-size: 11px;">
+            <em>This report contains confidential medical information. Unauthorized disclosure is prohibited.</em>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Dialog Actions -->
+      <div class="dialog-actions">
+        <button type="button" class="action-button btn-print" (click)="printReport()">
+          🖨️ Print Report
+        </button>
+        <button type="button" class="action-button btn-pdf" (click)="exportToPDF()">
+          📄 Export PDF
+        </button>
+        <button type="button" class="action-button btn-close" (click)="closeDialog()">
+          ✕ Close
+        </button>
+      </div>
+    </div>
+  </div>

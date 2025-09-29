@@ -1,0 +1,25 @@
+.inventory-management-container {
+    padding: 20px;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  th, td {
+    padding: 8px;
+    border: 1px solid #ddd;
+  }
+  
+  button {
+    padding: 6px 12px;
+    margin-right: 5px;
+  }
+  
+  .modal {
+    background: #fff;
+    padding: 20px;
+    border: 1px solid #ccc;
+    margin-top: 20px;
+  }

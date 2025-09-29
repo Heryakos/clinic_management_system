@@ -1,0 +1,173 @@
+<!-- src/app/injection-details-dialog/injection-details-dialog.component.html -->
+<div class="medical-report-container">
+    <!-- Header Section with Logo -->
+    <div class="report-header">
+      <div class="hospital-info">
+        <img src="assets/images/hospital-logo.png" alt="Hospital Logo" class="hospital-logo">
+        <div class="hospital-details">
+          <h1>Medical Center</h1>
+          <p>Injection Administration Report</p>
+          <div class="report-meta">
+            <span>Report Date: {{ getCurrentDate() }}</span>
+            <span>Time: {{ getCurrentTime() }}</span>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="close-btn" (click)="closeDialog()" aria-label="Close dialog">&times;</button>
+    </div>
+  
+    <!-- Patient Information Section -->
+    <div class="section patient-section">
+      <h2 class="section-title">Patient Information</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <label>Patient ID:</label>
+          <span>{{ data.injection.patientID || 'N/A' }}</span>
+        </div>
+        <div class="info-item">
+          <label>Patient Name:</label>
+          <span>{{ data.injection.patientName || 'N/A' }}</span>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Injection Details Section -->
+    <div class="section injection-section">
+      <h2 class="section-title">Injection Details</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <label>Injection ID:</label>
+          <span>{{ data.injection.injectionID }}</span>
+        </div>
+        <div class="info-item">
+          <label>Injection Number:</label>
+          <span>{{ data.injection.injectionNumber }}</span>
+        </div>
+        <div class="info-item">
+          <label>Injection Date:</label>
+          <span>{{ data.injection.injectionDate | date:'medium' }}</span>
+        </div>
+        <div class="info-item">
+          <label>Status:</label>
+          <span class="status-badge" [ngClass]="'status-' + (data.injection.status || '').toLowerCase()">
+            {{ data.injection.status }}
+          </span>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Medication Information Section -->
+    <div class="section medication-section">
+      <h2 class="section-title">Medication Information</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <label>Medication ID:</label>
+          <span>{{ data.injection.medicationID }}</span>
+        </div>
+        <div class="info-item">
+          <label>Medication Name:</label>
+          <span class="medication-name">{{ data.injection.medicationName }}</span>
+        </div>
+        <div class="info-item">
+          <label>Strength:</label>
+          <span>{{ data.injection.strength }}</span>
+        </div>
+        <div class="info-item">
+          <label>Dosage Form:</label>
+          <span>{{ data.injection.dosageForm }}</span>
+        </div>
+        <div class="info-item">
+          <label>Dose:</label>
+          <span class="dose-highlight">{{ data.injection.dose }}</span>
+        </div>
+        <div class="info-item">
+          <label>Route:</label>
+          <span>{{ data.injection.route }}</span>
+        </div>
+        <div class="info-item">
+          <label>Site:</label>
+          <span>{{ data.injection.site }}</span>
+        </div>
+        <div class="info-item">
+          <label>Frequency:</label>
+          <span>{{ data.injection.frequency }}</span>
+        </div>
+        <div class="info-item">
+          <label>Duration:</label>
+          <span>{{ data.injection.duration }}</span>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Administration Details Section -->
+    <div class="section administration-section">
+      <h2 class="section-title">Administration Details</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <label>Ordering Physician ID:</label>
+          <span>{{ data.injection.orderingPhysicianID }}</span>
+        </div>
+        <div class="info-item">
+          <label>Ordering Physician:</label>
+          <span class="physician-name">{{ data.injection.orderingPhysicianName }}</span>
+        </div>
+        <div class="info-item">
+          <label>Administered By ID:</label>
+          <span>{{ data.injection.administeredBy }}</span>
+        </div>
+        <div class="info-item">
+          <label>Administered By:</label>
+          <span class="nurse-name">{{ data.injection.administeredByName }}</span>
+        </div>
+        <div class="info-item">
+          <label>Administration Date:</label>
+          <span>{{ data.injection.administeredDate | date:'medium' }}</span>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Instructions and Notes Section -->
+    <div class="section notes-section" *ngIf="data.injection.instructions || data.injection.notes">
+      <h2 class="section-title">Instructions & Notes</h2>
+      <div class="notes-content">
+        <div class="note-item" *ngIf="data.injection.instructions">
+          <label>Instructions:</label>
+          <p>{{ data.injection.instructions }}</p>
+        </div>
+        <div class="note-item" *ngIf="data.injection.notes">
+          <label>Additional Notes:</label>
+          <p>{{ data.injection.notes }}</p>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Footer Section -->
+    <div class="report-footer">
+      <div class="signature-section">
+        <div class="signature-box">
+          <div class="signature-line"></div>
+          <label>Physician Signature</label>
+        </div>
+        <div class="signature-box">
+          <div class="signature-line"></div>
+          <label>Nurse Signature</label>
+        </div>
+        <div class="signature-box">
+          <div class="signature-line"></div>
+          <label>Date</label>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Action Buttons -->
+    <div class="dialog-actions">
+      <button type="button" class="action-btn print-btn" (click)="print()">
+        <span class="btn-icon">🖨️</span>
+        Print Report
+      </button>
+      <button type="button" class="action-btn close-btn-action" (click)="closeDialog()">
+        <span class="btn-icon">✕</span>
+        Close
+      </button>
+    </div>
+  </div>

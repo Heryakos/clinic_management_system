@@ -1,0 +1,123 @@
+<div class="supervisor-container">
+    <h2>Supervisor Inventory Dashboard</h2>
+  
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="card">Pending Requests: {{ pendingRequests.length }}</div>
+      <div class="card">Purchase Requests: {{ purchaseRequests.length }}</div>
+    </div>
+  
+    <!-- Filters -->
+    <div class="filters">
+      <input
+        type="text"
+        placeholder="Filter by Request Number"
+        (input)="filterRequests($event)"
+      />
+    </div>
+  
+    <!-- Inventory Requests -->
+    <h3>Pending Requests</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Request #</th>
+          <th>Room</th>
+          <th>Date</th>
+          <th>Items</th>
+          <th>Status</th>
+          <th>Monitored</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let request of filteredRequests">
+          <td>{{ request.requestNumber }}</td>
+          <td>{{ request.roomID }}</td>
+          <td>{{ request.requestDate | date }}</td>
+          <td>{{ request.items.length }}</td>
+          <td>{{ request.status }}</td>
+          <td>{{ request.monitored ? "Yes" : "No" }}</td>
+          <td>
+            <button class="view-details" (click)="viewDetails(request)">
+              View Details
+            </button>
+            <button class="monitor" (click)="monitorRequest(request.requestID!)">
+              Monitor
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  
+    <!-- Purchase Requests -->
+    <h3>Purchase Requests</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Purchase #</th>
+          <th>Item</th>
+          <th>Quantity</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let purchase of purchaseRequests">
+          <td>{{ purchase.requestNumber }}</td>
+          <td>{{ purchase.itemName }}</td>
+          <td>{{ purchase.quantity }}</td>
+          <td>{{ purchase.status }}</td>
+        </tr>
+      </tbody>
+    </table>
+  
+    <!-- Reports -->
+    <div class="reports-section">
+      <h3>Inventory Reports</h3>
+      <button (click)="generateReport('stock')">Stock Report</button>
+      <button (click)="generateReport('transactions')">Transactions Report</button>
+      <button (click)="generateReport('requests')">Requests Report</button>
+    </div>
+  
+    <!-- Modal for Details -->
+    <div *ngIf="selectedRequest" class="modal-overlay">
+      <div class="modal">
+        <h3>Request Details: {{ selectedRequest.requestNumber }}</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Requested Quantity</th>
+              <th>Current Stock</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of selectedRequestDetails">
+              <td>{{ item.itemName }}</td>
+              <td>{{ item.requestedQuantity }}</td>
+              <td>{{ item.currentStock }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <textarea
+          [(ngModel)]="comments"
+          placeholder="Enter comments"
+        ></textarea>
+        <button
+          class="approve"
+          (click)="approveRequest()"
+          [disabled]="isProcessing"
+        >
+          Approve
+        </button>
+        <button
+          class="reject"
+          (click)="rejectRequest()"
+          [disabled]="isProcessing"
+        >
+          Reject
+        </button>
+        <button class="close" (click)="closeModal()">Close</button>
+      </div>
+    </div>
+  </div>

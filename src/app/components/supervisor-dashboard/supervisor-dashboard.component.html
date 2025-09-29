@@ -1,0 +1,304 @@
+<div class="supervisor-container">
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="card pending">
+        <span class="card-icon">⏳</span>
+        <div class="card-content">
+          <h3>{{ pendingRequestsCount }}</h3>
+          <p>Pending Requests</p>
+        </div>
+      </div>
+      <div class="card approved">
+        <span class="card-icon">✅</span>
+        <div class="card-content">
+          <h3>{{ approvedRequestsCount }}</h3>
+          <p>Approved Today</p>
+        </div>
+      </div>
+      <div class="card purchase">
+        <span class="card-icon">🛒</span>
+        <div class="card-content">
+          <h3>{{ purchaseRequestsCount }}</h3>
+          <p>Purchase Requests</p>
+        </div>
+      </div>
+      <div class="card value">
+        <span class="card-icon">💰</span>
+        <div class="card-content">
+          <h3>{{ totalEstimatedValue | currency:'ETB' }}</h3>
+          <p>Pending Value</p>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Filters -->
+    <div class="filters-section">
+      <div class="filter-group">
+        <label for="statusFilter">Status:</label>
+        <select id="statusFilter" [(ngModel)]="statusFilter" (ngModelChange)="onFilterChange()">
+          <option value="all">All</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+          <option value="issued">Issued</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="roomFilter">Room:</label>
+        <select id="roomFilter" [(ngModel)]="roomFilter" (ngModelChange)="onFilterChange()">
+          <option value="all">All</option>
+          <option *ngFor="let room of uniqueRooms" [value]="room">{{ room }}</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="dateFrom">From:</label>
+        <input type="date" id="dateFrom" [(ngModel)]="dateFrom" (ngModelChange)="onFilterChange()">
+        <span>to</span>
+        <label for="dateTo">To:</label>
+        <input type="date" id="dateTo" [(ngModel)]="dateTo" (ngModelChange)="onFilterChange()">
+      </div>
+    </div>
+  
+    <!-- Inventory Requests -->
+    <div class="requests-section">
+      <h3>Inventory Requests</h3>
+      <div class="table-container">
+        <table class="requests-table table">
+          <thead>
+            <tr>
+              <th>Request #</th>
+              <th>From</th>
+              <th>Room</th>
+              <th>Date</th>
+              <th>Reason</th>
+              <th>Status</th>
+              <th>Items</th>
+              <th>Est. Value</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let request of filteredRequests" [ngClass]="'status-' + request.status.toLowerCase()">
+              <td>{{ request.requestNumber }}</td>
+              <td>{{ request.requestedByName }}</td>
+              <td>
+                <span class="room-badge" [ngClass]="getRoomClass(request.roomName)">
+                  {{ request.roomName }}
+                </span>
+              </td>
+              <td>{{ request.requestDate | date:'mediumDate' }}</td>
+              <td>{{ request.reasonForRequest }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="'status-' + request.status.toLowerCase()">
+                  {{ request.status }}
+                </span>
+              </td>
+              <td>{{ request.itemCount }} <span class="item-count">items</span></td>
+              <td>{{ request.estimatedValue | currency:'ETB' }}</td>
+              <td class="actions-cell">
+                <button class="action-btn view" (click)="viewRequestDetails(request)">View</button>
+                <button class="action-btn approve" (click)="approveRequest(request)" *ngIf="request.status === 'Pending'">Approve</button>
+                <button class="action-btn reject" (click)="rejectRequest(request)" *ngIf="request.status === 'Pending'">Reject</button>
+                <button class="action-btn issue" (click)="issueItems(request)" *ngIf="request.status === 'Approved'">Issue</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  
+    <!-- Purchase Requests -->
+    <div class="purchase-requests-section">
+      <h3>Purchase Requests</h3>
+      <div class="table-container">
+        <table class="purchase-table table">
+          <thead>
+            <tr>
+              <th>Purchase #</th>
+              <th>Item</th>
+              <th>Quantity</th>
+              <th>Est. Cost</th>
+              <th>Requested By</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let purchase of purchaseRequests" [ngClass]="'status-' + purchase.status.toLowerCase()">
+              <td>{{ purchase.requestNumber }}</td>
+              <td>{{ purchase.itemName }} ({{ purchase.itemCode }})</td>
+              <td>{{ purchase.quantity }}</td>
+              <td>{{ purchase.totalEstimatedCost | currency:'ETB' }}</td>
+              <td>{{ purchase.requestedByName }}</td>
+              <td>{{ purchase.requestDate | date:'mediumDate' }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="'status-' + purchase.status.toLowerCase()">
+                  {{ purchase.status }}
+                </span>
+              </td>
+              <td class="actions-cell">
+                <button class="action-btn view" (click)="viewPurchaseDetails(purchase)">View</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  
+    <!-- Modal for Request/Purchase Details -->
+    <div class="modal" *ngIf="selectedRequest || selectedPurchase">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>{{ selectedRequest ? 'Request Details' : 'Purchase Request Details' }}</h3>
+          <button class="close-btn" (click)="closeModal()">✖</button>
+        </div>
+        <div class="modal-body">
+          <ng-container *ngIf="selectedRequest">
+            <div class="request-info">
+              <div class="info-row">
+                <label>Request Number:</label>
+                <span>{{ selectedRequest.requestNumber }}</span>
+              </div>
+              <div class="info-row">
+                <label>Requested By:</label>
+                <span>{{ selectedRequest.requestedByName }}</span>
+              </div>
+              <div class="info-row">
+                <label>Room:</label>
+                <span>{{ selectedRequest.roomName }}</span>
+              </div>
+              <div class="info-row">
+                <label>Date:</label>
+                <span>{{ selectedRequest.requestDate | date:'mediumDate' }}</span>
+              </div>
+              <div class="info-row">
+                <label>Reason:</label>
+                <span>{{ selectedRequest.reasonForRequest }}</span>
+              </div>
+              <div class="info-row">
+                <label>Estimated Value:</label>
+                <span>{{ selectedRequest.estimatedValue | currency:'ETB' }}</span>
+              </div>
+            </div>
+            <div class="items-details">
+              <h4>Requested Items</h4>
+              <table class="items-table table">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Code</th>
+                    <th>Quantity</th>
+                    <th>Stock</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of selectedRequestItems">
+                    <td>{{ item.itemName }}</td>
+                    <td>{{ item.itemCode || 'N/A' }}</td>
+                    <td>{{ item.requestedQuantity || 0 }}</td>
+                    <td>{{ item.currentStock || 0 }}</td>
+                    <td>
+                        <span class="stock-status" [ngClass]="(item.currentStock || 0) >= (item.requestedQuantity || 0) ? 'available' : 'insufficient'">
+                            {{ (item.currentStock || 0) >= (item.requestedQuantity || 0) ? 'Available' : 'Insufficient' }}
+                          </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </ng-container>
+          <ng-container *ngIf="selectedPurchase">
+            <div class="request-info">
+              <div class="info-row">
+                <label>Purchase Request Number:</label>
+                <span>{{ selectedPurchase.requestNumber }}</span>
+              </div>
+              <div class="info-row">
+                <label>Item:</label>
+                <span>{{ selectedPurchase.itemName }} ({{ selectedPurchase.itemCode }})</span>
+              </div>
+              <div class="info-row">
+                <label>Quantity:</label>
+                <span>{{ selectedPurchase.quantity }}</span>
+              </div>
+              <div class="info-row">
+                <label>Estimated Cost:</label>
+                <span>{{ selectedPurchase.totalEstimatedCost | currency:'ETB' }}</span>
+              </div>
+              <div class="info-row">
+                <label>Requested By:</label>
+                <span>{{ selectedPurchase.requestedByName }}</span>
+              </div>
+              <div class="info-row">
+                <label>Request Date:</label>
+                <span>{{ selectedPurchase.requestDate | date:'mediumDate' }}</span>
+              </div>
+              <div class="info-row">
+                <label>Status:</label>
+                <span>{{ selectedPurchase.status }}</span>
+              </div>
+              <div class="info-row" *ngIf="selectedPurchase.supplier">
+                <label>Supplier:</label>
+                <span>{{ selectedPurchase.supplier }}</span>
+              </div>
+              <div class="info-row" *ngIf="selectedPurchase.comments">
+                <label>Comments:</label>
+                <span>{{ selectedPurchase.comments }}</span>
+              </div>
+            </div>
+            <div class="items-details" *ngIf="selectedPurchaseItems.length > 0">
+              <h4>Received Items</h4>
+              <table class="items-table table">
+                <thead>
+                  <tr>
+                    <th>Batch Number</th>
+                    <th>Manufacturer</th>
+                    <th>Supplier</th>
+                    <th>Manufacture Date</th>
+                    <th>Expiry Date</th>
+                    <th>Quantity</th>
+                    <th>Unit Price</th>
+                    <th>Received By</th>
+                    <th>Received Date</th>
+                    <th>Quality Check</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of selectedPurchaseItems">
+                    <td>{{ item.batchNumber }}</td>
+                    <td>{{ item.manufacturer }}</td>
+                    <td>{{ item.supplier }}</td>
+                    <td>{{ item.manufactureDate | date:'mediumDate' }}</td>
+                    <td>{{ item.expiryDate | date:'mediumDate' }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.unitPrice | currency:'ETB' }}</td>
+                    <td>{{ item.receivedByName }}</td>
+                    <td>{{ item.receivedDate | date:'mediumDate' }}</td>
+                    <td>
+                      <span class="stock-status" [ngClass]="item.qualityCheck ? 'available' : 'insufficient'">
+                        {{ item.qualityCheck ? 'Passed' : 'Pending' }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </ng-container>
+          <div class="comments-section" *ngIf="showCommentsInput">
+            <label for="actionComments">Comments:</label>
+            <textarea id="actionComments" [(ngModel)]="actionComments" rows="4"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer" *ngIf="selectedRequest && showCommentsInput">
+          <button class="action-btn approve" (click)="confirmApproveRequest()" [disabled]="isProcessing">Approve</button>
+          <button class="action-btn reject" (click)="confirmRejectRequest()" [disabled]="isProcessing">Reject</button>
+          <button class="action-btn cancel" (click)="closeModal()" [disabled]="isProcessing">Cancel</button>
+        </div>
+        <div class="modal-footer" *ngIf="selectedPurchase">
+          <button class="action-btn cancel" (click)="closeModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>

@@ -1,0 +1,225 @@
+.notification-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .notification-container h2 {
+    color: #2c3e50;
+    margin-bottom: 30px;
+    font-size: 2em;
+    font-weight: 500;
+  }
+  
+  .notification-form-container {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+  }
+  
+  .notification-form {
+    display: grid;
+    gap: 20px;
+  }
+  
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+  }
+  
+  .form-group {
+    flex: 1;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+  }
+  
+  .form-control {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+  }
+  
+  .form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+  
+  textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+  }
+  
+  .form-control[readonly] {
+    background-color: #f8f9fa;
+    cursor: not-allowed;
+  }
+  
+  .error-message {
+    color: #e74c3c;
+    font-size: 14px;
+    margin-top: 5px;
+  }
+  
+  .success-message {
+    color: #28a745;
+    font-size: 14px;
+    margin-top: 20px;
+    text-align: center;
+  }
+  
+  .submit-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  .submit-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+  
+  .submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .clear-btn {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-left: 10px;
+  }
+  
+  .clear-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+  }
+  
+  .clear-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  
+  .notifications-section {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+  }
+  
+  .notifications-section h3 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    font-size: 1.5em;
+    font-weight: 500;
+  }
+  
+  .notifications-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  
+  .notifications-table th,
+  .notifications-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+  .notifications-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+  }
+  
+  .notifications-table tr:hover {
+    background-color: #f8f9fa;
+  }
+  
+  .notification-image {
+    max-width: 100px;
+    max-height: 100px;
+    border-radius: 6px;
+  }
+  
+  .image-link {
+    cursor: pointer;
+  }
+  
+  .unread-count {
+    color: #e74c3c;
+    font-weight: 500;
+  }
+  
+  .status-badge.read {
+    background-color: #d4edda;
+    color: #155724;
+  }
+  
+  .status-badge.unread {
+    background-color: #f8d7da;
+    color: #721c24;
+  }
+  
+  .no-results {
+    text-align: center;
+    color: #e74c3c;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+  }
+  
+  .image-preview {
+    max-width: 100px;
+    max-height: 100px;
+    margin-top: 10px;
+    border-radius: 6px;
+  }
+  
+  @media (max-width: 768px) {
+    .notification-container {
+      padding: 10px;
+    }
+  
+    .notification-form {
+      padding: 20px;
+    }
+  
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+  }

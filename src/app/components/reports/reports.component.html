@@ -1,0 +1,167 @@
+<div class="reports-container">
+  <div class="reports-header">
+    <h2>Hospital Management Dashboard</h2>
+    <div class="report-controls">
+      <div class="select-wrapper">
+        <select [(ngModel)]="selectedReportType" (change)="onReportTypeChange()" class="form-control">
+          <option value="overview">Overview Dashboard</option>
+          <option value="patients">Patient Analytics</option>
+          <option value="financial">Financial Insights</option>
+          <option value="inventory">Inventory Management</option>
+          <option value="staff">Staff Performance</option>
+        </select>
+      </div>
+      
+      <div class="select-wrapper">
+        <select [(ngModel)]="selectedDateRange" (change)="onReportTypeChange()" class="form-control">
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+          <option value="quarter">This Quarter</option>
+          <option value="year">This Year</option>
+        </select>
+      </div>
+
+      <div class="export-buttons">
+        <button class="export-btn pdf" (click)="exportReport('pdf')">
+          <span class="material-icons">picture_as_pdf</span> PDF
+        </button>
+        <button class="export-btn excel" (click)="exportReport('excel')">
+          <span class="material-icons">table_chart</span> Excel
+        </button>
+        <button class="export-btn print" (click)="printReport()">
+          <span class="material-icons">print</span> Print
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="loading-spinner" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Loading dashboard data...</p>
+  </div>
+
+  <div class="report-content" *ngIf="!isLoading">
+    <!-- Overview Statistics -->
+    <div class="stats-overview">
+      <div class="stat-card" *ngFor="let stat of statsConfig" (click)="openDetail(stat)">
+        <div class="stat-icon" [ngStyle]="{'background': stat.gradient}">
+          <span class="material-icons">{{ stat.icon }}</span>
+        </div>
+        <div class="stat-info">
+          <h3>{{ stat.title }}</h3>
+          <p class="stat-number">{{ reportData[stat.key] }}</p>
+          <small>{{ stat.subtitle }}</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monthly Trends Chart -->
+    <div class="chart-section">
+      <h3>Monthly Performance Trends</h3>
+      <div class="chart-container">
+        <div echarts [options]="chartOptions" class="echarts"></div>
+      </div>
+    </div>
+
+    <!-- Department Statistics -->
+    <div class="department-stats">
+      <h3>Department Performance</h3>
+      <div class="table-container">
+        <table class="department-table">
+          <thead>
+            <tr>
+              <th>Department</th>
+              <th>Patients</th>
+              <th>Requests</th>
+              <th>Expenses (ETB)</th>
+              <th>Performance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let dept of reportData.departmentStats" (click)="openDepartmentDetail(dept)">
+              <td>{{ dept.department }}</td>
+              <td>{{ dept.patients }}</td>
+              <td>{{ dept.requests }}</td>
+              <td>{{ dept.expenses | currency:'ETB':'symbol':'1.2-2' }}</td>
+              <td>
+                <div class="performance-bar">
+                  <div class="performance-fill" [ngStyle]="{'width.%': (dept.patients / 60) * 100, 'background': getPerformanceGradient(dept.patients)}"></div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Financial Summary -->
+    <div class="financial-summary">
+      <h3>Financial Overview</h3>
+      <div class="financial-cards">
+        <div class="financial-card income">
+          <h4>Total Revenue</h4>
+          <p class="amount">{{ getTotalRevenue() | currency:'ETB':'symbol':'1.2-2' }}</p>
+          <small>Prescription + Lab revenue</small>
+        </div>
+
+        <div class="financial-card expense">
+          <h4>Total Expenses</h4>
+          <p class="amount">{{ getTotalExpenses() | currency:'ETB':'symbol':'1.2-2' }}</p>
+          <small>Reimbursements and operational costs</small>
+        </div>
+
+        <div class="financial-card profit">
+          <h4>Net Profit</h4>
+          <p class="amount">{{ getNetProfit() | currency:'ETB':'symbol':'1.2-2' }}</p>
+          <small>Revenue minus expenses</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activities -->
+    <div class="recent-activities">
+      <h3>Recent Activity Log</h3>
+      <div class="activities-grid">
+        <div class="activity-item" *ngFor="let activity of activitiesConfig">
+          <div class="activity-icon" [ngStyle]="{'background': activity.gradient}">
+            <span class="material-icons">{{ activity.icon }}</span>
+          </div>
+          <div class="activity-content">
+            <h4>{{ activity.title }}</h4>
+            <p>{{ reportData[activity.key] }} {{ activity.description }}</p>
+            <small>Last updated: {{ curruntdate | date:'medium' }}</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div class="modal-backdrop" *ngIf="detailModalOpen" (click)="closeDetail()"></div>
+  <div class="modal" *ngIf="detailModalOpen">
+    <div class="modal-header">
+      <h3>{{ detailTitle }}</h3>
+      <button class="modal-close" (click)="closeDetail()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-chart">
+        <div echarts [options]="detailChartOptions" class="echarts"></div>
+      </div>
+      <div class="table-container" *ngIf="detailRows && detailRows.length">
+        <table class="department-table">
+          <thead>
+            <tr>
+              <th *ngFor="let col of detailColumns">{{ col.header }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of detailRows">
+              <td *ngFor="let col of detailColumns">{{ row[col.field] }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="detailRows && !detailRows.length" style="text-align:center;padding:16px;color:#666;">No records in selected range.</div>
+    </div>
+  </div>
+</div>

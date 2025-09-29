@@ -1,0 +1,74 @@
+<div class="inventory-management-container">
+    <h2>Approved Requests</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Request #</th>
+          <th>Room</th>
+          <th>Date</th>
+          <th>Items</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let request of approvedRequests">
+          <td>{{ request.requestNumber }}</td>
+          <td>{{ request.roomID }}</td>
+          <td>{{ request.requestDate | date }}</td>
+          <td>{{ request.items.length }}</td>
+          <td>
+            <button (click)="issueItems(request)">Issue All</button>
+            <button (click)="viewDetails(request)">View & Partial Issue/Purchase</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  
+    <h2>Purchase Requests</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Purchase #</th>
+          <th>Item</th>
+          <th>Quantity</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let purchase of purchaseRequests">
+          <td>{{ purchase.requestNumber }}</td>
+          <td>{{ purchase.itemName }}</td>
+          <td>{{ purchase.quantity }}</td>
+          <td>{{ purchase.status }}</td>
+          <td>
+            <button (click)="markPurchased(purchase)" *ngIf="purchase.status === 'Pending'">Mark Purchased</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  
+    <!-- Modal for details -->
+    <div *ngIf="selectedRequest" class="modal">
+      <h3>Request Details: {{ selectedRequest.requestNumber }}</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Requested Quantity</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of selectedRequestDetails">
+            <td>{{ item.itemName }}</td>
+            <td>{{ item.requestedQuantity }}</td>
+            <td>
+              <button (click)="createPurchase(selectedRequest, item)">Create Purchase</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <button (click)="selectedRequest = undefined">Close</button>
+    </div>
+  </div>

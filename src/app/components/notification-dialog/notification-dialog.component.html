@@ -1,0 +1,221 @@
+<div class="notification-dialog-container">
+  <h2>Notifications</h2>
+  <div class="tabs">
+    <button type="button"
+      class="tab-btn" 
+      [class.active]="activeTab === 'send'" 
+      (click)="activeTab = 'send'">
+      Send Notification
+    </button>
+    <button type="button"
+      class="tab-btn" 
+      [class.active]="activeTab === 'view'" 
+      (click)="activeTab = 'view'">
+      View Notifications <span *ngIf="unreadCount > 0" class="unread-count">({{ unreadCount }} unread)</span>
+    </button>
+  </div>
+
+  <!-- Send Notification Tab -->
+  <div *ngIf="activeTab === 'send'" class="tab-content">
+    <form [formGroup]="notificationForm" (ngSubmit)="onSubmit()" class="notification-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="employeeID">Employee ID</label>
+          <input 
+            type="text" 
+            id="employeeID" 
+            formControlName="employeeID" 
+            class="form-control" 
+            readonly>
+        </div>
+        <div class="form-group">
+          <label for="roomType">Room Type</label>
+          <select 
+            id="roomType" 
+            formControlName="roomType" 
+            class="form-control"
+            (change)="onRoomChange($event)">
+            <option value="" disabled>Select Room Type</option>
+            <option *ngFor="let roomType of uniqueRoomTypes" [value]="roomType">{{ roomType }}</option>
+          </select>
+          <div class="error-message" *ngIf="notificationForm.get('roomType')?.invalid && notificationForm.get('roomType')?.touched">
+            Room Type is required
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="doctorUserName">Doctor</label>
+          <select 
+            id="doctorUserName" 
+            formControlName="doctorUserName" 
+            class="form-control" 
+            [disabled]="availableDoctors.length === 0">
+            <option value="" disabled>Select Doctor</option>
+            <option *ngFor="let doctor of availableDoctors" [value]="doctor.userName">
+              {{ doctor.fName }} {{ doctor.mName }}
+            </option>
+          </select>
+          <div class="error-message" *ngIf="notificationForm.get('doctorUserName')?.invalid && notificationForm.get('doctorUserName')?.touched">
+            Doctor is required
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="priority">Priority</label>
+          <select 
+            id="priority" 
+            formControlName="priority" 
+            class="form-control">
+            <option value="Normal">Normal</option>
+            <option value="Urgent">Urgent</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="message">Message</label>
+          <textarea 
+            id="message" 
+            formControlName="message" 
+            class="form-control" 
+            placeholder="Enter notification message"></textarea>
+          <div class="error-message" *ngIf="notificationForm.get('message')?.invalid && notificationForm.get('message')?.touched">
+            Message is required and must not exceed 500 characters.
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="image">Image (Optional)</label>
+          <input 
+            type="file" 
+            id="image" 
+            (change)="onFileChange($event)" 
+            accept="image/*"
+            class="form-control">
+          <img *ngIf="imagePreview" [src]="imagePreview" alt="Image Preview" class="image-preview">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button 
+          type="submit" 
+          class="submit-btn"
+          [disabled]="notificationForm.invalid || isSubmitting">
+          {{ isSubmitting ? 'Sending...' : 'Send Notification' }}
+        </button>
+        <button 
+          type="button" 
+          class="clear-btn"
+          (click)="onCancel()"
+          [disabled]="isSubmitting">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- View Notifications Tab -->
+  <div *ngIf="activeTab === 'view'" class="tab-content notifications-section">
+    <div class="notifications-controls">
+      <div class="filter-group">
+        <label for="notificationFilter">Filter Notifications:</label>
+        <select 
+          id="notificationFilter" 
+          [(ngModel)]="notificationFilter" 
+          (change)="onFilterChange()"
+          class="form-control">
+          <option value="all">All ({{ notifications.length }})</option>
+          <option value="read">Read</option>
+          <option value="unread">Unread ({{ unreadCount }})</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="priorityFilter">Priority:</label>
+        <select 
+          id="priorityFilter" 
+          [(ngModel)]="priorityFilter" 
+          (change)="onFilterChange()"
+          class="form-control">
+          <option value="all">All Priorities</option>
+          <option value="Normal">Normal</option>
+          <option value="Urgent">Urgent</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="dateRangeStart">Date Range:</label>
+        <input 
+          type="date" 
+          id="dateRangeStart" 
+          [(ngModel)]="dateRange.start" 
+          (change)="onDateRangeChange()"
+          class="form-control">
+        <input 
+          type="date" 
+          id="dateRangeEnd" 
+          [(ngModel)]="dateRange.end" 
+          (change)="onDateRangeChange()"
+          class="form-control">
+      </div>
+      <div class="search-group">
+        <label for="notificationSearch">Search Notifications:</label>
+        <input 
+          type="text" 
+          id="notificationSearch" 
+          [(ngModel)]="searchQuery" 
+          (input)="onSearchChange()"
+          class="form-control"
+          placeholder="Search by message...">
+      </div>
+      <div class="archive-toggle">
+        <label>
+          <input 
+            type="checkbox" 
+            [(ngModel)]="showArchived" 
+            (change)="toggleArchived()"> 
+          Show Archived Notifications
+        </label>
+      </div>
+    </div>
+    <div class="table-container" *ngIf="filteredNotifications.length > 0 && notificationFilter !== ''">
+      <table class="notifications-table">
+        <thead>
+          <tr>
+            <th>Message</th>
+            <th>Timestamp</th>
+            <th>Priority</th>
+            <th>Image</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let notification of paginatedNotifications">
+            <td>{{ notification.message }}</td>
+            <td>{{ notification.timestamp | date:'medium' }}</td>
+            <td>{{ notification.priority || 'Normal' }}</td>
+            <td>
+              <a *ngIf="notification.imageData" (click)="openImagePreview(notification.imageData)" class="image-link">
+                <img [src]="notification.imageData" alt="Notification Image" class="notification-image">
+              </a>
+              <span *ngIf="!notification.imageData">N/A</span>
+            </td>
+            <td>
+              <span 
+                class="status-badge" 
+                [class]="notification.isRead ? 'read' : 'unread'" 
+                (click)="markAsRead(notification.notificationID)">
+                {{ notification.isRead ? 'Read' : 'Unread' }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="load-more-controls" *ngIf="paginatedNotifications.length < filteredNotifications.length">
+        <button 
+          class="load-more-btn" 
+          (click)="loadMoreNotifications()">
+          Load More
+        </button>
+      </div>
+    </div>
+    <div class="no-results" *ngIf="notificationFilter !== '' && filteredNotifications.length === 0">
+      No notifications found for the selected filter or search.
+    </div>
+    <div class="no-results" *ngIf="notificationFilter === ''">
+      Please select a filter to view notifications.
+    </div>
+  </div>
+</div>

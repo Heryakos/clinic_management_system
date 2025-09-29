@@ -1,0 +1,196 @@
+.supervisor-container {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: 'Arial', sans-serif;
+    background-color: #f9fafb;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  h2,
+  h3 {
+    color: #1f2937;
+    margin-bottom: 1.5rem;
+  }
+  
+  .summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  
+  .card {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #ffffff, #f3f4f6);
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease-in-out;
+  }
+  
+  .card:hover {
+    transform: translateY(-4px);
+  }
+  
+  .filters {
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: flex-start;
+    gap: 1rem;
+  }
+  
+  .filters input {
+    padding: 0.75rem;
+    width: 100%;
+    max-width: 300px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease-in-out;
+  }
+  
+  .filters input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+  
+  th,
+  td {
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+  }
+  
+  th {
+    background-color: #f3f4f6;
+    font-weight: 600;
+    color: #374151;
+  }
+  
+  tr:last-child td {
+    border-bottom: none;
+  }
+  
+  tr:hover {
+    background-color: #f9fafb;
+  }
+  
+  button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+  }
+  
+  button:hover {
+    transform: translateY(-1px);
+  }
+  
+  button:active {
+    transform: translateY(0);
+  }
+  
+  button:disabled {
+    background-color: #d1d5db;
+    cursor: not-allowed;
+  }
+  
+  button.approve {
+    background-color: #22c55e;
+    color: #fff;
+  }
+  
+  button.reject {
+    background-color: #ef4444;
+    color: #fff;
+  }
+  
+  button.view-details,
+  button.monitor {
+    background-color: #3b82f6;
+    color: #fff;
+  }
+  
+  button.close {
+    background-color: #6b7280;
+    color: #fff;
+  }
+  
+  .modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    max-width: 600px;
+    width: 90%;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  .modal textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    margin-top: 1rem;
+    resize: vertical;
+    font-size: 1rem;
+  }
+  
+  .modal button {
+    margin-top: 1rem;
+    margin-right: 0.5rem;
+  }
+  
+  .reports-section {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .reports-section button {
+    background-color: #10b981;
+    color: #fff;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -60%);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%);
+    }
+  }
+  
+  /* Overlay for modal */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }

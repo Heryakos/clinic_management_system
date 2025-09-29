@@ -1,0 +1,218 @@
+<div class="prescription-card">
+  <div class="dialog-title">
+    <h2>{{ data.dialogTitle }}</h2>
+    <button type="button" class="close-btn" (click)="dialogRef.close()">Close</button>
+  </div>
+
+  <div *ngIf="isLoading" class="loading">Loading prescription data...</div>
+
+  <div *ngIf="errorMessage" class="error-message" [ngClass]="{'success-message': !isLoading && errorMessage.includes('successfully')}">
+    {{ errorMessage }}
+  </div>
+
+  <form [formGroup]="prescriptionForm" (ngSubmit)="onSubmit()" *ngIf="!isLoading && !errorMessage">
+    <div class="header">
+      <div class="header-content">
+        <div class="logo">
+          <img [src]="logoPath" alt="Clinic Logo" class="logo-img" />
+        </div>
+        <div class="clinic-info">
+          <h1>FEDERAL HOUSING CORPORATION MEDIUM CLINIC</h1>
+          <div class="clinic-phone">TEL. 0118 553615</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="title-section">
+      <h2>Prescription Paper</h2>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="action-btn print-btn" (click)="printPrescription()">Print</button>
+      <button type="button" class="action-btn pdf-btn" (click)="exportToPDF()">Export to PDF</button>
+    </div>
+
+    <div class="patient-section">
+      <div class="form-grid">
+        <div class="form-row two-line-row">
+          <div class="form-group">
+            <label>Patient's Full Name:</label>
+            <div class="input-container">
+              <input type="text" class="underline-input form-control" formControlName="FullName" readonly />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Town/Region:</label>
+            <div class="input-container small">
+              <input type="text" class="underline-input form-control" formControlName="woreda" [readonly]="!isEditing" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Woreda:</label>
+            <div class="input-container small">
+              <input type="text" class="underline-input form-control" formControlName="woreda" [readonly]="!isEditing" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Kebele/House No:</label>
+            <div class="input-container small">
+              <input type="text" class="underline-input form-control" formControlName="houseNo" [readonly]="!isEditing" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Tel No:</label>
+            <div class="input-container small">
+              <input type="text" class="underline-input form-control" formControlName="phone" [readonly]="!isEditing" />
+            </div>
+          </div>
+        </div>
+        <div class="form-row two-line-row">
+          <div class="form-group">
+            <label>Sex:</label>
+            <div class="input-container small">
+              <input type="text" class="underline-input form-control" formControlName="gender" readonly />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Age:</label>
+            <div class="input-container small">
+              <input type="number" class="underline-input form-control" formControlName="age" readonly />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Weight:</label>
+            <div class="input-container small">
+              <input type="number" class="underline-input form-control" formControlName="Weight" [readonly]="!isEditing" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Card No:</label>
+            <div class="input-container small">
+              <input type="text" class="underline-input form-control" formControlName="CardNumber" readonly />
+            </div>
+          </div>
+        </div>
+        <div class="form-group full-width">
+          <label>Diagnosis:</label>
+          <div class="input-container">
+            <input type="text" class="underline-input form-control" formControlName="MedicalHistory" readonly />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="medication-section">
+      <table class="medication-table">
+        <thead>
+          <tr>
+            <th class="medication-header">
+              Medicine name, Strength, Dosage form, Dose, Frequency, Duration, Quality, How to use and other information
+            </th>
+            <th class="price-header">Price (dispensers use only)</th>
+          </tr>
+          <tr>
+            <td class="rx-cell">Rx</td>
+            <td class="empty-cell"></td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="medication-row">
+            <td class="medication-cell">
+              <input type="text" class="table-input form-control" [value]="(prescriptionForm.get('MedicationName')?.value ? prescriptionForm.get('MedicationName')?.value + ', ' : '') + (prescriptionForm.get('MedicationDetails')?.value || '')" readonly />
+            </td>
+            <td class="price-cell">
+              <input type="number" class="table-input price-input form-control" formControlName="TotalAmount" readonly />
+            </td>
+          </tr>
+          <tr class="medication-row">
+            <td class="medication-cell"></td>
+            <td class="price-cell"></td>
+          </tr>
+          <tr class="medication-row">
+            <td class="medication-cell"></td>
+            <td class="price-cell"></td>
+          </tr>
+          <tr>
+            <td class="total-label">Total price</td>
+            <td class="total-price">
+              <input type="number" class="table-input price-input form-control" formControlName="TotalAmount" readonly />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-section">
+      <div class="info-column">
+        <h3>Prescriber's</h3>
+        <div class="info-fields">
+          <div class="form-group">
+            <label>Full Name:</label>
+            <div class="input-container">
+              <input type="text" class="underline-input form-control" formControlName="PrescriberName" readonly />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Qualification:</label>
+            <div class="input-container">
+              <input type="text" class="underline-input form-control" [value]="''" readonly />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Registration:</label>
+            <div class="input-container">
+              <input type="text" class="underline-input form-control" [value]="''" readonly />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Signature:</label>
+            <div class="input-container">
+              <input type="text" class="underline-input form-control" [value]="''" readonly />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Date:</label>
+            <div class="input-container">
+              <input type="date" class="underline-input form-control" formControlName="PrescriptionDate" readonly />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="info-column">
+        <h3>Dispenser's</h3>
+        <div class="info-fields">
+          <div class="form-group">
+            <label>Full Name:</label>
+            <div class="input-container">
+              <input type="text" class="underline-input form-control" formControlName="PharmacistName" readonly />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Qualification:</label>
+            <div class="input-container">
+              <input type="text" class="underline-input form-control" [value]="''" readonly />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Registration:</label>
+            <div class="input-container">
+              <input type="text" class="underline-input form-control" [value]="''" readonly />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Signature:</label>
+            <div class="input-container">
+              <input type="text" class="underline-input form-control" [value]="''" readonly />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Date:</label>
+            <div class="input-container">
+              <input type="date" class="underline-input form-control" formControlName="PrescriptionDate" readonly />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,377 @@
+/* Container Styles */
+.medical-request-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Heading Styles */
+.medical-request-container h2,
+.requests-list h3,
+.modal-content h3 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+  font-size: 1.5em;
+  font-weight: 500;
+}
+
+/* Form Styles */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-control {
+  width: 100%;
+  padding: 8px;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 16px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.error-message {
+  color: #e74c3c;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+/* Button Styles */
+.action-btn,
+.submit-btn,
+.cancel-btn,
+.close-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 4px;
+  text-transform: uppercase;
+}
+
+/* Action Buttons */
+.action-btn.view-reason {
+  background-color: #4B5EAA;
+  color: white;
+}
+
+.action-btn.view-reason:hover {
+  background-color: #3B4A8A;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(75, 94, 170, 0.3);
+}
+
+.action-btn.clinic-request {
+  background-color: #3498DB;
+  color: white;
+}
+
+.action-btn.clinic-request:hover {
+  background-color: #2980B9;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+}
+
+.action-btn.approve {
+  background-color: #2ECC71;
+  color: white;
+}
+
+.action-btn.approve:hover {
+  background-color: #27AE60;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(46, 204, 113, 0.3);
+}
+
+.action-btn.reject {
+  background-color: #E74C3C;
+  color: white;
+}
+
+.action-btn.reject:hover {
+  background-color: #C0392B;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+}
+
+/* Modal Buttons */
+.submit-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 10px 20px;
+}
+
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cancel-btn,
+.close-btn {
+  background-color: #6c757d;
+  color: white;
+  padding: 10px 20px;
+}
+
+.cancel-btn:hover,
+.close-btn:hover {
+  background-color: #5a6268;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+}
+
+/* Modal Styles */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 900px; /* Increased from 500px */
+  width: 100%; /* Increased from 90% */
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  justify-content: flex-end;
+}
+
+/* Table Styles */
+.requests-list {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.requests-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.requests-table th,
+.requests-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.requests-table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #495057;
+}
+
+.requests-table tr:hover {
+  background-color: #f8f9fa;
+}
+
+/* Status Badge Styles */
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.status-badge.pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status-badge.approved {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-badge.rejected {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+/* Reason Content */
+.reason-content p {
+  color: #333;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  margin-bottom: 20px;
+}
+/* Existing styles for table, modals, etc. */
+.action-btn.print {
+  background-color: #2196F3;
+  color: white;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 5px;
+}
+
+.action-btn.print:hover {
+  background-color: #1976D2;
+}
+
+.status-badge {
+  padding: 5px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.status-badge.pending {
+  background-color: #FFC107;
+  color: #000;
+}
+
+.status-badge.approved {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.status-badge.rejected {
+  background-color: #f44336;
+  color: white;
+}
+
+.requests-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.requests-table th, .requests-table td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.requests-table th {
+  background-color: #f2f2f2;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 5px;
+  width: 85vw;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.close-btn, .submit-btn, .cancel-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.submit-btn {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.cancel-btn, .close-btn {
+  background-color: #f44336;
+  color: white;
+}
+/* Responsive Design */
+@media (max-width: 768px) {
+  .medical-request-container {
+      padding: 10px;
+  }
+
+  .requests-list {
+      padding: 15px;
+  }
+
+  .requests-table th,
+  .requests-table td {
+      padding: 8px;
+      font-size: 14px;
+  }
+
+  .action-btn {
+      padding: 6px 12px;
+      font-size: 12px;
+      margin: 2px;
+  }
+
+  .modal-content {
+      padding: 15px;
+      width: 98%; /* Increased for mobile */
+      max-width: 700px;
+  }
+
+  .modal-actions {
+      flex-direction: column;
+      gap: 8px;
+  }
+
+  .submit-btn,
+  .cancel-btn,
+  .close-btn {
+      width: 100%;
+      padding: 8px;
+  }
+}

@@ -1,0 +1,66 @@
+<div class="reason-tree-dropdown" #dropdownContainer>
+    <div 
+      class="dropdown-trigger" 
+      [class.error]="error" 
+      [class.disabled]="disabled"
+      [class.open]="isOpen"
+      (click)="toggleDropdown()">
+      <span class="display-value" [class.placeholder]="!selectedReason">
+        {{ displayValue }}
+      </span>
+      <span class="dropdown-arrow" [class.rotated]="isOpen">▼</span>
+    </div>
+  
+    <div class="error-message" *ngIf="error">{{ error }}</div>
+  
+    <div class="dropdown-menu" *ngIf="isOpen">
+      <!-- Search Input -->
+      <div class="search-container">
+        <input 
+          type="text" 
+          class="search-input"
+          placeholder="Search reasons..."
+          [(ngModel)]="searchTerm"
+          (input)="onSearchChange()"
+          (click)="$event.stopPropagation()">
+        <button 
+          type="button" 
+          class="clear-search" 
+          *ngIf="searchTerm"
+          (click)="clearSearch()">×</button>
+      </div>
+  
+      <!-- Reasons List -->
+      <div class="tree-content">
+        <div *ngIf="filteredReasons.length === 0" class="no-results">
+          No reasons found
+        </div>
+  
+        <div *ngFor="let category of filteredReasons" class="category-item">
+          <!-- Category Header -->
+          <div 
+            class="category-header" 
+            (click)="toggleCategory(category.category)">
+            <span class="expand-icon" [class.expanded]="isCategoryExpanded(category.category)">
+              {{ isCategoryExpanded(category.category) ? '▼' : '▶' }}
+            </span>
+            <span class="category-icon">🏷️</span>
+            <span class="category-name">{{ category.category }}</span>
+            <span class="item-count">({{ getCategoryReasonCount(category) }})</span>
+          </div>
+  
+          <!-- Reasons -->
+          <div *ngIf="isCategoryExpanded(category.category)" class="reasons">
+            <div 
+              *ngFor="let reason of category.reasons" 
+              class="reason-item"
+              (click)="selectReason(reason, category.category)">
+              <span class="reason-icon">📋</span>
+              <span class="reason-name">{{ reason.reasonName }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  

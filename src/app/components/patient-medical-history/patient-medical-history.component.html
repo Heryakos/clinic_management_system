@@ -1,0 +1,357 @@
+<div class="patient-medical-history-container">
+    <div class="header">
+      <h2>Patient Medical History Management</h2>
+      <p>Search and manage patient medical history records</p>
+    </div>
+  
+    <!-- Search Section - Only show if showSearch is true -->
+    <div *ngIf="showSearch" class="search-section">
+      <div class="search-form">
+        <label for="cardNumber">Card Number:</label>
+        <input
+          type="text"
+          id="cardNumber"
+          [(ngModel)]="cardNumber"
+          placeholder="Enter patient card number"
+          class="search-input"
+          [disabled]="loading"
+        />
+        <button
+          type="button"
+          (click)="searchPatient()"
+          class="search-btn"
+          [disabled]="loading"
+        >
+          {{ loading ? 'Searching...' : 'Search Patient' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Close Button for Popup -->
+    <div *ngIf="!showSearch" class="close-button-container">
+      <button
+        type="button"
+        (click)="closeDialogHandler()"
+        class="close-btn-popup"
+        title="Close"
+      >
+        ×
+      </button>
+    </div>
+  
+    <!-- Messages -->
+    <div class="messages">
+      <div *ngIf="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+      <div *ngIf="successMessage" class="success-message">
+        {{ successMessage }}
+      </div>
+    </div>
+  
+    <!-- Patient Data Section -->
+    <div *ngIf="patientData" class="patient-data-section">
+      <div class="section-header">
+        <h3>Patient Information</h3>
+        <div class="action-buttons">
+          <button
+            *ngIf="!editMode"
+            type="button"
+            (click)="toggleEditMode()"
+            class="edit-btn"
+          >
+            Edit Empty Fields
+          </button>
+          <div *ngIf="editMode" class="edit-actions">
+            <button
+              type="button"
+              (click)="saveChanges()"
+              class="save-btn"
+              [disabled]="loading"
+            >
+              {{ loading ? 'Saving...' : 'Save Changes' }}
+            </button>
+            <button
+              type="button"
+              (click)="cancelEdit()"
+              class="cancel-btn"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+  
+      <div class="patient-form">
+        <!-- Basic Information -->
+        <div class="form-section">
+          <h4>Basic Information</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Card Number:</label>
+              <input
+                type="text"
+                [value]="patientData.CardNumber"
+                readonly
+                class="readonly-input"
+              />
+            </div>
+            <div class="form-group">
+              <label>Patient ID:</label>
+              <input
+                type="text"
+                [value]="patientData.PatientID || ''"
+                readonly
+                class="readonly-input"
+              />
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>First Name:</label>
+              <input
+                type="text"
+                [(ngModel)]="patientData.FirstName"
+                [readonly]="!editMode || !isFieldEmpty(patientData.FirstName)"
+                [class]="editMode && isFieldEmpty(patientData.FirstName) ? 'editable-input' : 'readonly-input'"
+              />
+              <!-- <span *ngIf="isFieldEmpty(patientData.FirstName)" class="empty-indicator">Empty</span> -->
+            </div>
+            <div class="form-group">
+              <label>Last Name:</label>
+              <input
+                type="text"
+                [(ngModel)]="patientData.LastName"
+                [readonly]="!editMode || !isFieldEmpty(patientData.LastName)"
+                [class]="editMode && isFieldEmpty(patientData.LastName) ? 'editable-input' : 'readonly-input'"
+              />
+              <!-- <span *ngIf="isFieldEmpty(patientData.LastName)" class="empty-indicator">Empty</span> -->
+            </div>
+          </div>
+  
+          <div class="form-row">
+            <div class="form-group">
+              <label>Father Name:</label>
+              <input
+                type="text"
+                [(ngModel)]="patientData.FatherName"
+                [readonly]="!editMode || !isFieldEmpty(patientData.FatherName)"
+                [class]="editMode && isFieldEmpty(patientData.FatherName) ? 'editable-input' : 'readonly-input'"
+              />
+              <!-- <span *ngIf="isFieldEmpty(patientData.FatherName)" class="empty-indicator">Empty</span> -->
+            </div>
+            <div class="form-group">
+              <label>Date of Birth:</label>
+              <input
+                type="date"
+                [(ngModel)]="patientData.DateOfBirth"
+                [readonly]="!editMode || !isFieldEmpty(patientData.DateOfBirth)"
+                [class]="editMode && isFieldEmpty(patientData.DateOfBirth) ? 'editable-input' : 'readonly-input'"
+              />
+              <!-- <span *ngIf="isFieldEmpty(patientData.DateOfBirth)" class="empty-indicator">Empty</span> -->
+            </div>
+          </div>
+  
+          <div class="form-row">
+            <div class="form-group">
+              <label>Age:</label>
+              <input
+                type="number"
+                [(ngModel)]="patientData.Age"
+                [readonly]="!editMode || !isFieldEmpty(patientData.Age)"
+                [class]="editMode && isFieldEmpty(patientData.Age) ? 'editable-input' : 'readonly-input'"
+              />
+              <!-- <span *ngIf="isFieldEmpty(patientData.Age)" class="empty-indicator">Empty</span> -->
+            </div>
+            <div class="form-group">
+              <label>Blood Type:</label>
+              <input
+                type="text"
+                [(ngModel)]="patientData.BloodType"
+                [readonly]="!editMode || !isFieldEmpty(patientData.BloodType)"
+                [class]="editMode && isFieldEmpty(patientData.BloodType) ? 'editable-input' : 'readonly-input'"
+              />
+              <!-- <span *ngIf="isFieldEmpty(patientData.BloodType)" class="empty-indicator">Empty</span> -->
+            </div>
+          </div>
+        </div>
+  
+        <!-- Medical Information -->
+        <div class="form-section">
+          <h4>Medical Information</h4>
+          <div class="form-group">
+            <label>Allergies:</label>
+            <textarea
+              [(ngModel)]="patientData.Allergies"
+              [readonly]="!editMode || !isFieldEmpty(patientData.Allergies)"
+              [class]="editMode && isFieldEmpty(patientData.Allergies) ? 'editable-textarea' : 'readonly-textarea'"
+              rows="3"
+            ></textarea>
+            <!-- <span *ngIf="isFieldEmpty(patientData.Allergies)" class="empty-indicator">Empty</span> -->
+          </div>
+  
+          <div class="form-group">
+            <label>Medical History:</label>
+            <textarea
+              [(ngModel)]="patientData.MedicalHistory"
+              [readonly]="!editMode || !isFieldEmpty(patientData.MedicalHistory)"
+              [class]="editMode && isFieldEmpty(patientData.MedicalHistory) ? 'editable-textarea' : 'readonly-textarea'"
+              rows="4"
+            ></textarea>
+            <!-- <span *ngIf="isFieldEmpty(patientData.MedicalHistory)" class="empty-indicator">Empty</span> -->
+          </div>
+        </div>
+  
+        <!-- Clinical Information -->
+        <div class="form-section">
+          <h4>Clinical Information</h4>
+          <div class="form-group">
+            <label>Chief Complaint:</label>
+            <textarea
+              [(ngModel)]="patientData.ChiefComplaint"
+              [readonly]="!editMode || !isFieldEmpty(patientData.ChiefComplaint)"
+              [class]="editMode && isFieldEmpty(patientData.ChiefComplaint) ? 'editable-textarea' : 'readonly-textarea'"
+              rows="3"
+            ></textarea>
+            <!-- <span *ngIf="isFieldEmpty(patientData.ChiefComplaint)" class="empty-indicator">Empty</span> -->
+          </div>
+  
+          <div class="form-group">
+            <label>Clinical Findings:</label>
+            <textarea
+              [(ngModel)]="patientData.ClinicalFindings"
+              [readonly]="!editMode || !isFieldEmpty(patientData.ClinicalFindings)"
+              [class]="editMode && isFieldEmpty(patientData.ClinicalFindings) ? 'editable-textarea' : 'readonly-textarea'"
+              rows="4"
+            ></textarea>
+            <!-- <span *ngIf="isFieldEmpty(patientData.ClinicalFindings)" class="empty-indicator">Empty</span> -->
+          </div>
+  
+          <div class="form-group">
+            <label>Treatment Plan:</label>
+            <textarea
+              [(ngModel)]="patientData.TreatmentPlan"
+              [readonly]="!editMode || !isFieldEmpty(patientData.TreatmentPlan)"
+              [class]="editMode && isFieldEmpty(patientData.TreatmentPlan) ? 'editable-textarea' : 'readonly-textarea'"
+              rows="4"
+            ></textarea>
+            <!-- <span *ngIf="isFieldEmpty(patientData.TreatmentPlan)" class="empty-indicator">Empty</span> -->
+          </div>
+        </div>
+  
+        <!-- Vital Signs -->
+        <div class="form-section">
+          <h4>Vital Signs</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Pulse Rate:</label>
+              <input
+                type="text"
+                [(ngModel)]="patientData.PulseRate"
+                [readonly]="!editMode || !isFieldEmpty(patientData.PulseRate)"
+                [class]="editMode && isFieldEmpty(patientData.PulseRate) ? 'editable-input' : 'readonly-input'"
+              />
+              <!-- <span *ngIf="isFieldEmpty(patientData.PulseRate)" class="empty-indicator">Empty</span> -->
+            </div>
+            <div class="form-group">
+              <label>Temperature:</label>
+              <input
+                type="text"
+                [(ngModel)]="patientData.Temperature"
+                [readonly]="!editMode || !isFieldEmpty(patientData.Temperature)"
+                [class]="editMode && isFieldEmpty(patientData.Temperature) ? 'editable-input' : 'readonly-input'"
+              />
+              <!-- <span *ngIf="isFieldEmpty(patientData.Temperature)" class="empty-indicator">Empty</span> -->
+            </div>
+          </div>
+  
+          <div class="form-row">
+            <div class="form-group">
+              <label>Blood Pressure:</label>
+              <input
+                type="text"
+                [(ngModel)]="patientData.BloodPressure"
+                [readonly]="!editMode || !isFieldEmpty(patientData.BloodPressure)"
+                [class]="editMode && isFieldEmpty(patientData.BloodPressure) ? 'editable-input' : 'readonly-input'"
+              />
+              <!-- <span *ngIf="isFieldEmpty(patientData.BloodPressure)" class="empty-indicator">Empty</span> -->
+            </div>
+            <div class="form-group">
+              <label>BMI:</label>
+              <input
+                type="text"
+                [(ngModel)]="patientData.BMI"
+                [readonly]="!editMode || !isFieldEmpty(patientData.BMI)"
+                [class]="editMode && isFieldEmpty(patientData.BMI) ? 'editable-input' : 'readonly-input'"
+              />
+              <!-- <span *ngIf="isFieldEmpty(patientData.BMI)" class="empty-indicator">Empty</span> -->
+            </div>
+          </div>
+  
+          <div class="form-row">
+            <div class="form-group">
+              <label>Height:</label>
+              <input
+                type="text"
+                [(ngModel)]="patientData.Height"
+                [readonly]="!editMode || !isFieldEmpty(patientData.Height)"
+                [class]="editMode && isFieldEmpty(patientData.Height) ? 'editable-input' : 'readonly-input'"
+              />
+              <!-- <span *ngIf="isFieldEmpty(patientData.Height)" class="empty-indicator">Empty</span> -->
+            </div>
+            <div class="form-group">
+              <label>Weight:</label>
+              <input
+                type="text"
+                [(ngModel)]="patientData.Weight"
+                [readonly]="!editMode || !isFieldEmpty(patientData.Weight)"
+                [class]="editMode && isFieldEmpty(patientData.Weight) ? 'editable-input' : 'readonly-input'"
+              />
+              <!-- <span *ngIf="isFieldEmpty(patientData.Weight)" class="empty-indicator">Empty</span> -->
+            </div>
+          </div>
+        </div>
+  
+        <!-- Appointment Information -->
+        <div class="form-section">
+          <h4>Appointment Information</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Visit Date:</label>
+              <input
+                type="date"
+                [(ngModel)]="patientData.VisitDate"
+                [readonly]="!editMode || !isFieldEmpty(patientData.VisitDate)"
+                [class]="editMode && isFieldEmpty(patientData.VisitDate) ? 'editable-input' : 'readonly-input'"
+              />
+              <!-- <span *ngIf="isFieldEmpty(patientData.VisitDate)" class="empty-indicator">Empty</span> -->
+            </div>
+            <div class="form-group">
+              <label>Next Appointment:</label>
+              <input
+                type="date"
+                [(ngModel)]="patientData.NextAppointment"
+                [readonly]="!editMode || !isFieldEmpty(patientData.NextAppointment)"
+                [class]="editMode && isFieldEmpty(patientData.NextAppointment) ? 'editable-input' : 'readonly-input'"
+              />
+              <!-- <span *ngIf="isFieldEmpty(patientData.NextAppointment)" class="empty-indicator">Empty</span> -->
+            </div>
+          </div>
+  
+          <div class="form-row">
+            <div class="form-group">
+              <label>Assigned Room:</label>
+              <input
+                type="number"
+                [(ngModel)]="patientData.AssignedRoom"
+                [readonly]="!editMode || !isFieldEmpty(patientData.AssignedRoom)"
+                [class]="editMode && isFieldEmpty(patientData.AssignedRoom) ? 'editable-input' : 'readonly-input'"
+              />
+              <!-- <span *ngIf="isFieldEmpty(patientData.AssignedRoom)" class="empty-indicator">Empty</span> -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

@@ -1,0 +1,169 @@
+<div class="laboratory-container">
+  <h2>Laboratory Investigation</h2>
+
+  <div class="notification-btn-container">
+    <button type="button" class="notification-btn" (click)="openNotificationDialog()">Send Notification</button>
+  </div>
+
+  <!-- Card Number Search -->
+  <div class="card-search-section">
+    <form (ngSubmit)="searchByCardNumber()" class="search-form">
+      <div class="form-group">
+        <label for="cardNumberSearch">Search by Card Number:</label>
+        <input type="text" id="cardNumberSearch" [(ngModel)]="cardNumberSearch" name="cardNumberSearch" class="form-control" placeholder="Enter card number">
+        <div class="error-message" *ngIf="cardSearchError">{{ cardSearchError }}</div>
+      </div>
+      <button type="submit" class="search-btn" [disabled]="isCardSearching">{{ isCardSearching ? 'Searching...' : 'Search' }}</button>
+    </form>
+  </div>
+
+  <!-- Only show form and table if cardSearchResult is present -->
+  <ng-container *ngIf="cardSearchResult">
+    <form [formGroup]="laboratoryForm" (ngSubmit)="onSubmit()" class="lab-form">
+      <div class="form-header">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="physician">Physician:</label>
+            <input 
+              type="text" 
+              id="physician" 
+              formControlName="physician"
+              class="form-control"
+              placeholder="Enter physician name"
+              [disabled]="true">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="testType">Test Category:</label>
+          <select 
+            id="testType" 
+            formControlName="testType" 
+            class="form-control" 
+            (change)="onTestTypeChange()">
+            <option 
+              *ngFor="let cat of availableTestCategories" 
+              [value]="cat">
+              {{ cat }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="tests-section">
+        <h3>Test Results</h3>
+        <div class="tests-grid" formArrayName="tests">
+          <div *ngFor="let test of testsFormArray.controls; let i = index" [formGroupName]="i" class="test-item">
+            <div class="test-name">
+              <label>{{ test.get('name')?.value }}</label>
+              <small class="normal-range">Normal: {{ test.get('normalRange')?.value }}</small>
+            </div>
+            <div class="test-result">
+              <input 
+                type="text" 
+                formControlName="result"
+                class="form-control"
+                placeholder="Enter result">
+              <div class="error-message" *ngIf="test.get('result')?.invalid && test.get('result')?.touched">
+                Result is required
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="unit-{{i}}">Unit:</label>
+              <input 
+                type="text" 
+                id="unit-{{i}}" 
+                formControlName="unit"
+                class="form-control"
+                readonly
+              >
+            </div>
+            <div class="form-group">
+              <label for="isAbnormal-{{i}}">Abnormal:</label>
+              <label class="custom-checkbox">
+                <input 
+                  type="checkbox" 
+                  id="isAbnormal-{{i}}" 
+                  formControlName="isAbnormal">
+                <span class="checkmark"></span>
+              </label>
+            </div>
+            
+            <div class="form-group">
+              <label for="comments-{{i}}">Comments:</label>
+              <textarea 
+                id="comments-{{i}}" 
+                formControlName="comments"
+                class="form-control"
+                rows="3"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <div class="form-group">
+          <label for="reportedBy">Reported By:</label>
+          <input 
+            type="text" 
+            id="reportedBy" 
+            formControlName="reportedBy"
+            class="form-control"
+            placeholder="Enter reporter name"
+            [disabled]="true">
+          <div class="error-message" *ngIf="laboratoryForm.get('reportedBy')?.invalid && laboratoryForm.get('reportedBy')?.touched">
+            Reporter name is required
+          </div>
+        </div>
+
+        <button 
+          type="submit" 
+          class="submit-btn"
+          [disabled]="laboratoryForm.invalid || isSubmitting">
+          {{ isSubmitting ? 'Recording...' : 'Record Test Results' }}
+        </button>
+      </div>
+    </form>
+  </ng-container>
+    <div class="tests-list">
+      <h3>{{ isActiveTests ? 'Active Laboratory Tests' : 'Recent Laboratory Tests' }}</h3>
+      <div class="table-container">
+        <table class="tests-table">
+          <thead>
+            <tr>
+              <th>Test Number</th>
+              <th>Patient Name</th>
+              <th>Physician</th>
+              <th>Test Type</th>
+              <th>Date</th>
+              <th>Reported By</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let test of filteredLaboratoryTests">
+              <td>{{ test.testNumber }}</td>
+              <td>{{ test.patientName }}</td>
+              <td>{{ test.orderingPhysicianName }}</td>
+              <td>{{ test.testCategory }}</td>
+              <td>{{ test.testDate | date:'short' }}</td>
+              <td>{{ test.reportedBy }}</td>
+              <td>
+                <button type="button" class="action-btn view" (click)="viewTestDetails(test.testID)">View Results</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+
+  <!-- Laboratory Report Dialog -->
+  <app-laboratory-report-dialog
+    [showDialog]="showTestDetailsDialog"
+    [testNumber]="selectedTestNumber"
+    [testData]="selectedTestData"
+    [testDetails]="selectedTestDetails"
+    (close)="closeTestDetailsDialog()">
+  </app-laboratory-report-dialog>
+</div>

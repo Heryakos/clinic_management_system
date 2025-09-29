@@ -1,0 +1,371 @@
+<div class="item-receiving-container">
+  <!-- Summary Cards -->
+  <div class="summary-cards">
+    <div class="card purchased">
+      <span class="card-icon">🛒</span>
+      <div class="card-content">
+        <h3>{{ purchasedRequestsCount }}</h3>
+        <p>Ready to Receive</p>
+      </div>
+    </div>
+    <div class="card received">
+      <span class="card-icon">📦</span>
+      <div class="card-content">
+        <h3>{{ receivedTodayCount }}</h3>
+        <p>Received Today</p>
+      </div>
+    </div>
+    <div class="card quality-pending">
+      <span class="card-icon">🔍</span>
+      <div class="card-content">
+        <h3>{{ qualityPendingCount }}</h3>
+        <p>Quality Pending</p>
+      </div>
+    </div>
+    <div class="card total-cost">
+      <span class="card-icon">💰</span>
+      <div class="card-content">
+        <h3>{{ totalReceivedValue | currency:'ETB' }}</h3>
+        <p>Today's Value</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Receive Items Form -->
+  <div class="receiving-form-section">
+    <h2>Receive Purchased Items</h2>
+    <form [formGroup]="receivingForm" (ngSubmit)="submitReceiving()" class="receiving-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="purchaseRequest">Purchase Request <span class="required">*</span></label>
+          <select id="purchaseRequest" formControlName="purchaseRequestId" class="form-control">
+            <option value="" disabled>Select a purchase request</option>
+            <option *ngFor="let pr of availablePurchaseRequests" [value]="pr.purchaseRequestID">
+              {{ pr.requestNumber }} - {{ pr.itemName }} (Qty: {{ pr.quantity }})
+            </option>
+          </select>
+          <div class="error-message"
+            *ngIf="receivingForm.get('purchaseRequestId')?.invalid && receivingForm.get('purchaseRequestId')?.touched">
+            Purchase request selection is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="batchNumber">Batch Number <span class="required">*</span></label>
+          <input id="batchNumber" formControlName="batchNumber" class="form-control" placeholder="Enter batch number">
+          <!-- Update your template with better error messages -->
+          <div class="error-message" *ngIf="receivingForm.get('batchNumber')?.hasError('required') && 
+            receivingForm.get('batchNumber')?.touched">
+            Batch number is required
+          </div>
+          <div class="error-message" *ngIf="receivingForm.get('batchNumber')?.hasError('pattern') && 
+            receivingForm.get('batchNumber')?.touched">
+            Batch number can only contain uppercase letters, numbers, and hyphens
+          </div>
+          <div class="error-message" *ngIf="receivingForm.get('batchNumber')?.hasError('batchExists') && 
+            receivingForm.get('batchNumber')?.touched">
+            This batch number already exists in the system
+          </div>
+
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="manufacturer">Manufacturer <span class="required">*</span></label>
+          <input id="manufacturer" formControlName="manufacturer" class="form-control"
+            placeholder="Enter manufacturer name">
+          <div class="error-message"
+            *ngIf="receivingForm.get('manufacturer')?.invalid && receivingForm.get('manufacturer')?.touched">
+            Manufacturer is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="supplier">Supplier <span class="required">*</span></label>
+          <input id="supplier" formControlName="supplier" class="form-control" placeholder="Enter supplier name">
+          <div class="error-message"
+            *ngIf="receivingForm.get('supplier')?.invalid && receivingForm.get('supplier')?.touched">
+            Supplier is required
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="manufactureDate">Manufacture Date</label>
+          <input type="date" id="manufactureDate" formControlName="manufactureDate" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="expiryDate">Expiry Date</label>
+          <input type="date" id="expiryDate" formControlName="expiryDate" class="form-control">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="quantity">Quantity Received <span class="required">*</span></label>
+          <input type="number" id="quantity" formControlName="quantity" class="form-control" min="1"
+            placeholder="Enter quantity received">
+          <div class="error-message"
+            *ngIf="receivingForm.get('quantity')?.invalid && receivingForm.get('quantity')?.touched">
+            Valid quantity is required (minimum 1)
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="unitPrice">Unit Price <span class="required">*</span></label>
+          <input type="number" id="unitPrice" formControlName="unitPrice" class="form-control" min="0" step="0.01"
+            placeholder="Enter unit price">
+          <div class="error-message"
+            *ngIf="receivingForm.get('unitPrice')?.invalid && receivingForm.get('unitPrice')?.touched">
+            Valid unit price is required
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group total-cost">
+          <label>Total Cost</label>
+          <div class="total-display">
+            {{ calculateTotalCost() | currency:'ETB' }}
+          </div>
+        </div>
+      </div>
+
+      <div class="quality-section">
+        <h4>Quality Control</h4>
+        <div class="form-row">
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="qualityCheck">
+              <span class="checkmark"></span>
+              Quality Check Passed
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="qualityComments">Quality Comments</label>
+          <textarea id="qualityComments" formControlName="qualityComments" class="form-control" rows="3"
+            placeholder="Enter quality control comments..."></textarea>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" (click)="resetForm()">Reset</button>
+        <button type="submit" class="btn-primary" [disabled]="isSubmitting || receivingForm.invalid">
+          {{ isSubmitting ? 'Receiving...' : 'Receive Items' }}
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Purchase Requests Table -->
+  <div class="purchase-requests-section">
+    <h3>Purchase Requests - Ready to Receive</h3>
+    <div class="table-container">
+      <table class="purchase-table table">
+        <thead>
+          <tr>
+            <th>Purchase #</th>
+            <th>Item</th>
+            <th>Requested Qty</th>
+            <th>Est. Cost</th>
+            <th>Requested By</th>
+            <th>Purchase Date</th>
+            <th>Supplier</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="availablePurchaseRequests.length === 0">
+            <td colspan="9" class="no-data">No purchase requests ready for receiving</td>
+          </tr>
+          <tr *ngFor="let pr of availablePurchaseRequests" class="purchase-row">
+            <td>{{ pr.requestNumber }}</td>
+            <td>{{ pr.itemName }} <br><small class="item-code">{{ pr.itemCode }}</small></td>
+            <td>{{ pr.quantity }}</td>
+            <td>{{ pr.totalEstimatedCost | currency:'ETB' }}</td>
+            <td>{{ pr.requestedByName }}</td>
+            <td>{{ pr.purchaseDate | date:'mediumDate' }}</td>
+            <td>{{ pr.supplier || 'TBD' }}</td>
+            <td>
+              <span class="status-badge status-purchased">{{ pr.status }}</span>
+            </td>
+            <td class="actions-cell">
+              <button class="action-btn receive" (click)="selectPurchaseRequest(pr)">Receive</button>
+              <button class="action-btn view" (click)="viewPurchaseDetails(pr)">Details</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recently Received Items -->
+  <div class="received-items-section">
+    <h3>Recently Received Items</h3>
+    <div class="table-container">
+      <table class="received-table table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Batch #</th>
+            <th>Quantity</th>
+            <th>Unit Price</th>
+            <th>Total Cost</th>
+            <th>Received Date</th>
+            <th>Quality Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="recentlyReceived.length === 0">
+            <td colspan="8" class="no-data">No recently received items</td>
+          </tr>
+          <tr *ngFor="let item of recentlyReceived">
+            <td>{{ item.itemName }} <br><small class="item-code">{{ item.itemCode }}</small></td>
+            <td>{{ item.batchNumber }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ item.unitPrice | currency:'ETB' }}</td>
+            <td>{{ item.totalCost | currency:'ETB' }}</td>
+            <td>{{ item.receivedDate | date:'medium' }}</td>
+            <td>
+              <span class="quality-status" [ngClass]="item.qualityCheck ? 'passed' : 'pending'">
+                {{ item.qualityCheck ? 'Passed' : 'Pending' }}
+              </span>
+            </td>
+            <td class="actions-cell">
+              <button class="action-btn view" (click)="viewReceivedItemDetails(item)">View</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal for Purchase/Received Item Details -->
+  <div class="modal" *ngIf="selectedPurchaseRequest || selectedReceivedItem">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>{{ selectedPurchaseRequest ? 'Purchase Request Details' : 'Received Item Details' }}</h3>
+        <button class="close-btn" (click)="closeDetailsModal()">✖</button>
+      </div>
+      <div class="modal-body">
+        <ng-container *ngIf="selectedPurchaseRequest">
+          <div class="request-info">
+            <div class="info-row">
+              <label>Purchase Request #:</label>
+              <span>{{ selectedPurchaseRequest.requestNumber }}</span>
+            </div>
+            <div class="info-row">
+              <label>Item:</label>
+              <span>{{ selectedPurchaseRequest.itemName }}</span>
+            </div>
+            <div class="info-row">
+              <label>Item Code:</label>
+              <span>{{ selectedPurchaseRequest.itemCode }}</span>
+            </div>
+            <div class="info-row">
+              <label>Requested Quantity:</label>
+              <span>{{ selectedPurchaseRequest.quantity }}</span>
+            </div>
+            <div class="info-row">
+              <label>Estimated Unit Price:</label>
+              <span>{{ selectedPurchaseRequest.estimatedUnitPrice | currency:'ETB' }}</span>
+            </div>
+            <div class="info-row">
+              <label>Total Estimated Cost:</label>
+              <span>{{ selectedPurchaseRequest.totalEstimatedCost | currency:'ETB' }}</span>
+            </div>
+            <div class="info-row">
+              <label>Requested By:</label>
+              <span>{{ selectedPurchaseRequest.requestedByName }}</span>
+            </div>
+            <div class="info-row">
+              <label>Purchase Date:</label>
+              <span>{{ selectedPurchaseRequest.purchaseDate | date:'medium' }}</span>
+            </div>
+            <div class="info-row" *ngIf="selectedPurchaseRequest.supplier">
+              <label>Supplier:</label>
+              <span>{{ selectedPurchaseRequest.supplier }}</span>
+            </div>
+            <div class="info-row" *ngIf="selectedPurchaseRequest.comments">
+              <label>Comments:</label>
+              <span>{{ selectedPurchaseRequest.comments }}</span>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="selectedReceivedItem">
+          <div class="request-info">
+            <div class="info-row">
+              <label>Registration ID:</label>
+              <span>{{ selectedReceivedItem.registrationID }}</span>
+            </div>
+            <div class="info-row">
+              <label>Item:</label>
+              <span>{{ selectedReceivedItem.itemName }}</span>
+            </div>
+            <div class="info-row">
+              <label>Batch Number:</label>
+              <span>{{ selectedReceivedItem.batchNumber }}</span>
+            </div>
+            <div class="info-row">
+              <label>Manufacturer:</label>
+              <span>{{ selectedReceivedItem.manufacturer }}</span>
+            </div>
+            <div class="info-row">
+              <label>Supplier:</label>
+              <span>{{ selectedReceivedItem.supplier }}</span>
+            </div>
+            <div class="info-row" *ngIf="selectedReceivedItem.manufactureDate">
+              <label>Manufacture Date:</label>
+              <span>{{ selectedReceivedItem.manufactureDate | date:'mediumDate' }}</span>
+            </div>
+            <div class="info-row" *ngIf="selectedReceivedItem.expiryDate">
+              <label>Expiry Date:</label>
+              <span>{{ selectedReceivedItem.expiryDate | date:'mediumDate' }}</span>
+            </div>
+            <div class="info-row">
+              <label>Quantity:</label>
+              <span>{{ selectedReceivedItem.quantity }}</span>
+            </div>
+            <div class="info-row">
+              <label>Unit Price:</label>
+              <span>{{ selectedReceivedItem.unitPrice | currency:'ETB' }}</span>
+            </div>
+            <div class="info-row">
+              <label>Total Cost:</label>
+              <span>{{ selectedReceivedItem.totalCost | currency:'ETB' }}</span>
+            </div>
+            <div class="info-row">
+              <label>Received By:</label>
+              <span>{{ selectedReceivedItem.receivedByName }}</span>
+            </div>
+            <div class="info-row">
+              <label>Received Date:</label>
+              <span>{{ selectedReceivedItem.receivedDate | date:'medium' }}</span>
+            </div>
+            <div class="info-row">
+              <label>Quality Check:</label>
+              <span class="quality-status" [ngClass]="selectedReceivedItem.qualityCheck ? 'passed' : 'pending'">
+                {{ selectedReceivedItem.qualityCheck ? 'Passed' : 'Pending' }}
+              </span>
+            </div>
+            <div class="info-row" *ngIf="selectedReceivedItem.qualityComments">
+              <label>Quality Comments:</label>
+              <span>{{ selectedReceivedItem.qualityComments }}</span>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+      <div class="modal-footer">
+        <button class="action-btn cancel" (click)="closeDetailsModal()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,93 @@
+<div class="clinic-form-container">
+    <!-- Loading Indicator -->
+    <div *ngIf="isLoading" class="loading-indicator">Loading...</div>
+  
+    <!-- Error Message -->
+    <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+  
+    <!-- Form -->
+    <form [formGroup]="sickLeaveForm" *ngIf="!isLoading && !errorMessage" class="form-card">
+      <!-- Header with Logo and Title -->
+      <div class="form-header">
+        <div class="clinic-logo">
+          <div class="logo-container">
+            <div class="logo-circle">
+              <!-- <img src="assets/photo_2025-07-21_14-48-47.jpg" alt="Clinic Logo" class="logo-image"> -->
+              <img [src]="logoPath" alt="Clinic Logo" class="logo-img" />
+            </div>
+          </div>
+        </div>
+        <div class="clinic-info">
+          <h1 class="clinic-title">{{ clinicName }}</h1>
+          <h2 class="form-title">{{ formTitle }}</h2>
+        </div>
+      </div>
+  
+      <!-- Sick Leave Data Table -->
+      <div class="form-content">
+        <table class="data-table">
+          <tbody>
+            <tr>
+              <td class="label-cell">ፔ.ቁ (Employee ID)</td>
+              <td class="input-cell">
+                <input type="text" class="form-input" formControlName="EmployeeID" readonly />
+              </td>
+            </tr>
+            <tr>
+              <td class="label-cell">የታማሚው ስም (Employee Name)</td>
+              <td class="input-cell">
+                <input type="text" class="form-input" formControlName="FullName" readonly />
+              </td>
+            </tr>
+            <tr>
+              <td class="label-cell">የስራ ክፍል (Department)</td>
+              <td class="input-cell">
+                <input type="text" class="form-input" formControlName="department_name" readonly />
+              </td>
+            </tr>
+            <tr>
+              <td class="label-cell">ቀን (Request Date)</td>
+              <td class="input-cell">
+                <input type="text" class="form-input" formControlName="RequestDate" readonly />
+              </td>
+            </tr>
+            <tr>
+              <td class="label-cell">ከ (Start Date)</td>
+              <td class="input-cell">
+                <input type="text" class="form-input" formControlName="StartDate" readonly />
+              </td>
+            </tr>
+            <tr>
+              <td class="label-cell">እስከ (End Date)</td>
+              <td class="input-cell">
+                <input type="text" class="form-input" formControlName="EndDate" readonly />
+              </td>
+            </tr>
+            <tr>
+              <td class="label-cell">ጠቅላላ ቀናት (Total Days)</td>
+              <td class="input-cell">
+                <input type="number" class="form-input" formControlName="TotalDays" readonly />
+              </td>
+            </tr>
+            <tr>
+              <td class="label-cell">የሀኪም ስም (Doctor Name)</td>
+              <td class="input-cell">
+                <input type="text" class="form-input" formControlName="DoctorName" readonly />
+              </td>
+            </tr>
+            <tr>
+              <td class="label-cell">የቅርብ ሃላፊው ስምና ፊርማ (Supervisor Name & Signature)</td>
+              <td class="input-cell">
+                <input type="text" class="form-input" formControlName="UserName" readonly />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+  
+      <!-- Print Button -->
+      <div class="form-actions">
+        <button type="button" class="print-button" (click)="onPrintForm()">Print Form</button>
+      </div>
+    </form>
+  </div>

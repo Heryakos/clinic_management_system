@@ -1,0 +1,149 @@
+<div class="patient-assignment-container">
+  <h2>Patient Room Assignment</h2>
+
+  <!-- Patient Search Section -->
+  <div class="search-container">
+    <h3>Search Patient</h3>
+    <form [formGroup]="patientSearchForm" (ngSubmit)="onPatientSearch()" class="search-form">
+      <div class="form-group">
+        <label for="cardNumber">Card Number:</label>
+        <input 
+          type="text" 
+          id="cardNumber" 
+          formControlName="cardNumber"
+          class="form-control"
+          placeholder="Enter patient card number">
+        <div class="error-message" *ngIf="patientSearchForm.get('cardNumber')?.invalid && patientSearchForm.get('cardNumber')?.touched">
+          Card number is required
+        </div>
+      </div>
+      <button 
+        type="submit" 
+        class="search-btn"
+        [disabled]="patientSearchForm.invalid || isSearching">
+        {{ isSearching ? 'Searching...' : 'Search Patient' }}
+      </button>
+    </form>
+  </div>
+
+  <!-- Selected Patient Information -->
+  <div class="patient-info" *ngIf="selectedPatient">
+    <h3>Selected Patient</h3>
+    <div class="patient-card">
+      <div class="info-group">
+        <label>Patient ID:</label>
+        <span>{{ selectedPatient.PatientID }}</span>
+      </div>
+      <div class="info-group">
+        <label>Card Number:</label>
+        <span>{{ selectedPatient.CardNumber }}</span>
+      </div>
+      <div class="info-group">
+        <label>Full Name:</label>
+        <span>{{ selectedPatient.FullName }}</span>
+      </div>
+      <div class="info-group">
+        <label>Age:</label>
+        <span>{{ selectedPatient.Age }}</span>
+      </div>
+      <div class="info-group">
+        <label>Gender:</label>
+        <span>{{ selectedPatient.Gender }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assignment Form -->
+  <div class="assignment-form-container" *ngIf="selectedPatient">
+    <h3>Assign Patient to Room</h3>
+    <form [formGroup]="assignmentForm" (ngSubmit)="onSubmit()" class="assignment-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="assignedRoom">Room:</label>
+          <select id="assignedRoom" formControlName="assignedRoom" class="form-control">
+            <option value="">Select a room</option>
+            <option *ngFor="let room of rooms" [value]="room.roomID">
+              {{ room.roomType }}
+            </option>
+          </select>
+          <div class="error-message" *ngIf="assignmentForm.get('assignedRoom')?.invalid && assignmentForm.get('assignedRoom')?.touched">
+            Room selection is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="doctorID">Doctor ID:</label>
+          <input 
+            type="text" 
+            id="doctorID" 
+            formControlName="doctorID"
+            class="form-control"
+            placeholder="Enter doctor ID">
+          <div class="error-message" *ngIf="assignmentForm.get('doctorID')?.invalid && assignmentForm.get('doctorID')?.touched">
+            Doctor ID is required
+          </div>
+        </div>
+      </div>
+
+      <button 
+        type="submit" 
+        class="submit-btn"
+        [disabled]="assignmentForm.invalid || isSubmitting">
+        {{ isSubmitting ? 'Assigning...' : 'Assign Patient' }}
+      </button>
+    </form>
+  </div>
+
+  <!-- No Results Message -->
+  <div class="no-results" *ngIf="searched && !selectedPatient">
+    No patient found for the provided card number.
+  </div>
+
+  <!-- Current Assignments Table -->
+  <div class="assignments-section">
+    <h3>Current Patient Assignments</h3>
+    <div class="table-container">
+      <table class="assignments-table">
+        <thead>
+          <tr>
+            <th>Assignment ID</th>
+            <th>Patient ID</th>
+            <th>Room</th>
+            <th>Doctor ID</th>
+            <th>Assignment Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let assignment of assignments">
+            <td>{{ assignment.assignmentID }}</td>
+            <td>{{ assignment.patientID }}</td>
+            <td>{{ getRoomName(assignment.assignedRoom) }}</td>
+            <td>{{ assignment.doctorID }}</td>
+            <td>{{ assignment.assignmentDate | date:'medium' }}</td>
+            <td>
+              <span class="status-badge" [class]="assignment.status.toLowerCase()">
+                {{ assignment.status }}
+              </span>
+            </td>
+            <td>
+              <button 
+                class="action-btn"
+                (click)="updateAssignmentStatus(assignment.assignmentID, 'Completed')"
+                *ngIf="assignment.status === 'Active'">
+                Complete
+              </button>
+              <button 
+                class="action-btn"
+                (click)="updateAssignmentStatus(assignment.assignmentID, 'Cancelled')"
+                *ngIf="assignment.status === 'Active'">
+                Cancel
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div> 

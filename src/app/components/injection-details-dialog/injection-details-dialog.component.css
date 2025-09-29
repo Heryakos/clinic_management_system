@@ -1,0 +1,362 @@
+:host {
+  display: block;
+}
+
+.medical-report-container {
+  background: white;
+  max-width: 800px;
+  margin: 0 auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  overflow: hidden;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+  
+  /* Header Section */
+  .report-header {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a5f 100%);
+    color: white;
+    padding: 25px 30px;
+    position: relative;
+    border-bottom: 4px solid #1e3a5f;
+  }
+  
+  .hospital-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .hospital-logo {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    background: white;
+    padding: 8px;
+    object-fit: contain;
+  }
+  
+  .hospital-details h1 {
+    margin: 0 0 5px 0;
+    font-size: 24px;
+    font-weight: 600;
+  }
+  
+  .hospital-details p {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    opacity: 0.9;
+  }
+  
+  .report-meta {
+    display: flex;
+    gap: 20px;
+    font-size: 14px;
+    opacity: 0.8;
+  }
+  
+  .close-btn {
+    position: absolute;
+    top: 20px;
+    right: 25px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+  }
+  
+  /* Section Styling */
+  .section {
+    padding: 25px 30px;
+    border-bottom: 1px solid #e8ecf0;
+  }
+  
+  .section:last-of-type {
+    border-bottom: none;
+  }
+  
+  .section-title {
+    color: #2c5aa0;
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 20px 0;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e8ecf0;
+    display: flex;
+    align-items: center;
+  }
+  
+  .section-title::before {
+    content: "";
+    width: 4px;
+    height: 20px;
+    background: #2c5aa0;
+    margin-right: 12px;
+    border-radius: 2px;
+  }
+  
+  /* Info Grid */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  
+  .info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .info-item label {
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .info-item span,
+  .info-item p {
+    color: #2d3748;
+    font-size: 16px;
+    padding: 10px 15px;
+    background: #f7fafc;
+    border-radius: 6px;
+    border-left: 3px solid #e2e8f0;
+    min-height: 20px;
+  }
+  
+  /* Special Styling */
+  .status-badge {
+    display: inline-block !important;
+    padding: 6px 12px !important;
+    border-radius: 20px !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    min-height: auto !important;
+  }
+  
+  .status-active {
+    background: #c6f6d5 !important;
+    color: #22543d !important;
+    border-left: 3px solid #38a169 !important;
+  }
+  
+  .status-completed {
+    background: #bee3f8 !important;
+    color: #2a4365 !important;
+    border-left: 3px solid #3182ce !important;
+  }
+  
+  .status-pending {
+    background: #fef5e7 !important;
+    color: #744210 !important;
+    border-left: 3px solid #d69e2e !important;
+  }
+  
+  .medication-name,
+  .physician-name,
+  .nurse-name {
+    font-weight: 600 !important;
+    color: #2c5aa0 !important;
+  }
+  
+  .dose-highlight {
+    background: #fff5f5 !important;
+    color: #c53030 !important;
+    border-left: 3px solid #e53e3e !important;
+    font-weight: 600 !important;
+  }
+  
+  /* Notes Section */
+  .notes-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .note-item p {
+    margin: 0;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+  
+  /* Footer Section */
+  .report-footer {
+    background: #f8fafc;
+    padding: 30px;
+    border-top: 2px solid #e2e8f0;
+  }
+  
+  .signature-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 30px;
+  }
+  
+  .signature-box {
+    text-align: center;
+  }
+  
+  .signature-line {
+    height: 2px;
+    background: #cbd5e0;
+    margin-bottom: 10px;
+    border-radius: 1px;
+  }
+  
+  .signature-box label {
+    font-size: 14px;
+    color: #4a5568;
+    font-weight: 500;
+  }
+  
+  /* Action Buttons */
+  .dialog-actions {
+    padding: 25px 30px;
+    background: #f8fafc;
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    border-top: 1px solid #e2e8f0;
+  }
+  
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .print-btn {
+    background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+    color: white;
+  }
+  
+  .print-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(56, 161, 105, 0.3);
+  }
+  
+  .close-btn-action {
+    background: linear-gradient(135deg, #718096 0%, #4a5568 100%);
+    color: white;
+  }
+  
+  .close-btn-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(113, 128, 150, 0.3);
+  }
+  
+  .btn-icon {
+    font-size: 18px;
+  }
+  
+  /* Print Styles */
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+  
+    .medical-report-container,
+    .medical-report-container * {
+      visibility: visible;
+    }
+  
+    .medical-report-container {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100% !important;
+      max-width: none !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      margin: 0 !important;
+    }
+  
+    .close-btn,
+    .dialog-actions {
+      display: none !important;
+    }
+  
+    .report-header {
+      background: #2c5aa0 !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;  /* Changed from color-adjust */
+    }
+    
+    .section {
+      page-break-inside: avoid;
+    }
+  
+    .info-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  
+    .signature-line {
+      background: #000 !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;  /* Changed from color-adjust */
+    }
+    
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .medical-report-container {
+      margin: 10px;
+      border-radius: 8px;
+    }
+  
+    .report-header,
+    .section,
+    .dialog-actions,
+    .report-footer {
+      padding: 20px;
+    }
+  
+    .hospital-info {
+      flex-direction: column;
+      text-align: center;
+      gap: 15px;
+    }
+  
+    .info-grid {
+      grid-template-columns: 1fr;
+    }
+  
+    .signature-section {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+  
+    .dialog-actions {
+      flex-direction: column;
+    }
+  
+    .action-btn {
+      justify-content: center;
+    }
+  }
+  

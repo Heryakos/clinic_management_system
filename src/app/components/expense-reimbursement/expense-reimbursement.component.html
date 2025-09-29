@@ -1,0 +1,173 @@
+<p>expense-reimbursement works!</p>
+<div class="expense-container">
+  <h2>Medical Expense Reimbursement</h2>
+  
+  <form [formGroup]="expenseForm" (ngSubmit)="onSubmit()" class="expense-form">
+    <div class="patient-info">
+      <h3>Patient Information</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="patientName">Name of Patient:</label>
+          <input 
+            type="text" 
+            id="patientName" 
+            formControlName="patientName"
+            class="form-control"
+            placeholder="Enter patient name">
+          <div class="error-message" *ngIf="expenseForm.get('patientName')?.invalid && expenseForm.get('patientName')?.touched">
+            Patient name is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="payrollNo">Payroll No:</label>
+          <input 
+            type="text" 
+            id="payrollNo" 
+            formControlName="payrollNo"
+            class="form-control"
+            placeholder="Enter payroll number">
+          <div class="error-message" *ngIf="expenseForm.get('payrollNo')?.invalid && expenseForm.get('payrollNo')?.touched">
+            Payroll number is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="department">Department:</label>
+          <input 
+            type="text" 
+            id="department" 
+            formControlName="department"
+            class="form-control"
+            placeholder="Enter department">
+          <div class="error-message" *ngIf="expenseForm.get('department')?.invalid && expenseForm.get('department')?.touched">
+            Department is required
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="investigations-section">
+      <div class="section-header">
+        <h3>Investigation Details</h3>
+        <button type="button" class="add-btn" (click)="addInvestigation()">+ Add Investigation</button>
+      </div>
+
+      <div formArrayName="investigations">
+        <div *ngFor="let investigation of investigationsFormArray.controls; let i = index" [formGroupName]="i" class="investigation-item">
+          <div class="investigation-header">
+            <h4>Investigation {{ i + 1 }}</h4>
+            <button type="button" class="remove-btn" (click)="removeInvestigation(i)" [disabled]="investigationsFormArray.length === 1">
+              Remove
+            </button>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Investigation Description:</label>
+              <input type="text" formControlName="description" class="form-control" placeholder="Enter investigation type">
+              <div class="error-message" *ngIf="investigation.get('description')?.invalid && investigation.get('description')?.touched">
+                Description is required
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Done at (Location):</label>
+              <input type="text" formControlName="location" class="form-control" placeholder="Enter location/facility">
+              <div class="error-message" *ngIf="investigation.get('location')?.invalid && investigation.get('location')?.touched">
+                Location is required
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Invoice Number:</label>
+              <input type="text" formControlName="invoiceNo" class="form-control" placeholder="Enter invoice number">
+              <div class="error-message" *ngIf="investigation.get('invoiceNo')?.invalid && investigation.get('invoiceNo')?.touched">
+                Invoice number is required
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Amount (ETB):</label>
+              <input type="number" step="0.01" formControlName="amount" class="form-control" placeholder="Enter amount">
+              <div class="error-message" *ngIf="investigation.get('amount')?.invalid && investigation.get('amount')?.touched">
+                Valid amount is required
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="total-amount">
+        <strong>Total Amount: {{ calculateTotalAmount() | currency:'ETB':'symbol':'1.2-2' }}</strong>
+      </div>
+    </div>
+
+    <div class="form-footer">
+      <p class="note">The medical expense should be paid to the patient</p>
+      <button 
+        type="submit" 
+        class="submit-btn"
+        [disabled]="expenseForm.invalid || isSubmitting">
+        {{ isSubmitting ? 'Submitting...' : 'Submit Reimbursement Request' }}
+      </button>
+    </div>
+  </form>
+
+  <div class="reimbursements-list">
+    <h3>Reimbursement Requests</h3>
+    <div class="table-container">
+      <table class="reimbursements-table">
+        <thead>
+          <tr>
+            <th>Request ID</th>
+            <th>Patient Name</th>
+            <th>Payroll No</th>
+            <th>Department</th>
+            <th>Total Amount</th>
+            <th>Status</th>
+            <th>Submission Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let reimbursement of expenseReimbursements">
+            <td>{{ reimbursement.id }}</td>
+            <td>{{ reimbursement.patientName }}</td>
+            <td>{{ reimbursement.payrollNo }}</td>
+            <td>{{ reimbursement.department }}</td>
+            <td>{{ reimbursement.totalAmount | currency:'ETB':'symbol':'1.2-2' }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="reimbursement.status">
+                {{ reimbursement.status | titlecase }}
+              </span>
+            </td>
+            <td>{{ reimbursement.submissionDate | date:'short' }}</td>
+            <td>
+              <button 
+                *ngIf="reimbursement.status === 'pending'" 
+                class="action-btn approve"
+                (click)="updateReimbursementStatus(reimbursement.id, 'approved')">
+                Approve
+              </button>
+              <button 
+                *ngIf="reimbursement.status === 'pending'" 
+                class="action-btn reject"
+                (click)="updateReimbursementStatus(reimbursement.id, 'rejected')">
+                Reject
+              </button>
+              <button 
+                *ngIf="reimbursement.status === 'approved'" 
+                class="action-btn pay"
+                (click)="updateReimbursementStatus(reimbursement.id, 'paid')">
+                Mark as Paid
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

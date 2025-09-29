@@ -1,0 +1,100 @@
+<div class="notification-container">
+    <h2>Notifications <span *ngIf="unreadCount > 0" class="unread-count">({{ unreadCount }} unread)</span></h2>
+  
+    <!-- Create Notification Form -->
+    <div class="notification-form-container">
+      <form [formGroup]="notificationForm" (ngSubmit)="onSubmit()" class="notification-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="employeeID">Employee ID</label>
+            <input 
+              type="text" 
+              id="employeeID" 
+              formControlName="employeeID" 
+              class="form-control" 
+              readonly>
+          </div>
+          <div class="form-group">
+            <label for="message">Message</label>
+            <textarea 
+              id="message" 
+              formControlName="message" 
+              class="form-control" 
+              placeholder="Enter notification message"></textarea>
+            <div class="error-message" *ngIf="notificationForm.get('message')?.invalid && notificationForm.get('message')?.touched">
+              Message is required and must not exceed 500 characters.
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="image">Image (Optional)</label>
+            <input 
+              type="file" 
+              id="image" 
+              (change)="onFileChange($event)" 
+              accept="image/*"
+              class="form-control">
+            <img *ngIf="imagePreview" [src]="imagePreview" alt="Image Preview" class="image-preview">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button 
+            type="submit" 
+            class="submit-btn"
+            [disabled]="notificationForm.invalid || isSubmitting">
+            {{ isSubmitting ? 'Sending...' : 'Send Notification' }}
+          </button>
+          <button 
+            type="button" 
+            class="clear-btn"
+            (click)="resetForm()"
+            [disabled]="isSubmitting">
+            Clear
+          </button>
+        </div>
+      </form>
+    </div>
+  
+    <!-- Notifications List -->
+    <div class="notifications-section" *ngIf="notifications.length > 0">
+      <h3>Recent Notifications</h3>
+      <div class="table-container">
+        <table class="notifications-table">
+          <thead>
+            <tr>
+              <th>Message</th>
+              <th>Timestamp</th>
+              <th>Image</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let notification of notifications">
+              <td>{{ notification.message }}</td>
+              <td>{{ notification.timestamp | date:'medium' }}</td>
+              <td>
+                <a *ngIf="notification.imageData" (click)="openImagePreview(notification.imageData)" class="image-link">
+                  <img [src]="notification.imageData" alt="Notification Image" class="notification-image">
+                </a>
+                <span *ngIf="!notification.imageData">N/A</span>
+              </td>
+              <td>
+                <span class="status-badge" [class]="notification.isRead ? 'read' : 'unread'">
+                  {{ notification.isRead ? 'Read' : 'Unread' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  
+    <div class="no-results" *ngIf="notifications.length === 0 && !errorMessage">
+      No notifications found.
+    </div>
+    <div class="no-results" *ngIf="errorMessage">
+      {{ errorMessage }}
+    </div>
+    <div class="success-message" *ngIf="successMessage">
+      {{ successMessage }}
+    </div>
+  </div>

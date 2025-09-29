@@ -1,0 +1,303 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
+.clinic-form-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  font-family: 'Noto Sans Ethiopic', 'Nyala', 'Ebrima', sans-serif;
+}
+
+.loading-indicator {
+  text-align: center;
+  padding: 40px;
+  font-size: 18px;
+  color: #666;
+}
+
+.error-message {
+  text-align: center;
+  padding: 20px;
+  color: #dc3545;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.form-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+
+.form-header {
+  text-align: center;
+  padding: 30px 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 2px solid #dee2e6;
+}
+
+.clinic-logo {
+  margin-bottom: 20px;
+}
+
+.logo-container {
+  display: flex;
+  justify-content: center;
+}
+
+.logo-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 4px solid #1976D2;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.clinic-info {
+  font-family: 'Noto Sans Ethiopic', sans-serif;
+}
+
+.clinic-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1976D2;
+  margin: 15px 0 10px 0;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+}
+
+.form-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #424242;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.form-content {
+  padding: 30px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Noto Sans Ethiopic', sans-serif;
+}
+
+.data-table tr {
+  border-bottom: 1px solid #e9ecef;
+}
+
+.data-table tr:last-child {
+  border-bottom: none;
+}
+
+.label-cell {
+  padding: 15px 20px 15px 0;
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+  vertical-align: middle;
+  width: 40%;
+  line-height: 1.4;
+}
+
+.input-cell {
+  padding: 15px 0;
+  vertical-align: middle;
+  position: relative;
+}
+
+.form-input {
+  width: 100%;
+  border: none;
+  border-bottom: 2px dotted #666;
+  background: transparent;
+  padding: 8px 0;
+  font-family: 'Noto Sans Ethiopic', sans-serif;
+  font-size: 14px;
+  color: #333;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.form-input:focus {
+  border-bottom-color: #1976D2;
+  border-bottom-style: solid;
+}
+
+.form-input:read-only {
+  background-color: #f8f9fa;
+  cursor: default;
+}
+
+.form-actions {
+  padding: 20px 30px;
+  text-align: center;
+  background-color: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+}
+
+.print-button {
+  background: linear-gradient(135deg, #1976D2, #1565C0);
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  font-family: 'Noto Sans Ethiopic', sans-serif;
+}
+
+.print-button:hover {
+  background: linear-gradient(135deg, #1565C0, #0d47a1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.print-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .clinic-form-container {
+    padding: 10px;
+  }
+  
+  .form-header {
+    padding: 20px 15px;
+  }
+  
+  .form-content {
+    padding: 20px 15px;
+  }
+  
+  .data-table {
+    font-size: 13px;
+  }
+  
+  .label-cell {
+    width: 100%;
+    display: block;
+    padding: 10px 0 5px 0;
+    font-weight: 600;
+  }
+  
+  .input-cell {
+    width: 100%;
+    display: block;
+    padding: 5px 0 15px 0;
+  }
+  
+  .data-table tr {
+    display: block;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 15px;
+  }
+  
+  .clinic-title {
+    font-size: 20px;
+  }
+  
+  .form-title {
+    font-size: 14px;
+  }
+  
+  .logo-circle {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .clinic-form-container {
+    max-width: none;
+    margin: 0;
+    padding: 20px;
+    background-color: white;
+    box-shadow: none;
+  }
+  
+  .form-card {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+  
+  .form-actions {
+    display: none;
+  }
+  
+  .form-header {
+    background: white;
+    border-bottom: 2px solid #000;
+  }
+  
+  .logo-circle {
+    border-color: #000;
+  }
+  
+  .clinic-title,
+  .form-title {
+    color: #000;
+    text-shadow: none;
+  }
+  
+  .form-input {
+    border-bottom-color: #000;
+    color: #000;
+    background: white;
+  }
+  
+  .label-cell {
+    color: #000;
+  }
+  
+  .data-table tr {
+    border-bottom-color: #000;
+  }
+  
+  .form-content {
+    background: white;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}

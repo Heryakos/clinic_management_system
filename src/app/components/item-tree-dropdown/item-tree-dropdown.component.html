@@ -1,0 +1,96 @@
+<div class="item-tree-dropdown" #dropdownContainer>
+    <div 
+      class="dropdown-trigger" 
+      [class.error]="error" 
+      [class.disabled]="disabled"
+      [class.open]="isOpen"
+      (click)="toggleDropdown()">
+      <span class="display-value" [class.placeholder]="!selectedItem">
+        {{ displayValue }}
+      </span>
+      <span class="dropdown-arrow" [class.rotated]="isOpen">▼</span>
+    </div>
+  
+    <div class="error-message" *ngIf="error">{{ error }}</div>
+  
+    <div class="dropdown-menu" *ngIf="isOpen">
+      <!-- Search Input -->
+      <div class="search-container">
+        <input 
+          type="text" 
+          class="search-input"
+          placeholder="Search items..."
+          [(ngModel)]="searchTerm"
+          (input)="onSearchChange()"
+          (click)="$event.stopPropagation()">
+        <button 
+          type="button" 
+          class="clear-search" 
+          *ngIf="searchTerm"
+          (click)="clearSearch()">×</button>
+      </div>
+  
+      <!-- Items List -->
+      <div class="items-content">
+        <div *ngIf="filteredItems.length === 0" class="no-results">
+          No items found
+        </div>
+  
+        <div *ngFor="let category of filteredItems" class="category-group">
+          <!-- Category Header -->
+          <div 
+            class="category-header" 
+            (click)="toggleCategory(category.categoryName)">
+            <span class="expand-icon" [class.expanded]="isCategoryExpanded(category.categoryName)">
+              {{ isCategoryExpanded(category.categoryName) ? '▼' : '▶' }}
+            </span>
+            <span class="category-icon">🏷️</span>
+            <span class="category-name">{{ category.categoryName }}</span>
+            <span class="item-count">({{ getCategoryItemCount(category) }})</span>
+          </div>
+  
+          <!-- Dosage Forms in Category -->
+          <div *ngIf="isCategoryExpanded(category.categoryName)" class="dosage-forms">
+            <div *ngFor="let dosageForm of category.dosageForms" class="dosage-form-item">
+              <div 
+                class="dosage-form-header"
+                (click)="toggleForm(category.categoryName, dosageForm.form)">
+                <span class="expand-icon" [class.expanded]="isFormExpanded(category.categoryName, dosageForm.form)">
+                  {{ isFormExpanded(category.categoryName, dosageForm.form) ? '▼' : '▶' }}
+                </span>
+                <span class="form-icon">📦</span>
+                <span class="form-name">{{ dosageForm.form }}</span>
+                <span class="item-count">({{ dosageForm.items.length }})</span>
+              </div>
+              <div *ngIf="isFormExpanded(category.categoryName, dosageForm.form)" class="items">
+                <div 
+                  *ngFor="let item of dosageForm.items" 
+                  class="item-row"
+                  [class.low-stock]="item.currentStock <= item.minimumStock"
+                  (click)="selectItem(item, category.categoryName, dosageForm.form)">
+                  <div class="item-info">
+                    <span class="item-icon">📦</span>
+                    <div class="item-details">
+                      <span class="item-name">{{ item.itemName }}</span>
+                      <span class="item-code" *ngIf="item.itemCode">({{ item.itemCode }})</span>
+                    </div>
+                  </div>
+                  <div class="stock-info">
+                    <span class="stock-quantity" 
+                          [class.low]="item.currentStock <= item.minimumStock"
+                          [class.normal]="item.currentStock > item.minimumStock">
+                      {{ item.currentStock }} {{ item.unit }}
+                    </span>
+                    <span class="stock-status" 
+                          [class.low]="item.currentStock <= item.minimumStock">
+                      {{ item.currentStock <= item.minimumStock ? 'Low Stock' : 'Available' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
