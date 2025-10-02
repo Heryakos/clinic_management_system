@@ -48,6 +48,7 @@ import { InventoryManagementComponent } from './components/inventory-management/
 import { ItemReceivingComponent } from './components/item-receiving/item-receiving.component';
 import { InjectionDetailsDialogComponent } from './components/injection-details-dialog/injection-details-dialog.component';
 import { ReimbursementDocumentUploadComponent } from './components/reimbursement-document-upload/reimbursement-document-upload.component';
+// import { StockRequestFormComponent } from './components/stock-request-form/stock-request-form.component';
 
 
 @NgModule({
@@ -87,7 +88,8 @@ import { ReimbursementDocumentUploadComponent } from './components/reimbursement
     InventoryManagementComponent,
     ItemReceivingComponent,
     InjectionDetailsDialogComponent,
-    ReimbursementDocumentUploadComponent
+    ReimbursementDocumentUploadComponent,
+    // StockRequestFormComponent
     // PatientMedicalHistoryComponent
     // PatientInfoCardComponent
   ],

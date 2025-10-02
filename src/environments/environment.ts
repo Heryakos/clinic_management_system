@@ -21,8 +21,8 @@ export const environment = {
   // username: window._UserName,
   // username: '10506', // this is supervisor and doctor
   // username: 'C00066', // Laboratory
-  // username: '10522',  // this is the Pharmacy
-  username: 'C00113', // doctor
+  username: '10522',  // this is the Pharmacy
+  // username: 'C00113', // doctor
   // username: 'C00067', // patient
   // username: '11094', // patient
   // username: '10830', // cardroom

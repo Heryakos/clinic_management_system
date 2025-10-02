@@ -1,0 +1,194 @@
+<div class="modal" *ngIf="selectedRequest || selectedPurchase">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>{{ selectedRequest ? 'Stock Request Form' : 'Purchase Request Form' }}</h3>
+        <button class="close-btn" (click)="closeModal()">✖</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-container">
+          <div class="form-title">በፌዴራል ቤቶች ኮርፖሬሽን</div>
+          <div class="form-title">እቃ ጠያቂ ቅፅ / Stock Request Form</div>
+          <div class="form-subtitle">የተጠየቀ እቃ</div>
+  
+          <div class="form-section">
+            ጥያቄውን ያቀረበው ህክምና አገልግሎት ቡድን
+            <br>መጠየቂያ ቁጥር: {{ selectedRequest?.requestNumber || selectedPurchase?.requestNumber || 'N/A' }}<br>
+            ለ: {{ selectedRequest?.roomName || selectedPurchase?.itemName || 'N/A' }}<br>
+            Requested from: {{ selectedRequest?.requestedByName || selectedPurchase?.requestedByName || 'N/A' }}<br>
+            Requested to: {{ selectedRequest?.roomName || 'N/A' }}<br>
+            ቀን: {{ (selectedRequest?.requestDate || selectedPurchase?.requestDate) | date:'mediumDate' }}
+          </div>
+  
+          <table>
+            <thead>
+              <tr>
+                <th>No.</th>
+                <th>የተጠየቀ እቃ / List items</th>
+                <th>መለኪያ / Unit</th>
+                <th>ብዛት / Quantity</th>
+                <th>የስራ ትዕዛዝ ቁ. / Job order No.</th>
+                <th>ምክንያት / Reason for request</th>
+              </tr>
+            </thead>
+            <tbody>
+              <ng-container *ngIf="selectedRequest">
+                <tr *ngFor="let item of selectedRequestItems; let i = index">
+                  <td>{{ i + 1 }}</td>
+                  <td>{{ item.itemName }}</td>
+                  <td>{{ item.unit || 'N/A' }}</td>
+                  <td>{{ item.requestedQuantity || 0 }}</td>
+                  <td>{{ item.jobOrderNo || 'N/A' }}</td>
+                  <td>{{ selectedRequest.reasonForRequest || 'N/A' }}</td>
+                </tr>
+                <!-- Fill remaining rows to ensure 18 rows -->
+                <tr *ngFor="let dummy of dummyRows(selectedRequestItems.length)">
+                  <td>{{ selectedRequestItems.length + dummy + 1 }}</td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                </tr>
+              </ng-container>
+              <ng-container *ngIf="selectedPurchase">
+                <tr>
+                  <td>1</td>
+                  <td>{{ selectedPurchase.itemName }} ({{ selectedPurchase.itemCode }})</td>
+                  <td>{{ selectedPurchase.unit || 'N/A' }}</td>
+                  <td>{{ selectedPurchase.quantity }}</td>
+                  <td>{{ selectedPurchase.jobOrderNo || 'N/A' }}</td>
+                  <td>{{ selectedPurchase.comments || 'N/A' }}</td>
+                </tr>
+                <!-- Fill remaining rows to ensure 18 rows -->
+                <tr *ngFor="let dummy of dummyRows(1)">
+                  <td>{{ 2 + dummy }}</td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                </tr>
+              </ng-container>
+            </tbody>
+          </table>
+  
+          <div class="signature">
+            <div>ጥያቄውን ያቀረበው: {{ selectedRequest?.requestedByName || selectedPurchase?.requestedByName || 'N/A' }} <span>ፊርማ: ____________________</span></div>
+            <div>ጥያቄውን ያጸደቀው ሃላፊ: {{ supervisorName || 'N/A' }} <span>ፊርማ: ____________________</span></div>
+            <div *ngIf="showCommentsInput">
+              <label for="actionComments">አስተያየት / Comments:</label>
+              <textarea id="actionComments" [(ngModel)]="actionComments" rows="4" style="width: 100%;"></textarea>
+            </div>
+            <div>ፈቃጅ የስራ ሂደት: ____________________ <span>ፊርማ: ____________________</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" *ngIf="selectedRequest && showCommentsInput">
+        <button class="action-btn approve" (click)="confirmApproveRequest()" [disabled]="isProcessing">Approve</button>
+        <button class="action-btn reject" (click)="confirmRejectRequest()" [disabled]="isProcessing">Reject</button>
+        <button class="action-btn cancel" (click)="closeModal()" [disabled]="isProcessing">Cancel</button>
+      </div>
+      <div class="modal-footer" *ngIf="selectedPurchase">
+        <button class="action-btn cancel" (click)="closeModal()">Close</button>
+      </div>
+    </div>
+  </div>
+  
+  <style>
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 5px;
+      max-width: 800px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .modal-footer {
+      margin-top: 20px;
+      text-align: right;
+    }
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .action-btn {
+      padding: 8px 16px;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+    .action-btn.approve {
+      background: #28a745;
+      color: white;
+      border: none;
+    }
+    .action-btn.reject {
+      background: #dc3545;
+      color: white;
+      border: none;
+    }
+    .action-btn.cancel {
+      background: #6c757d;
+      color: white;
+      border: none;
+    }
+    .form-container {
+      font-family: "Times New Roman", serif;
+      font-size: 14px;
+    }
+    .form-title {
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .form-subtitle {
+      text-align: center;
+      text-decoration: underline;
+      margin-bottom: 20px;
+    }
+    .form-section {
+      margin: 10px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    table, th, td {
+      border: 1px solid black;
+    }
+    th, td {
+      padding: 6px;
+      text-align: center;
+      font-size: 13px;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .signature {
+      margin-top: 30px;
+    }
+    .signature div {
+      margin: 20px 0;
+    }
+  </style>

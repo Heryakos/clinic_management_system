@@ -911,14 +911,16 @@ loadRoomSpecificData(): void {
     this.isActivePrescriptions = true; // Set flag for Active Prescriptions
     this.medicationDetailsWithStock = []; // Reset stock status
     this.prescriptionDetailsMap = {}; // Reset details map
-    // console.log('Starting loadPrescriptionQueue');
-    // debugger;
   
+    // Fetch pharmacist's employee ID from environment (similar to loadUserData)
+    const employeeId = environment.username;
+  
+    // Fetch prescriptions, optionally filtering by employee context
     this.medicalService.getPrescriptions().subscribe({
       next: (prescriptions: any[]) => {
-        // console.log('Received prescriptions:', prescriptions);
-        // debugger;
-  // 
+        console.log('Received prescriptions:', prescriptions);
+  
+        // Map prescriptions and ensure CardNumber is correctly populated
         const all = prescriptions || [];
         const nonDispensed = all
           .filter(p => {
@@ -926,23 +928,47 @@ loadRoomSpecificData(): void {
             console.log('Filtering prescription:', p, 'Status:', s);
             return s === '' || s === 'active' || s === 'pending' || s === 'ordered';
           })
-          .map(p => ({
-            ...p,
-            CardNumber: p.CardNumber || p.cardNumber || 'N/A',
-            FullName: p.patientName || `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Unknown',
-            PrescriptionDate: p.prescriptionDate || p.PrescriptionDate,
-            Status: p.status || p.Status || 'Unknown', // Map to PascalCase
-            PrescriberName: p.prescriberName || p.PrescriberName || 'N/A',
-            PharmacistName: p.pharmacistName || p.PharmacistName || 'N/A',
-            prescriptionID: p.prescriptionID || p.PrescriptionID || `temp-${Date.now()}`
-          }));
+          .map(p => {
+            // Attempt to fetch CardNumber from patient data if missing
+            let cardNumber = p.CardNumber || p.cardNumber;
+          
+            if (!cardNumber && p.patientID) {
+              // Optionally fetch patient details to get CardNumber
+              this.medicalService.getPatient(p.patientID).subscribe({
+                next: (patient) => {
+                  cardNumber = patient.CardNumber || environment.username || 'Unknown'; // ✅ use employeeId if missing
+                },
+                error: (error) => {
+                  console.error('Error fetching patient for CardNumber:', error);
+                  cardNumber = environment.username || 'Unknown'; // ✅ fallback to employeeId
+                }
+              });
+            }
+          
+            // ✅ final fallback: if still no CardNumber, use employeeId
+            if (!cardNumber) {
+              cardNumber = environment.username;
+            }
+          
+            return {
+              ...p,
+              CardNumber: cardNumber || environment.username || 'Unknown', // ✅ always fill with employeeId if empty
+              FullName: p.patientName || `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Unknown',
+              PrescriptionDate: p.prescriptionDate || p.PrescriptionDate,
+              Status: p.status || p.Status || 'Unknown',
+              PrescriberName: p.prescriberName || p.PrescriberName || 'N/A',
+              PharmacistName: p.pharmacistName || p.PharmacistName || 'N/A',
+              prescriptionID: p.prescriptionID || p.PrescriptionID || `temp-${Date.now()}`
+            };
+          })
+          
   
         console.log('Non-dispensed prescriptions:', nonDispensed);
-        // debugger;
   
+        // Set prescriptions, prioritizing non-dispensed ones
         this.prescriptions = nonDispensed.length > 0 ? nonDispensed : all.map(p => ({
           ...p,
-          CardNumber: p.CardNumber || p.cardNumber || 'N/A',
+          CardNumber: p.CardNumber || p.cardNumber || 'Unknown',
           FullName: p.patientName || `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Unknown',
           PrescriptionDate: p.prescriptionDate || p.PrescriptionDate,
           Status: p.status || p.Status || 'Unknown',
@@ -951,17 +977,49 @@ loadRoomSpecificData(): void {
           prescriptionID: p.prescriptionID || p.PrescriptionID || `temp-${Date.now()}`
         }));
   
-        console.log('Final prescriptions array:', this.prescriptions);
+        // Sort prescriptions by date (newest first)
         this.prescriptions.sort((a, b) =>
           new Date(b.PrescriptionDate || 0).getTime() - new Date(a.PrescriptionDate || 0).getTime()
         );
   
-        this.cdr.detectChanges(); // Ensure UI updates
-        // console.log('Change detection triggered');
+        // Fetch prescription details for each prescription to ensure complete data
+        const detailPromises = this.prescriptions.map(p => {
+          if (p.prescriptionID && !p.prescriptionID.startsWith('temp-')) {
+            return this.medicalService.getPrescriptionIDDetails(p.prescriptionID).toPromise()
+              .then(details => {
+                this.prescriptionDetailsMap[p.prescriptionID] = details || null;
+                return details;
+              })
+              .catch(error => {
+                console.error(`Error loading details for prescription ${p.prescriptionID}:`, error);
+                this.prescriptionDetailsMap[p.prescriptionID] = null;
+                return null;
+              });
+          }
+          return Promise.resolve(null);
+        });
+  
+        Promise.all(detailPromises).then(() => {
+          // Update medicationDetailsWithStock for the first prescription
+          if (this.prescriptions.length > 0) {
+            const firstPrescription = this.prescriptions[0];
+            const firstDetails = this.prescriptionDetailsMap[firstPrescription.prescriptionID];
+            if (firstDetails && firstDetails.MedicationName) {
+              const medicationNames = this.extractMedicationNames(firstDetails.MedicationName);
+              this.medicationDetailsWithStock = medicationNames.map(name => ({
+                medication: name,
+                isInStock: false
+              }));
+              console.log('Populated medicationDetailsWithStock:', this.medicationDetailsWithStock);
+            }
+          }
+  
+          this.cdr.detectChanges();
+          console.log('Change detection triggered');
+        });
       },
       error: (error) => {
         console.error('Error in getPrescriptions:', error);
-        // debugger;
         this.prescriptions = [];
         this.cdr.detectChanges();
         console.log('Error handler: prescriptions cleared');
