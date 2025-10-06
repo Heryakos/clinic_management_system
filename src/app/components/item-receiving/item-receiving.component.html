@@ -100,6 +100,14 @@
         <div class="form-group">
           <label for="expiryDate">Expiry Date</label>
           <input type="date" id="expiryDate" formControlName="expiryDate" class="form-control">
+          <div class="warning-message" *ngIf="receivingForm.get('expiryDate')?.value">
+            <ng-container *ngIf="getDaysUntilExpiry() <= 30" class="error-warning">
+              ⚠️ WARNING: Item expires in {{ getDaysUntilExpiry() }} days - Quality check failed automatically
+            </ng-container>
+            <ng-container *ngIf="getDaysUntilExpiry() > 30 && getDaysUntilExpiry() <= 90" class="caution-warning">
+              ⚠️ CAUTION: Item expires in {{ getDaysUntilExpiry() }} days
+            </ng-container>
+          </div>
         </div>
       </div>
 

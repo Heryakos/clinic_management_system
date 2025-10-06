@@ -34,6 +34,7 @@ export class SupervisorDashboardComponent implements OnInit {
   isProcessing = false;
 
   supervisorId: string | null = null;
+  supervisorName: string | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -52,6 +53,7 @@ export class SupervisorDashboardComponent implements OnInit {
         const employee = response?.c_Employees?.[0];
         if (employee) {
           this.supervisorId = employee.user_ID ?? null;
+          this.supervisorName = employee.fullName ?? employee.firstName + ' ' + employee.lastName ?? null;
         }
       },
       error => {

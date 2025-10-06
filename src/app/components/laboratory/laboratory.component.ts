@@ -559,6 +559,11 @@ export class LaboratoryComponent implements OnInit {
   
         this.filteredLaboratoryTests = pending;
         console.log('filteredLaboratoryTests:', this.filteredLaboratoryTests);
+
+        if (this.filteredLaboratoryTests.length > 0) {
+          this.cardNumberSearch = this.filteredLaboratoryTests[0].cardNumber;
+          this.searchByCardNumber();
+        }
       },
       (error) => {
         console.error('getLaboratoryTests error:', error);

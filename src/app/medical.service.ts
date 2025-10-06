@@ -130,6 +130,19 @@ export class MedicalService {
     );
   }
 
+  // Add to MedicalService
+// getInjectionDetails(injectionID: number): Observable<any> {
+//   return this.http.get(`${this.CHMSInjectionBase}injections/${injectionID}`).pipe(
+//     catchError(this.handleError)
+//   );
+// }
+
+updateInjection(data: any): Observable<any> {
+  return this.http.put(`${this.CHMSInjectionBase}injections/${data.injectionID}`, data).pipe(
+    catchError(this.handleError)
+  );
+}
+
   administerInjection(injectionID: number, nurseID: string): Observable<any> {
     return this.http.put(`${this.CHMSInjectionBase}injections/${injectionID}/administer`, { nurseID }).pipe(
       catchError(this.handleError)
@@ -1073,17 +1086,33 @@ export class MedicalService {
 
 
   getIssueItems(): Observable<InventoryItemenhanced[]> {
-    return this.http.get<any[]>(`${this.chmsInventoryBase}items`).pipe(
+    const url = `${this.chmsInventoryBase}items`;
+    console.log('Calling endpoint:', url);
+    console.log('Full URL would be:', environment.rootPath2 + 'CHMS_Inventory/items');
+    return this.http.get<any>(url).pipe(
       map(response => {
         console.log('Raw API response:', JSON.stringify(response, null, 2));
 
-        // Normalize API response to array
-        let items = Array.isArray(response) ? response : [];
+        // Handle the grouped API response structure
+        let items: any[] = [];
+        
+        if (Array.isArray(response)) {
+          // If response is an array of category objects
+          response.forEach(category => {
+            if (category.items && Array.isArray(category.items)) {
+              items = items.concat(category.items);
+            }
+          });
+        } else if (response && response.items && Array.isArray(response.items)) {
+          // If response is a single category object with items
+          items = response.items;
+        } else if (response && Array.isArray(response)) {
+          // If response is directly an array of items (fallback)
+          items = response;
+        }
 
-        // If response has an items property, use that instead
-        // if (response.items && Array.isArray(response.items)) {
-        //   items = response.items;
-        // }
+        console.log('Extracted items array:', items);
+        console.log('Items array length:', items.length);
 
         if (!items || items.length === 0) {
           console.warn('No items returned from API');
@@ -1091,6 +1120,7 @@ export class MedicalService {
         }
 
         return items.map((item: any) => {
+          console.log('Processing item:', item);
           let stockStatus: 'Low Stock' | 'Normal' | 'Overstock' = 'Normal';
           if (item.CurrentStock <= item.MinimumStock) {
             stockStatus = 'Low Stock';
@@ -1098,7 +1128,7 @@ export class MedicalService {
             stockStatus = 'Overstock';
           }
 
-          return {
+          const mappedItem = {
             itemID: item.ItemID || 0,
             itemCode: item.ItemCode || item.ItemID?.toString() || '',
             itemName: item.ItemName || '',
@@ -1119,6 +1149,8 @@ export class MedicalService {
             stockStatus: stockStatus,
             RoomID: item.RoomID || undefined
           } as InventoryItemenhanced;
+          console.log('Mapped item result:', mappedItem);
+          return mappedItem;
         });
       }),
       catchError(error => {

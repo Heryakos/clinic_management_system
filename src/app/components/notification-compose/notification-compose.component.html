@@ -1,0 +1,133 @@
+<div class="compose-dialog-container">
+  <div class="dialog-header">
+    <h2>Send Notification</h2>
+    <button class="close-btn" (click)="onCancel()" type="button">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+      </svg>
+    </button>
+  </div>
+
+  <form [formGroup]="composeForm" (ngSubmit)="onSubmit()" class="compose-form">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="roomType">Room Type</label>
+        <select 
+          id="roomType" 
+          formControlName="roomType" 
+          class="form-control"
+          (change)="onRoomChange($event)">
+          <option value="" disabled>Select Room Type</option>
+          <option *ngFor="let roomType of uniqueRoomTypes" [value]="roomType">{{ roomType }}</option>
+        </select>
+        <div class="error-message" *ngIf="composeForm.get('roomType')?.invalid && composeForm.get('roomType')?.touched">
+          Room Type is required
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="doctorUserName">Recipient</label>
+        <select 
+          id="doctorUserName" 
+          formControlName="doctorUserName" 
+          class="form-control" 
+          [disabled]="availableDoctors.length === 0">
+          <option value="" disabled>Select Recipient</option>
+          <option *ngFor="let doctor of availableDoctors" [value]="doctor.userName">
+            {{ doctor.fName }} {{ doctor.mName }}
+          </option>
+        </select>
+        <div class="error-message" *ngIf="composeForm.get('doctorUserName')?.invalid && composeForm.get('doctorUserName')?.touched">
+          Recipient is required
+        </div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="priority">Priority</label>
+        <select 
+          id="priority" 
+          formControlName="priority" 
+          class="form-control">
+          <option value="Normal">Normal</option>
+          <option value="Urgent">Urgent</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="message">Message</label>
+      <textarea 
+        id="message" 
+        formControlName="message" 
+        class="form-control message-textarea" 
+        placeholder="Type your message here..."
+        rows="4"></textarea>
+      <div class="character-count">
+        {{ composeForm.get('message')?.value?.length || 0 }}/500 characters
+      </div>
+      <div class="error-message" *ngIf="composeForm.get('message')?.invalid && composeForm.get('message')?.touched">
+        Message is required and must not exceed 500 characters.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="image">Attachment (Optional)</label>
+      <div class="file-input-container">
+        <input 
+          type="file" 
+          id="image" 
+          (change)="onFileChange($event)" 
+          accept="image/*"
+          class="file-input"
+          #fileInput>
+        <button type="button" 
+                class="file-input-btn" 
+                (click)="fileInput.click()">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+          </svg>
+          Choose Image
+        </button>
+        <span class="file-name" *ngIf="imageFile">{{ imageFile.name }}</span>
+      </div>
+      
+      <div class="image-preview-container" *ngIf="imagePreview">
+        <img [src]="imagePreview" alt="Image Preview" class="image-preview">
+        <button type="button" 
+                class="remove-image-btn" 
+                (click)="imagePreview = null; imageFile = null">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button 
+        type="button" 
+        class="cancel-btn"
+        (click)="onCancel()"
+        [disabled]="isSubmitting">
+        Cancel
+      </button>
+      <button 
+        type="submit" 
+        class="send-btn"
+        [disabled]="composeForm.invalid || isSubmitting">
+        <span *ngIf="!isSubmitting">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/>
+          </svg>
+          Send Notification
+        </span>
+        <span *ngIf="isSubmitting" class="sending-state">
+          <div class="spinner"></div>
+          Sending...
+        </span>
+      </button>
+    </div>
+  </form>
+</div> 

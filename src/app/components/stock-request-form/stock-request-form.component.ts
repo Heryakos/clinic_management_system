@@ -23,6 +23,7 @@ export class StockRequestFormComponent {
   @Output() confirmApproveRequest = new EventEmitter<void>();
   @Output() confirmRejectRequest = new EventEmitter<void>();
   @Output() actionCommentsChange = new EventEmitter<string>();
+  
 
   constructor() {}
 
@@ -30,5 +31,21 @@ export class StockRequestFormComponent {
   dummyRows(currentLength: number): number[] {
     const totalRows = 18;
     return Array(totalRows - currentLength).fill(0).map((_, i) => i);
+  }
+
+  onCommentsChange(value: string): void {
+    this.actionCommentsChange.emit(value);
+  }
+
+  onCloseModal(): void {
+    this.closeModal.emit();
+  }
+
+  onConfirmApproveRequest(): void {
+    this.confirmApproveRequest.emit();
+  }
+
+  onConfirmRejectRequest(): void {
+    this.confirmRejectRequest.emit();
   }
 }

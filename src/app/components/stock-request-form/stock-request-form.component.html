@@ -2,7 +2,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3>{{ selectedRequest ? 'Stock Request Form' : 'Purchase Request Form' }}</h3>
-        <button class="close-btn" (click)="closeModal()">✖</button>
+        <button class="close-btn" (click)="onCloseModal()">✖</button>
       </div>
       <div class="modal-body">
         <div class="form-container">
@@ -12,11 +12,11 @@
   
           <div class="form-section">
             ጥያቄውን ያቀረበው ህክምና አገልግሎት ቡድን
-            <br>መጠየቂያ ቁጥር: {{ selectedRequest?.requestNumber || selectedPurchase?.requestNumber || 'N/A' }}<br>
-            ለ: {{ selectedRequest?.roomName || selectedPurchase?.itemName || 'N/A' }}<br>
-            Requested from: {{ selectedRequest?.requestedByName || selectedPurchase?.requestedByName || 'N/A' }}<br>
-            Requested to: {{ selectedRequest?.roomName || 'N/A' }}<br>
-            ቀን: {{ (selectedRequest?.requestDate || selectedPurchase?.requestDate) | date:'mediumDate' }}
+            <br>መጠየቂያ ቁጥር: <span *ngIf="selectedRequest">{{ selectedRequest.requestNumber }}</span><span *ngIf="selectedPurchase">{{ selectedPurchase.requestNumber }}</span><span *ngIf="!selectedRequest && !selectedPurchase">N/A</span><br>
+            ለ: <span *ngIf="selectedRequest">{{ selectedRequest.roomName }}</span><span *ngIf="selectedPurchase">{{ selectedPurchase.itemName }}</span><span *ngIf="!selectedRequest && !selectedPurchase">N/A</span><br>
+            Requested from: <span *ngIf="selectedRequest">{{ selectedRequest.requestedByName }}</span><span *ngIf="selectedPurchase">{{ selectedPurchase.requestedByName }}</span><span *ngIf="!selectedRequest && !selectedPurchase">N/A</span><br>
+            Requested to: <span *ngIf="selectedRequest">{{ selectedRequest.roomName }}</span><span *ngIf="!selectedRequest">N/A</span><br>
+            ቀን: <span *ngIf="selectedRequest">{{ selectedRequest.requestDate | date:'mediumDate' }}</span><span *ngIf="selectedPurchase">{{ selectedPurchase.requestDate | date:'mediumDate' }}</span>
           </div>
   
           <table>
@@ -35,10 +35,10 @@
                 <tr *ngFor="let item of selectedRequestItems; let i = index">
                   <td>{{ i + 1 }}</td>
                   <td>{{ item.itemName }}</td>
-                  <td>{{ item.unit || 'N/A' }}</td>
-                  <td>{{ item.requestedQuantity || 0 }}</td>
-                  <td>{{ item.jobOrderNo || 'N/A' }}</td>
-                  <td>{{ selectedRequest.reasonForRequest || 'N/A' }}</td>
+                  <td><span *ngIf="item.unit">{{ item.unit }}</span><span *ngIf="!item.unit">N/A</span></td>
+                  <td>{{ item.requestedQuantity ? item.requestedQuantity : 0 }}</td>
+                  <td><span *ngIf="item.jobOrderNumber">{{ item.jobOrderNumber }}</span><span *ngIf="!item.jobOrderNumber">N/A</span></td>
+                  <td><span *ngIf="selectedRequest">{{ selectedRequest.reasonForRequest }}</span><span *ngIf="!selectedRequest">N/A</span></td>
                 </tr>
                 <!-- Fill remaining rows to ensure 18 rows -->
                 <tr *ngFor="let dummy of dummyRows(selectedRequestItems.length)">
@@ -54,10 +54,10 @@
                 <tr>
                   <td>1</td>
                   <td>{{ selectedPurchase.itemName }} ({{ selectedPurchase.itemCode }})</td>
-                  <td>{{ selectedPurchase.unit || 'N/A' }}</td>
+                  <td>pieces</td>
                   <td>{{ selectedPurchase.quantity }}</td>
-                  <td>{{ selectedPurchase.jobOrderNo || 'N/A' }}</td>
-                  <td>{{ selectedPurchase.comments || 'N/A' }}</td>
+                  <td>N/A</td>
+                  <td><span *ngIf="selectedPurchase && selectedPurchase.comments">{{ selectedPurchase.comments }}</span><span *ngIf="!selectedPurchase || !selectedPurchase.comments">N/A</span></td>
                 </tr>
                 <!-- Fill remaining rows to ensure 18 rows -->
                 <tr *ngFor="let dummy of dummyRows(1)">
@@ -73,23 +73,23 @@
           </table>
   
           <div class="signature">
-            <div>ጥያቄውን ያቀረበው: {{ selectedRequest?.requestedByName || selectedPurchase?.requestedByName || 'N/A' }} <span>ፊርማ: ____________________</span></div>
-            <div>ጥያቄውን ያጸደቀው ሃላፊ: {{ supervisorName || 'N/A' }} <span>ፊርማ: ____________________</span></div>
+            <div>ጥያቄውን ያቀረበው: <span *ngIf="selectedRequest">{{ selectedRequest.requestedByName }}</span><span *ngIf="selectedPurchase">{{ selectedPurchase.requestedByName }}</span><span *ngIf="!selectedRequest && !selectedPurchase">N/A</span> <span>ፊርማ: ____________________</span></div>
+            <div>ጥያቄውን ያጸደቀው ሃላፊ: <span *ngIf="supervisorName">{{ supervisorName }}</span><span *ngIf="!supervisorName">N/A</span> <span>ፊርማ: ____________________</span></div>
             <div *ngIf="showCommentsInput">
               <label for="actionComments">አስተያየት / Comments:</label>
-              <textarea id="actionComments" [(ngModel)]="actionComments" rows="4" style="width: 100%;"></textarea>
+              <textarea id="actionComments" [(ngModel)]="actionComments" (ngModelChange)="onCommentsChange($event)" rows="4" style="width: 100%;"></textarea>
             </div>
             <div>ፈቃጅ የስራ ሂደት: ____________________ <span>ፊርማ: ____________________</span></div>
           </div>
         </div>
       </div>
       <div class="modal-footer" *ngIf="selectedRequest && showCommentsInput">
-        <button class="action-btn approve" (click)="confirmApproveRequest()" [disabled]="isProcessing">Approve</button>
-        <button class="action-btn reject" (click)="confirmRejectRequest()" [disabled]="isProcessing">Reject</button>
-        <button class="action-btn cancel" (click)="closeModal()" [disabled]="isProcessing">Cancel</button>
+        <button class="action-btn approve" (click)="onConfirmApproveRequest()" [disabled]="isProcessing">Approve</button>
+        <button class="action-btn reject" (click)="onConfirmRejectRequest()" [disabled]="isProcessing">Reject</button>
+        <button class="action-btn cancel" (click)="onCloseModal()" [disabled]="isProcessing">Cancel</button>
       </div>
       <div class="modal-footer" *ngIf="selectedPurchase">
-        <button class="action-btn cancel" (click)="closeModal()">Close</button>
+        <button class="action-btn cancel" (click)="onCloseModal()">Close</button>
       </div>
     </div>
   </div>

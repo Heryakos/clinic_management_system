@@ -43,6 +43,7 @@ export class ItemReceivingComponent implements OnInit {
     this.loadPurchaseRequests();
     this.loadRecentlyReceived();
     this.validateBatchNumber();
+    this.setupExpiryDateMonitoring();
   }
 
   private getNextSequence(): number {
@@ -145,6 +146,55 @@ export class ItemReceivingComponent implements OnInit {
     const quantity = this.receivingForm.get('quantity')?.value || 0;
     const unitPrice = this.receivingForm.get('unitPrice')?.value || 0;
     return quantity * unitPrice;
+  }
+
+  // Add method to check if expiry date is too soon
+  checkExpiryDate(): void {
+    const expiryDate = this.receivingForm.get('expiryDate')?.value;
+    if (expiryDate) {
+      const today = new Date();
+      const expiry = new Date(expiryDate);
+      const daysUntilExpiry = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysUntilExpiry <= 90) {
+        // Show warning for items expiring within 90 days
+        const currentComments = this.receivingForm.get('qualityComments')?.value || '';
+        const warningText = `WARNING: Item expires in ${daysUntilExpiry} days`;
+        
+        if (!currentComments.includes(warningText)) {
+          this.receivingForm.patchValue({
+            qualityComments: currentComments ? `${currentComments}; ${warningText}` : warningText
+          });
+        }
+      }
+      
+      if (daysUntilExpiry <= 30) {
+        // Auto-fail quality check for items expiring within 30 days
+        this.receivingForm.patchValue({
+          qualityCheck: false
+        });
+      }
+    }
+  }
+
+  // Add method to set up expiry date monitoring
+  setupExpiryDateMonitoring(): void {
+    const expiryDateControl = this.receivingForm.get('expiryDate');
+    if (expiryDateControl) {
+      expiryDateControl.valueChanges.subscribe(() => {
+        this.checkExpiryDate();
+      });
+    }
+  }
+
+  // Method for template to get days until expiry
+  getDaysUntilExpiry(): number {
+    const expiryDate = this.receivingForm.get('expiryDate')?.value;
+    if (!expiryDate) return 999;
+    
+    const today = new Date();
+    const expiry = new Date(expiryDate);
+    return Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   }
 
   submitReceiving(): void {

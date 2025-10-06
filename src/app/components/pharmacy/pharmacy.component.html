@@ -2,9 +2,9 @@
   <h2>Prescription Management</h2>
 
   <!-- Notification Button -->
-  <div class="notification-btn-container">
+  <!-- <div class="notification-btn-container">
     <button type="button" class="notification-btn" (click)="openNotificationDialog()">Send Notification</button>
-  </div>
+  </div> -->
 
   <!-- Search Section -->
   <div class="search-container">
@@ -354,7 +354,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let prescription of prescriptions">
+            <tr *ngFor="let prescription of prescriptions" (click)="onPrescriptionRowClick(prescription)">
               <td>{{ prescription.CardNumber }}</td>
               <td>{{ prescription.FullName }}</td>
               <td>{{ prescription.PrescriptionDate | date:'short' }}</td>
@@ -362,8 +362,8 @@
               <td>{{ prescription.PrescriberName }}</td>
               <td>{{ prescription.PharmacistName || 'N/A' }}</td>
               <td>
-                <button type="button" class="action-btn view" (click)="viewPrescriptionDetails(prescription.prescriptionID)">View</button>
-                <button type="button" class="action-btn dispense" (click)="dispensePrescription(prescription.prescriptionID)" *ngIf="prescription.Status === 'Active'">Dispense</button>
+                <button type="button" class="action-btn view" (click)="viewPrescriptionDetails(prescription.prescriptionID, $event)">View</button>
+                <button type="button" class="action-btn dispense" (click)="dispensePrescription(prescription.prescriptionID, $event)" *ngIf="prescription.Status === 'Active'">Dispense</button>
               </td>
             </tr>
           </tbody>

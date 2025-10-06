@@ -1,0 +1,125 @@
+<div class="notification-bell-container">
+  <!-- Notification Bell Icon -->
+  <div class="notification-bell" 
+       (click)="toggleNotificationPanel()" 
+       [@bellShake]="bellState"
+       [class.has-notifications]="unreadCount > 0">
+    
+    <!-- Bell Icon -->
+    <svg class="bell-icon" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+    </svg>
+    
+    <!-- Unread Count Badge -->
+    <div class="unread-badge" *ngIf="unreadCount > 0">
+      {{ unreadCount > 99 ? '99+' : unreadCount }}
+    </div>
+    
+    <!-- Loading Indicator -->
+    <div class="loading-indicator" *ngIf="isLoading">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <!-- Notification Panel -->
+  <div class="notification-panel" 
+       #notificationPanel
+       [@slideDown]="isOpen ? 'open' : 'closed'"
+       *ngIf="isOpen">
+    
+    <!-- Panel Header -->
+    <div class="panel-header">
+      <div class="header-left">
+        <h3>Notifications</h3>
+        <span class="notification-count" *ngIf="unreadCount > 0">
+          {{ unreadCount }} unread
+        </span>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="action-btn refresh-btn" 
+                (click)="refreshNotifications()" 
+                [disabled]="isLoading"
+                title="Refresh">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+          </svg>
+        </button>
+        <button type="button" class="action-btn mark-all-btn" 
+                (click)="markAllAsRead()" 
+                *ngIf="unreadCount > 0"
+                title="Mark all as read">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+          </svg>
+        </button>
+        <button type="button" class="action-btn compose-btn" 
+                (click)="openComposeDialog()"
+                title="Send notification">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Notifications List -->
+    <div class="notifications-list">
+      <div class="loading-state" *ngIf="isLoading && notifications.length === 0">
+        <div class="spinner large"></div>
+        <p>Loading notifications...</p>
+      </div>
+
+      <div class="empty-state" *ngIf="!isLoading && notifications.length === 0">
+        <svg class="empty-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+        </svg>
+        <p>No notifications yet</p>
+        <small>You'll see notifications here when you receive them</small>
+      </div>
+
+      <div class="notification-item" 
+           *ngFor="let notification of notifications.slice(0, 10); trackBy: trackByNotificationId"
+           [class.unread]="!notification.isRead"
+           [class.urgent]="notification.priority === 'Urgent'"
+           (click)="markAsRead(notification.notificationID, $event)">
+        
+        <div class="notification-content">
+          <div class="notification-header">
+            <div class="sender-info">
+              <span class="sender-name" *ngIf="notification.senderName">
+                {{ notification.senderName }}
+              </span>
+              <span class="priority-badge" 
+                    [class]="getPriorityClass(notification.priority)"
+                    *ngIf="notification.priority === 'Urgent'">
+                {{ notification.priority }}
+              </span>
+            </div>
+            <div class="timestamp">
+              {{ getTimeAgo(notification.timestamp) }}
+            </div>
+          </div>
+          
+          <div class="notification-message">
+            {{ notification.message }}
+          </div>
+          
+          <div class="notification-image" *ngIf="notification.imageData">
+            <img [src]="notification.imageData" 
+                 alt="Notification attachment"
+                 (click)="$event.stopPropagation()">
+          </div>
+        </div>
+        
+        <div class="unread-indicator" *ngIf="!notification.isRead"></div>
+      </div>
+
+      <!-- View All Link -->
+      <div class="view-all-container" *ngIf="notifications.length > 10">
+        <button type="button" class="view-all-btn" routerLink="/notifications">
+          View all {{ notifications.length }} notifications
+        </button>
+      </div>
+    </div>
+  </div>
+</div> 

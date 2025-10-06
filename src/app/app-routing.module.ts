@@ -42,13 +42,13 @@ export const routes: Routes = [
     path: 'supervisor-medical-requests',
     component: SupervisorMedicalRequestsComponent,
     canActivate: [RoleGuard],
-    data: { expectedRole: '46dc8001-85ca-4e4f-921b-91d145f607a8' },
+    data: { expectedRole: '96C1AB25-D15C-42CF-92FF-9F041AE6AE10' },
   },
   {
     path: 'supervisor-dashboard',
     component: SupervisorDashboardComponent,
     canActivate: [RoleGuard],
-    data: { expectedRole: 'd14cdfed-4011-4086-b9c6-3ac6da444ff8' },
+    data: { expectedRole: '05cdc20a-24c4-4ead-aaa5-b913b7d5c1e7' },
   },
   {
     path: 'medical-request',

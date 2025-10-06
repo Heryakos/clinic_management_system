@@ -5,6 +5,7 @@ import { Observable, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { ClinicSickLeave,MedicalRequestView,ApprovalRequest} from '../../models/medical.model';
 import { ASSETS } from '../../assets.config';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-clinic-form',
@@ -13,7 +14,7 @@ import { ASSETS } from '../../assets.config';
 })
 export class ClinicFormComponent implements OnInit, OnChanges {
   logoPath = ASSETS.LOGO;
-
+  supervisorName: string = '';
   clinicName: string = 'በፌዴራል ቤቶች ኮርፖሬሽን';
   formTitle: string = 'ለህክምና ወደ ክሊኒክ ለመሄድ ፈቃድ መጠየቂያ ቅጽ';
   
@@ -44,6 +45,31 @@ export class ClinicFormComponent implements OnInit, OnChanges {
     if (this.employeeCode) {
       this.loadSickLeaveData(this.employeeCode);
     }
+    this.loadSupervisorName();
+  }
+
+  loadSupervisorName(): void {
+    this.medicalService.getEmployeeById(environment.username).subscribe(
+      (response: any) => {
+        console.log('Supervisor response', response);
+        
+        const employee = response?.c_Employees?.[0];
+        if (employee) {
+          // Combine fName and mName for supervisor name
+          this.supervisorName = `${employee.fName || ''} ${employee.mName || ''}`.trim();
+          
+          // Update the form with the supervisor name
+          this.sickLeaveForm.patchValue({
+            UserName: this.supervisorName
+          });
+        }
+        console.log('Supervisor Name:', this.supervisorName);
+      },
+      error => {
+        console.error('Error loading supervisor data:', error);
+        this.supervisorName = '';
+      }
+    );
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -102,14 +128,15 @@ export class ClinicFormComponent implements OnInit, OnChanges {
   
         const formData = {
           EmployeeID: data.EmployeeID || '', // Match form control name exactly
-          FullName: data.FirstName && data.LastName ? `${data.FirstName} ${data.LastName}` : '',
+          // FullName: data.FirstName && data.LastName ? `${data.FirstName} ${data.LastName}` : '',
+          FullName: this.getEmployeeFullName(data),
           department_name: data.department_name || '',
           RequestDate: data.RequestDate ? new Date(data.RequestDate).toLocaleString('en-US') : '',
           StartDate: formatDate(data.StartDate), // Use consistent date formatting
           EndDate: formatDate(data.EndDate), // Use consistent date formatting
           TotalDays: data.TotalDays ?? null, // Use nullish coalescing to handle undefined
           DoctorName: data.DoctorName || '', // Match API field name exactly
-          UserName: data.UserName || ''
+          // UserName: data.UserName || ''
         };
   
         console.log('Form Data to Patch:', formData);
@@ -126,7 +153,36 @@ export class ClinicFormComponent implements OnInit, OnChanges {
       }
     );
   }
+  private getEmployeeFullName(data: any): string {
+    // For employee name, use FirstName + LastName from sick leave data
+    if (data.FirstName && data.LastName) {
+      return `${data.FirstName} ${data.LastName}`;
+    } else if (data.fName && data.lName) {
+      return `${data.fName} ${data.lName}`;
+    } else if (data.en_name) {
+      return data.en_name;
+    } else if (data.fullName) {
+      return data.fullName;
+    }
+    return '';
+  }
 
+  private calculateTotalDays(startDate: any, endDate: any): number {
+    if (!startDate || !endDate) return 0;
+    
+    try {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0;
+      
+      const timeDiff = end.getTime() - start.getTime();
+      const dayDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
+      return dayDiff > 0 ? dayDiff : 0;
+    } catch {
+      return 0;
+    }
+  }
   onPrintForm(): void {
     window.print();
   }

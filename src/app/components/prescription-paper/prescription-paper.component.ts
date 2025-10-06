@@ -16,6 +16,7 @@ export class PrescriptionPaperComponent implements OnInit {
   @Input() cardNumber?: string;
   logoPath = ASSETS.LOGO;
   prescriptionForm!: FormGroup;
+  medications: any[] = [];
   isLoading: boolean = false;
   errorMessage: string | null = null;
   isEditing: boolean = false;
@@ -46,8 +47,6 @@ export class PrescriptionPaperComponent implements OnInit {
       houseNo: [{ value: '', disabled: false }],
       phone: [{ value: '', disabled: false }, Validators.pattern('^[0-9+\\- ]*$')],
       MedicalHistory: [{ value: '', disabled: true }, Validators.required],
-      MedicationDetails: [{ value: '', disabled: true }, Validators.required],
-      MedicationName: [{ value: '', disabled: true }],
       PrescriberName: [{ value: '', disabled: true }, Validators.required],
       Status: [{ value: '', disabled: true }],
       PharmacistName: [{ value: '', disabled: true }],
@@ -93,46 +92,79 @@ export class PrescriptionPaperComponent implements OnInit {
   }
 
   private processPrescriptionResponse(response: any): void {
-    let data: any;
-
-    // Handle different response structures
-    if (Array.isArray(response)) {
-      // If response is an array, find matching prescription or use first
-      data = response.find(p => p.prescriptionID === this.data.prescription?.prescriptionID) || response[0] || {};
-    } else if (response?.data) {
-      data = response.data;
-    } else {
-      // Assume single object response (e.g., from getPrescriptionspayrollID)
-      data = response || {};
+    let prescriptions = Array.isArray(response) ? response : [response];
+    
+    // If prescriptionID is provided, filter by it only when the response includes IDs
+    if (this.data.prescription?.prescriptionID) {
+      const responseHasIds = prescriptions.some(p => 'prescriptionID' in p || 'PrescriptionID' in p);
+      if (responseHasIds) {
+        const targetId = this.data.prescription.prescriptionID;
+        const filteredById = prescriptions.filter(p => p.prescriptionID === targetId || p.PrescriptionID === targetId);
+        // Only replace if we actually matched something; otherwise keep original
+        if (filteredById.length > 0) {
+          prescriptions = filteredById;
+        }
+      }
     }
 
-    console.log('Processed prescription data:', data);
+    // If specific medication selection is provided (from Pharmacy flow), filter to only those medications
+    if (this.data.medicationDetails && typeof this.data.medicationDetails === 'string') {
+      const selectedNames = new Set(
+        this.data.medicationDetails
+          .split(',')
+          .map(entry => entry.trim())
+          .filter(entry => entry.length > 0)
+          .map(entry => (entry.includes(' - ') ? entry.split(' - ')[0]?.trim() : entry))
+      );
+      if (selectedNames.size > 0) {
+        const filteredByMed = prescriptions.filter(p => {
+          const medName = (p.MedicationName || p.medicationName || '').toString().trim();
+          return medName && selectedNames.has(medName);
+        });
+        // Fallback if nothing matched due to formatting differences
+        if (filteredByMed.length > 0) {
+          prescriptions = filteredByMed;
+        }
+      }
+    }
 
-    // Normalize field names and ensure all fields are mapped
-    const formData = {
-      FullName: data.FullName || data.fullName || '',
-      gender: data.gender || data.Gender || '',
-      age: data.age || data.Age || null,
-      Weight: data.Weight || data.weight || null,
-      CardNumber: data.CardNumber || data.cardNumber || '',
-      woreda: data.woreda || data.Woreda || '',
-      houseNo: data.houseNo || data.HouseNo || '',
-      phone: data.phone || data.Phone || '',
-      MedicalHistory: data.MedicalHistory || data.medicalHistory || '',
-      MedicationDetails: this.data.medicationDetails || data.MedicationDetails || data.medicationDetails || '',
-      MedicationName: data.MedicationName || data.medicationName || '',
-      PrescriberName: data.PrescriberName || data.prescriberName || '',
-      Status: data.Status || data.status || '',
-      PharmacistName: data.PharmacistName || data.pharmacistName || '',
-      PrescriptionDate: data.PrescriptionDate ? new Date(data.PrescriptionDate).toISOString().split('T')[0] : '',
-      TotalAmount: data.TotalAmount || data.totalAmount || null
-    };
+    // Final fallback: if we somehow filtered everything out, show the original response
+    if ((!prescriptions || prescriptions.length === 0) && response) {
+      prescriptions = Array.isArray(response) ? response : [response];
+    }
 
-    console.log('Form data to patch:', formData);
+    this.medications = prescriptions;
 
-    this.prescriptionForm.patchValue(formData);
+    if (this.medications.length > 0) {
+      const common = this.medications[0];
+      
+      // Normalize field names
+      const formData = {
+        FullName: common.FullName || common.fullName || '',
+        gender: common.gender || common.Gender || '',
+        age: common.age || common.Age || null,
+        Weight: common.Weight || common.weight || null,
+        CardNumber: common.CardNumber || common.cardNumber || '',
+        woreda: common.woreda || common.Woreda || '',
+        houseNo: common.houseNo || common.HouseNo || '',
+        phone: common.phone || common.Phone || '',
+        MedicalHistory: common.MedicalHistory || common.medicalHistory || '',
+        PrescriberName: common.PrescriberName || common.prescriberName || '',
+        Status: common.Status || common.status || '',
+        PharmacistName: common.PharmacistName || common.pharmacistName || '',
+        PrescriptionDate: common.PrescriptionDate ? new Date(common.PrescriptionDate).toISOString().split('T')[0] : '',
+        TotalAmount: common.TotalAmount || common.totalAmount || this.calculateTotal()
+      };
+
+      this.prescriptionForm.patchValue(formData);
+    }
+
     this.isLoading = false;
     this.cdr.detectChanges();
+  }
+
+  private calculateTotal(): number {
+    return this.medications.reduce((sum, med) => sum + (med.unitPrice * med.quantity || 0), 0);
   }
 
   toggleEditMode(): void {
@@ -191,7 +223,6 @@ export class PrescriptionPaperComponent implements OnInit {
   exportToPDF(): void {
     const doc = new jsPDF();
     const formValue = this.prescriptionForm.getRawValue();
-    const medicationDisplay = `${formValue.MedicationName ? formValue.MedicationName + ', ' : ''}${formValue.MedicationDetails || ''}`;
 
        // Add Amiri font to VFS
       //  doc.addFileToVFS('Amiri-Regular.ttf', AMIRI_FONT_BASE64);
@@ -220,15 +251,24 @@ export class PrescriptionPaperComponent implements OnInit {
     doc.text(`Diagnosis: ${formValue.MedicalHistory || ''}`, 20, y + 40);
 
     y += 50;
+
+    let tableBody: string[][] = this.medications.map(med => [
+      '',
+      `${med.MedicationName ? med.MedicationName + ', ' : ''}${med.MedicationDetails || ''}`,
+      ''  // price if available
+    ]);
+
+    // Add empty rows to make at least 3
+    while (tableBody.length < 3) {
+      tableBody.push(['', '', '']);
+    }
+
+    tableBody.push(['Total price', '', formValue.TotalAmount?.toString() || '']);
+
     autoTable(doc, {
       startY: y,
       head: [['Rx', 'Medicine name, Strength, Dosage form, Dose, Frequency, Duration, Quality, How to use and other information', 'Price']],
-      body: [
-        ['', medicationDisplay, formValue.TotalAmount || ''],
-        ['', '', ''],
-        ['', '', ''],
-        ['Total price', '', formValue.TotalAmount || '']
-      ],
+      body: tableBody,
       theme: 'grid',
       styles: { fontSize: 8, font: 'Amiri' },
       headStyles: { fillColor: [200, 200, 200] },

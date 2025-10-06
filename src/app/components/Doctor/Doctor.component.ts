@@ -9,6 +9,7 @@ import { testCategories } from 'src/app/models/laboratory-test-categories';
 import { Medication, DosageForm, MedicationCategory, MedicationSelection } from '../medication-tree-dropdown/medication-tree-dropdown.component'; // Adjust the import path as needed
 import { NotificationDialogComponent } from '../notification-dialog/notification-dialog.component';
 import { PrescriptionPaperComponent } from '../prescription-paper/prescription-paper.component';
+import { InjectionPaperComponent } from '../injection-paper/injection-paper.component'; // Adjust path
 
 @Component({
     selector: 'app-doctor',
@@ -85,7 +86,6 @@ export class DoctorComponent implements OnInit {
         this.loadRooms();
         this.loadUserData();
         this.loadActivePatients();
-        this.loadPrescriptions();
     }
     // Helper method to show snackbar messages
     private showSnackBar(message: string, action: string = 'Close', duration: number = 3000, panelClass: string = 'info-snackbar'): void {
@@ -105,6 +105,14 @@ export class DoctorComponent implements OnInit {
     selectTab(tab: string): void {
         console.log('Selected tab:', tab, 'patientID:', this.patient?.cardNumber, 'createdBy:', this.createdBy);
         this.selectedTab = tab;
+        if (tab === 'prescriptions') {
+            if (this.patient?.CardNumber) {
+                this.loadPatientPrescriptions(this.patient.CardNumber);
+            } else {
+                this.prescriptions = [];
+            }
+        }
+        this.cdr.detectChanges();
     }
 
     loadUserData(): void {
@@ -153,30 +161,66 @@ export class DoctorComponent implements OnInit {
             }
         );
     }
+    // loadPrescriptions(): void {
+    //     this.medicalService.getPrescriptions().subscribe(
+    //         (prescriptions: any[]) => {
+    //             this.prescriptions = prescriptions.map(p => ({
+    //                 ...p,
+    //                 CardNumber: p.CardNumber || p.cardNumber || 'N/A',
+    //                 FullName: p.patientName || `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Unknown',
+    //                 PrescriptionDate: p.prescriptionDate || p.PrescriptionDate,
+    //                 Status: p.status || p.Status || 'Unknown',
+    //                 PrescriberName: p.prescriberName || p.PrescriberName || 'N/A',
+    //                 PharmacistName: p.pharmacistName || p.PharmacistName || 'N/A',
+    //                 prescriptionID: p.prescriptionID || p.PrescriptionID || `temp-${Date.now()}`
+    //             }));
+    //             this.prescriptions.sort((a, b) =>
+    //                 new Date(b.PrescriptionDate || 0).getTime() - new Date(a.PrescriptionDate || 0).getTime()
+    //             );
+    //             this.cdr.detectChanges();
+    //         },
+    //         error => {
+    //             console.error('Error loading prescriptions:', error);
+    //             this.prescriptions = [];
+    //             this.showSnackBar('Error loading prescriptions.', 'Close', 5000, 'error-snackbar');
+    //         }
+    //     );
+    // }
     loadPrescriptions(): void {
-        this.medicalService.getPrescriptions().subscribe(
-            (prescriptions: any[]) => {
-                this.prescriptions = prescriptions.map(p => ({
+        this.medicalService.getPrescriptions().subscribe({
+            next: (prescriptions: any[]) => {
+                // Ensure all prescriptions are included, regardless of status
+                this.prescriptions = (prescriptions || []).map(p => ({
                     ...p,
                     CardNumber: p.CardNumber || p.cardNumber || 'N/A',
                     FullName: p.patientName || `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Unknown',
-                    PrescriptionDate: p.prescriptionDate || p.PrescriptionDate,
+                    PrescriptionDate: p.prescriptionDate || p.PrescriptionDate || null,
                     Status: p.status || p.Status || 'Unknown',
                     PrescriberName: p.prescriberName || p.PrescriberName || 'N/A',
                     PharmacistName: p.pharmacistName || p.PharmacistName || 'N/A',
                     prescriptionID: p.prescriptionID || p.PrescriptionID || `temp-${Date.now()}`
                 }));
-                this.prescriptions.sort((a, b) =>
-                    new Date(b.PrescriptionDate || 0).getTime() - new Date(a.PrescriptionDate || 0).getTime()
-                );
-                this.cdr.detectChanges();
+
+                // Sort prescriptions by date (newest first), handling null dates
+                this.prescriptions.sort((a, b) => {
+                    const dateA = a.PrescriptionDate ? new Date(a.PrescriptionDate).getTime() : 0;
+                    const dateB = b.PrescriptionDate ? new Date(b.PrescriptionDate).getTime() : 0;
+                    return dateB - dateA;
+                });
+
+                console.log('Loaded prescriptions (including Dispensed):', this.prescriptions);
+                this.cdr.detectChanges(); // Trigger UI update
             },
-            error => {
+            error: (error) => {
                 console.error('Error loading prescriptions:', error);
                 this.prescriptions = [];
                 this.showSnackBar('Error loading prescriptions.', 'Close', 5000, 'error-snackbar');
+                this.cdr.detectChanges();
+            },
+            complete: () => {
+                console.log('Prescription loading completed');
             }
-        );
+        });
     }
     // New method to categorize medications
     private categorizeMedications(medications: any[]): MedicationCategory[] {
@@ -271,14 +315,13 @@ export class DoctorComponent implements OnInit {
                     Photo: patient.Photo,
                     RequestType: patient.RequestType,
                     RequestNumber: patient.RequestNumber,
-                    RoomType: patient.RoomType,
+                    RoleName: patient.RoleName,
                     RoomNumber: patient.RoomNumber,
                     StaffUserID: patient.StaffUserID,
                     IsActive: patient.IS_Active
                 }));
                 const examOnly = all.filter(p => {
-                    const room = (p as any).RoomType || (p as any).RoomName;
-                    return room === 'Examination(OPD-1)' || room === 'Examination(OPD-2)' || room === 'Examination(OPD-3)';
+                    return p.RoleName === 'Examination(OPD-1)' || p.RoleName === 'Examination(OPD-2)' || p.RoleName === 'Examination(OPD-3)';
                 });
                 this.activePatients = examOnly.length > 0 ? examOnly : all;
                 this.isSearching = false;
@@ -291,23 +334,13 @@ export class DoctorComponent implements OnInit {
             }
         );
     }
-    // loadPatientAssignments(): void {
-    //     if (this.patient) {
-    //         this.medicalService.getPatientAssignments().subscribe(
-    //             (assignments: any[]) => {
-    //                 this.patientAssignments = assignments.filter(a => a.patientID === this.patient.patientID);
-    //             },
-    //             error => {
-    //                 console.error('Error loading patient assignments:', error);
-    //                 this.patientAssignments = [];
-    //             }
-    //         );
-    //     }
-    // }
+
     onPatientRowClick(patient: PatientSummary): void {
+        this.resetPatientData(); // Clear old data immediately
         this.isSearchMode = false;
         this.searched = true;
         this.cardNumber = patient.CardNumber;
+        console.log('Patient clicked:', patient.CardNumber, patient.FullName);
 
         // Instead of using the limited data from the active patients list,
         // let's fetch the complete patient data using the card number
@@ -330,7 +363,12 @@ export class DoctorComponent implements OnInit {
                             this.loadPatientLaboratory(Number(fullPatientData.PatientID));
                             this.loadPatientPrescriptions(fullPatientData.CardNumber);
                             this.loadPatientInjections(fullPatientData.PatientID);
+                            // If Pharmacy tab is active, reload prescriptions for this specific patient
+                            if (this.selectedTab === 'prescriptions') {
+                                this.loadPatientPrescriptions(fullPatientData.CardNumber);
+                            }
                         },
+
                         error => {
                             this.medicalHistories = [];
                             // this.showSnackBar(`Error fetching medical history: ${error.message}`, 'Close', 5000, 'error-snackbar');
@@ -350,30 +388,7 @@ export class DoctorComponent implements OnInit {
         );
     }
 
-    // onPatientRowClick(patient: PatientSummary): void {
-    //     this.isSearchMode = false;
-    //     this.searched = true;
-    //     this.patient = patient;
-    //     this.cardNumber = patient.CardNumber;
-    //     this.editForm.patchValue({
-    //       ...patient,
-    //     //   RegistrationDate: this.formatDate(patient.RegistrationDate)
-    //     RegistrationDate: patient.RegistrationDate ? this.formatDate(patient.RegistrationDate.toISOString()) : ''
 
-    //     });
-    //     this.loadPatientLaboratory(Number(patient.PatientID));
-    //     this.loadPatientPrescriptions(patient.CardNumber);
-    //     this.loadPatientInjections(patient.PatientID);
-    //     this.medicalService.getPatientByCardNumberHistory(patient.CardNumber).subscribe(
-    //       (historyResponse: PatientMedicalHistory[]) => {
-    //         this.medicalHistories = Array.isArray(historyResponse) ? historyResponse : [];
-    //       },
-    //       error => {
-    //         this.medicalHistories = [];
-    //         this.showSnackBar(`Error fetching medical наверhistory: ${error.message}`, 'Close', 5000, 'error-snackbar');
-    //       }
-    //     );
-    //   }
     initializeSearchForm(): void {
         this.searchForm = this.fb.group({
             // patientID: ['', [Validators.required, Validators.pattern('^[0-9]+$')]]
@@ -481,44 +496,6 @@ export class DoctorComponent implements OnInit {
             doctorID: ['', Validators.required]
         });
     }
-
-    // onAssignmentSubmit(): void {
-    //     if (this.assignmentForm.valid && this.patient) {
-    //         this.isAssigning = true;
-
-    //         const assignment = {
-    //             cardID: this.patient.patientID,
-    //             assignedRoom: this.assignmentForm.value.assignedRoom,
-    //             doctorID: this.assignmentForm.value.doctorID,
-    //             assignedBy: this.createdBy
-    //         };
-
-    //         this.medicalService.assignPatient(assignment).subscribe(
-    //             () => {
-    //                 this.isAssigning = false;
-    //                 this.assignmentForm.reset();
-    //                 this.loadPatientAssignments();
-    //                 alert('Patient assigned to room successfully!');
-    //             },
-    //             error => {
-    //                 this.isAssigning = false;
-    //                 alert('Error assigning patient to room. Please try again.');
-    //             }
-    //         );
-    //     }
-    // }
-
-    // updateAssignmentStatus(assignmentId: number, status: string): void {
-    //     this.medicalService.updateAssignmentStatus(assignmentId, status).subscribe(
-    //         () => {
-    //             this.loadPatientAssignments();
-    //             alert('Assignment status updated successfully!');
-    //         },
-    //         error => {
-    //             alert('Error updating assignment status. Please try again.');
-    //         }
-    //     );
-    // }
 
     getRoomName(roomId: number): string {
         const room = this.rooms.find(r => r.roomID === roomId);
@@ -635,35 +612,8 @@ export class DoctorComponent implements OnInit {
         }
     }
 
-    // onSearch(): void {
-    //     if (this.searchForm.valid) {
-    //         const cardNumber = this.searchForm.value.patientID;
-    //         this.isSearching = true;
-    //         this.medicalService.getPatient(cardNumber).subscribe(
-    //             (response: any) => {
-    //                 const patient = Array.isArray(response) ? response[0] : response;
-    //                 if (patient && patient.patientID) {
-    //                     this.patient = patient;
-    //                     this.editForm.patchValue(patient);
-    //                     this.loadPatientLaboratory();
-    //                     this.loadPatientPrescriptions(patient.cardNumber);
-    //                     this.loadPatientInjections(patient.patientID);
-    //                     this.loadPatientAssignments(); // Load patient assignments after patient is found
-    //                 } else {
-    //                     this.resetPatientData();
-    //                     // alert('No patient found with this card number.');
-    //                 }
-    //                 this.isSearching = false;
-    //             },
-    //             error => {
-    //                 this.resetPatientData();
-    //                 this.isSearching = false;
-    //                 // alert(`No record found or error occurred: ${error.error?.message || error.message}`);
-    //             }
-    //         );
-    //     }
-    // }
     onSearch(): void {
+        this.resetPatientData(); // Clear old data immediately
         if (this.searchForm.valid) {
             this.isSearching = true;
 
@@ -676,7 +626,7 @@ export class DoctorComponent implements OnInit {
                     if (
                         patient &&
                         patient.PatientID &&
-                        (patient.RoomName === 'Examination(OPD-1)' || patient.RoomName === 'Examination(OPD-2)' || patient.RoomName === 'Examination(OPD-3)')
+                        (patient.RoleName === 'Examination(OPD-1)' || patient.RoleName === 'Examination(OPD-2)' || patient.RoleName === 'Examination(OPD-3)')
                         // patient.RoomName === 'doctor'
 
                     ) {
@@ -697,6 +647,10 @@ export class DoctorComponent implements OnInit {
                                 this.loadPatientLaboratory(Number(patient.PatientID));
                                 this.loadPatientPrescriptions(patient.CardNumber);
                                 this.loadPatientInjections(patient.PatientID);
+                                // If Pharmacy tab is active, also load all prescriptions
+                                if (this.selectedTab === 'prescriptions') {
+                                    this.loadPrescriptions();
+                                }
                             },
                             error => {
                                 this.medicalHistories = [];
@@ -722,9 +676,11 @@ export class DoctorComponent implements OnInit {
         this.patient = null;
         this.editForm.reset();
         this.laboratoryTests = [];
-        this.prescriptions = [];
+        this.prescriptions = []; // Clear prescriptions array
         this.injections = [];
         this.patientAssignments = []; // Reset patient assignments
+        this.medicalHistories = []; // Clear medical histories
+        console.log('Patient data reset - prescriptions cleared');
     }
 
     loadPatientLaboratory(patientId: number): void {
@@ -740,16 +696,45 @@ export class DoctorComponent implements OnInit {
     }
 
     loadPatientPrescriptions(cardNumber: string): void {
-        console.log('cardNumber:', cardNumber);
-        this.medicalService.getPrescriptionspayrollID(cardNumber).subscribe(
-            prescriptions => {
-                this.prescriptions = prescriptions;
+        console.log('Loading prescriptions for cardNumber:', cardNumber);
+        this.prescriptions = [];
+
+        this.medicalService.getPrescriptions().subscribe({
+            next: (all: any[]) => {
+                const list = Array.isArray(all) ? all : [];
+                console.log('All prescriptions before filtering:', list);
+                
+                // Filter strictly by cardNumber - check both possible field names
+                const filteredPrescriptions = list.filter(p => {
+                    const prescriptionCardNumber = p.CardNumber || p.cardNumber;
+                    console.log(`Checking prescription ${p.prescriptionID}: cardNumber=${prescriptionCardNumber}, target=${cardNumber}, match=${prescriptionCardNumber === cardNumber}`);
+                    return prescriptionCardNumber === cardNumber;
+                });
+                
+                console.log('Filtered prescriptions for', cardNumber, ':', filteredPrescriptions);
+                
+                // Map the filtered results
+                this.prescriptions = filteredPrescriptions.map(p => ({
+                    prescriptionID: p.prescriptionID || p.PrescriptionID,
+                    prescriptionNumber: p.prescriptionNumber || p.PrescriptionNumber,
+                    prescriptionDate: p.prescriptionDate || p.PrescriptionDate,
+                    totalAmount: p.totalAmount ?? p.TotalAmount ?? 0,
+                    status: p.status || p.Status,
+                    prescriberName: p.prescriberName || p.PrescriberName,
+                    pharmacistName: p.pharmacistName || p.PharmacistName,
+                    CardNumber: p.CardNumber || p.cardNumber
+                }));
+
+                console.log('Final prescriptions array:', this.prescriptions);
+                this.cdr.detectChanges();
             },
-            error => {
+            error: (error) => {
+                console.error('Error loading prescriptions from /prescriptions:', error);
                 this.prescriptions = [];
-                this.showSnackBar(`Error loading prescriptions: ${error.message}`, 'Close', 5000, 'error-snackbar');
+                this.showSnackBar('Error loading prescriptions.', 'Close', 5000, 'error-snackbar');
+                this.cdr.detectChanges();
             }
-        );
+        });
     }
 
     loadPatientInjections(patientID: number): void {
@@ -798,69 +783,33 @@ export class DoctorComponent implements OnInit {
         this.selectedTestData = null;
     }
 
-    // viewPrescriptionDetails(prescriptionID: number): void {
-    //     if (!prescriptionID) {
-    //         alert('Invalid prescription ID.');
-    //         return;
-    //     }
-    //     this.selectedPrescriptionNumber = '';
-    //     this.selectedPrescriptionDetails = [];
-    //     const prescription = this.prescriptions.find(p => p.prescriptionID === prescriptionID);
-    //     if (prescription) {
-    //         this.selectedPrescriptionNumber = prescription.prescriptionNumber;
-    //     }
-    //     // Try to get details from map, otherwise fetch
-    //     const cached = this.prescriptionDetailsMap[prescriptionID];
-    //     if (cached && Array.isArray(cached)) {
-    //         this.selectedPrescriptionDetails = cached;
-    //         this.showPrescriptionDetailsDialog = true;
-    //     } else {
-    //         this.medicalService.getPrescriptionIDDetails(Number(prescriptionID)).subscribe(
-    //             (details: any[]) => {
-    //                 this.selectedPrescriptionDetails = details || [];
-    //                 this.prescriptionDetailsMap[prescriptionID] = details;
-    //                 this.showPrescriptionDetailsDialog = true;
-    //             },
-    //             error => {
-    //                 this.selectedPrescriptionDetails = [];
-    //                 this.showPrescriptionDetailsDialog = true;
-    //             }
-    //         );
-    //     }
-    // }
-
-    // closePrescriptionDetailsDialog(): void {
-    //     this.showPrescriptionDetailsDialog = false;
-    //     this.selectedPrescriptionDetails = [];
-    //     this.selectedPrescriptionNumber = '';
-    // }
     viewPrescriptionDetails(prescriptionID: number | string): void {
         console.log('viewPrescriptionDetails called for prescriptionID:', prescriptionID);
         if (!prescriptionID) {
-          this.showSnackBar('Invalid prescription ID.', 'Close', 5000, 'error-snackbar');
-          return;
+            this.showSnackBar('Invalid prescription ID.', 'Close', 5000, 'error-snackbar');
+            return;
         }
-    
+
         const prescription = this.prescriptions.find(p => p.prescriptionID === prescriptionID);
         if (!prescription) {
-          this.showSnackBar('Prescription not found.', 'Close', 5000, 'error-snackbar');
-          return;
+            this.showSnackBar('Prescription not found.', 'Close', 5000, 'error-snackbar');
+            return;
         }
-    
+
         // Open as a dialog, passing cardNumber as data
         const dialogRef = this.dialog.open(PrescriptionPaperComponent, {
-          width: '800px',  // Adjust as needed
-          height: 'auto',
-          maxHeight: '90vh',
-          data: { cardNumber: prescription.CardNumber || this.cardNumber }  // Pass cardNumber via data
+            width: '800px',  // Adjust as needed
+            height: 'auto',
+            maxHeight: '90vh',
+            data: { cardNumber: prescription.CardNumber || this.cardNumber }  // Pass cardNumber via data
         });
-    
+
         // Optional: Handle dialog close
         dialogRef.afterClosed().subscribe(result => {
-          console.log('Prescription dialog closed', result);
-          // Handle any result if needed (e.g., refresh data)
+            console.log('Prescription dialog closed', result);
+            // Handle any result if needed (e.g., refresh data)
         });
-      }
+    }
 
     closePrescriptionDetailsDialog(): void {
         this.showPrescriptionDetailsDialog = false;
@@ -868,7 +817,17 @@ export class DoctorComponent implements OnInit {
         this.cdr.detectChanges();
     }
     viewInjectionDetails(injectionID: number): void {
-        this.showSnackBar(`Viewing details for Injection ID: ${injectionID}`, 'Close', 3000, 'info-snackbar');
+        const dialogRef = this.dialog.open(InjectionPaperComponent, {
+            width: '800px',
+            height: 'auto',
+            maxHeight: '90vh',
+            data: { injectionID: injectionID, dialogTitle: 'Injection Details' }
+        });
+
+        dialogRef.afterClosed().subscribe(result => {
+            console.log('Injection dialog closed', result);
+            // Refresh if needed
+        });
     }
 
     onEditSubmit(): void {

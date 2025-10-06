@@ -32,12 +32,15 @@ import { LaboratoryReportDialogComponent } from './components/laboratory-report-
 import { SupervisorMedicalRequestsComponent } from './components/supervisor-medical-requests/supervisor-medical-requests.component';
 import { PrescriptionPaperComponent } from './components/prescription-paper/prescription-paper.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { MatDialogModule } from '@angular/material/dialog';
 import { ClinicFormComponent } from './components/clinic-form/clinic-form.component';
 import { ReasonTreeDropdownComponent } from './components/reason-tree-dropdown/reason-tree-dropdown.component';
 import { ReferralModalComponent } from './components/referral-modal/referral-modal.component';
 import { ReferralTabComponent } from './components/referral-tab/referral-tab.component';
 import { NotificationCardComponent } from './components/notification-card/notification-card.component';
 import { NotificationDialogComponent } from './components/notification-dialog/notification-dialog.component';
+import { NotificationBellComponent } from './components/notification-bell/notification-bell.component';
+import { NotificationComposeComponent } from './components/notification-compose/notification-compose.component';
 import { ImagePreviewDialogComponent } from './components/image-preview-dialog/image-preview-dialog.component';
 import { StockSelectionDialogComponent } from './components/stock-selection-dialog/stock-selection-dialog.component';
 import { SupervisorDashboardComponent } from './components/supervisor-dashboard/supervisor-dashboard.component';
@@ -48,11 +51,16 @@ import { InventoryManagementComponent } from './components/inventory-management/
 import { ItemReceivingComponent } from './components/item-receiving/item-receiving.component';
 import { InjectionDetailsDialogComponent } from './components/injection-details-dialog/injection-details-dialog.component';
 import { ReimbursementDocumentUploadComponent } from './components/reimbursement-document-upload/reimbursement-document-upload.component';
-// import { StockRequestFormComponent } from './components/stock-request-form/stock-request-form.component';
-
+import { StockRequestFormComponent } from './components/stock-request-form/stock-request-form.component';
+import { InjectionPaperComponent } from './components/injection-paper/injection-paper.component';
+// import { EthiopianDatePickerDirective } from './components/directive/ethiopian-date-picker.directive';
+import { LucyCalendarDirective } from 'lucy-calendar';
+import { EthiopianDatePickerComponent } from './components/ethiopian-date-picker/ethiopian-date-picker.component';
+import { EthiopianDateAdapter } from './directive/ethiopian-date-adapter';
 
 @NgModule({
   declarations: [
+    // EthiopianDatePickerDirective,
     AppComponent,
     DashboardComponent,
     MedicalRequestComponent,
@@ -79,6 +87,8 @@ import { ReimbursementDocumentUploadComponent } from './components/reimbursement
     ReferralTabComponent,
     NotificationCardComponent,
     NotificationDialogComponent,
+    NotificationBellComponent,
+    NotificationComposeComponent,
     ImagePreviewDialogComponent,
     StockSelectionDialogComponent,
     SupervisorDashboardComponent,
@@ -89,12 +99,15 @@ import { ReimbursementDocumentUploadComponent } from './components/reimbursement
     ItemReceivingComponent,
     InjectionDetailsDialogComponent,
     ReimbursementDocumentUploadComponent,
+    InjectionPaperComponent
+    // EthiopianDatePickerComponent,
     // StockRequestFormComponent
     // PatientMedicalHistoryComponent
     // PatientInfoCardComponent
   ],
   imports: [
     MatSnackBarModule,
+    MatDialogModule,
     NgxEchartsModule.forRoot({
       echarts: () => import('echarts')
     }),    BrowserModule,
@@ -105,10 +118,15 @@ import { ReimbursementDocumentUploadComponent } from './components/reimbursement
     CommonModule,
     PatientHistoryCardComponent, // Moved to imports
     PatientInfoCardComponent, // Moved to imports
-    PatientMedicalHistoryComponent, BrowserAnimationsModule
+    PatientMedicalHistoryComponent, 
+    StockRequestFormComponent, // Standalone component
+    BrowserAnimationsModule,
+    LucyCalendarDirective,
+    EthiopianDatePickerComponent
   ],
   providers: [
-    MedicalService
+    MedicalService,
+    EthiopianDateAdapter   
   ],
   bootstrap: [AppComponent]
 })

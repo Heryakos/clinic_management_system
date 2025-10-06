@@ -305,29 +305,8 @@ export class InventoryComponent implements OnInit, OnDestroy {
   loadInventoryItems(): void {
     this.medicalService.getIssueItems().subscribe(
       (items: InventoryItemenhanced[]) => {
-        console.log('Loaded inventory items:', items);
-        this.inventoryItems = items.map(item => ({
-          ...item,
-          currentStock: item.currentStock || 0,
-          minimumStock: item.minimumStock || 0,
-          maximumStock: item.maximumStock || undefined,
-          itemID: item.itemID || 0,
-          itemCode: item.itemCode || '',
-          itemName: item.itemName || '',
-          categoryID: item.categoryID || 0,
-          categoryName: item.categoryName || '',
-          unit: item.unit || '',
-          unitPrice: item.unitPrice || 0,
-          batchNumber: item.batchNumber || '',
-          manufacturer: item.manufacturer || '',
-          expiryDate: item.expiryDate,
-          isActive: item.isActive !== undefined ? item.isActive : true,
-          createdDate: item.createdDate || new Date(),
-          updatedDate: item.updatedDate || new Date(),
-          maxQuantityAllowed: item.maxQuantityAllowed,
-          stockStatus: item.stockStatus || 'Normal',
-          RoomID: item.RoomID
-        }));
+        console.log('Loaded inventory items from service:', items);
+        this.inventoryItems = items;
         this.updateSummaryData();
       },
       error => {

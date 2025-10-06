@@ -1,0 +1,77 @@
+<div class="ethiopian-date-picker" [class.disabled]="disabled">
+  <div class="date-input" (click)="toggleCalendar()">
+    <input
+      type="text"
+      [value]="getDisplayValue()"
+      [placeholder]="placeholder"
+      readonly
+      [disabled]="disabled"
+      class="date-display">
+    <div class="input-actions">
+      <button
+        type="button"
+        *ngIf="selectedDate && !disabled"
+        class="clear-btn"
+        (click)="clearDate($event)"
+        title="Clear date">
+        ✕
+      </button>
+      <span class="calendar-icon">📅</span>
+    </div>
+  </div>
+
+  <div class="calendar-dropdown" *ngIf="isOpen">
+    <div class="calendar-header">
+      <div class="year-controls">
+        <button type="button" class="nav-btn" (click)="previousYear()" title="Previous Year">
+          ⟪
+        </button>
+        <span class="year-display">{{ currentViewDate.year }}</span>
+        <button type="button" class="nav-btn" (click)="nextYear()" title="Next Year">
+          ⟫
+        </button>
+      </div>
+      <div class="month-controls">
+        <button type="button" class="nav-btn" (click)="previousMonth()" title="Previous Month">
+          ‹
+        </button>
+        <span class="month-display">{{ monthNames[currentViewDate.month - 1] }}</span>
+        <button type="button" class="nav-btn" (click)="nextMonth()" title="Next Month">
+          ›
+        </button>
+      </div>
+    </div>
+
+    <div class="calendar-body">
+      <div class="day-names">
+        <div class="day-name" *ngFor="let dayName of dayNames">{{ dayName }}</div>
+      </div>
+      <div class="calendar-grid">
+        <div class="calendar-week" *ngFor="let week of calendarDays">
+          <button
+            type="button"
+            *ngFor="let day of week"
+            class="calendar-day"
+            [class.selected]="isSelected(day)"
+            [class.today]="isToday(day)"
+            [class.empty]="!day"
+            [disabled]="!day"
+            (click)="selectDate(day)">
+            {{ day || '' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="calendar-footer">
+      <button type="button" class="today-btn" (click)="goToToday()">
+        Today
+      </button>
+      <button type="button" class="close-btn" (click)="closeCalendar()">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <div class="calendar-overlay" *ngIf="isOpen" (click)="closeCalendar()"></div>
+</div>

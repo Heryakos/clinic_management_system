@@ -1,4 +1,15 @@
 <div class="app-container">
+  <!-- Top Header -->
+  <header class="top-header" *ngIf="showSidebar">
+    <div class="header-left">
+      <h1>FHC Clinic Management System</h1>
+      <p *ngIf="employeeName" class="employee-welcome">Welcome, {{ employeeName }}</p>
+    </div>
+    <div class="header-right">
+      <app-notification-bell></app-notification-bell>
+    </div>
+  </header>
+
   <nav class="sidebar" *ngIf="showSidebar">
     <div class="logo">
       <img [src]="logoPath" alt="FHC Logo" class="logo-img" />
@@ -10,12 +21,12 @@
     </div>
 
     <ul class="nav-menu">
-      <li *ngIf="showDashboard">
+      <!-- <li *ngIf="showDashboard">
         <a routerLink="/dashboard" routerLinkActive="active">
           <span class="icon">📊</span>
           <span class="text">Dashboard</span>
         </a>
-      </li>
+      </li> -->
       <li *ngIf="showEmployeeRegistered">
         <a routerLink="/users" routerLinkActive="active">
           <span class="icon">💼</span>
@@ -48,12 +59,12 @@
           <span class="text">Medical Requests</span>
         </a>
       </li>
-      <li *ngIf="showMedicalRequests">
+      <!-- <li *ngIf="showMedicalRequests">
         <a routerLink="/reimbursement-document-upload" routerLinkActive="active">
           <span class="icon">📤</span>
           <span class="text">Medical File Upload</span>
         </a>
-      </li>
+      </li> -->
       <li *ngIf="showPatientCards">
         <a routerLink="/patient-history-card" routerLinkActive="active">
           <span class="icon">💳</span>
@@ -96,54 +107,54 @@
           <span class="text">Sick Leave</span>
         </a>
       </li>
-      <li *ngIf="showExpenses">
+      <!-- <li *ngIf="showExpenses">
         <a routerLink="/expense-reimbursement" routerLinkActive="active">
           <span class="icon">💰</span>
           <span class="text">Expenses</span>
         </a>
-      </li>
-      <li *ngIf="showInventory">
+      </li> -->
+      <!-- <li *ngIf="showInventory">
         <a routerLink="/inventory" routerLinkActive="active">
           <span class="icon">📦</span>
           <span class="text">Inventory</span>
         </a>
-      </li>
+      </li> -->
       <li *ngIf="showInventoryRequest">
         <a routerLink="/inventory-request" routerLinkActive="active">
           <span class="icon">📋</span>
           <span class="text">Inventory Request</span>
         </a>
       </li>
-      <li *ngIf="showInventoryManagement">
+      <!-- <li *ngIf="showInventoryManagement">
         <a routerLink="/inventory-management" routerLinkActive="active">
           <span class="icon">🛠️</span>
           <span class="text">Inventory Management</span>
         </a>
-      </li>
+      </li> -->
       <li *ngIf="showItemReceiving">
         <a routerLink="/item-receiving" routerLinkActive="active">
           <span class="icon">📥</span>
           <span class="text">Item Receiving</span>
         </a>
       </li>
-      <li *ngIf="showSupervisorInventory">
+      <!-- <li *ngIf="showSupervisorInventory">
         <a routerLink="/supervisor-inventory" routerLinkActive="active">
           <span class="icon">👷</span>
           <span class="text">Supervisor Inventory</span>
         </a>
-      </li>
+      </li> -->
       <li *ngIf="showReports">
         <a routerLink="/reports" routerLinkActive="active">
           <span class="icon">📑</span>
           <span class="text">Reports</span>
         </a>
       </li>
-      <li *ngIf="showNotifications">
+      <!-- <li *ngIf="showNotifications">
         <a routerLink="/notifications" routerLinkActive="active">
           <span class="icon">🔔</span>
           <span class="text">Notifications</span>
         </a>
-      </li>
+      </li> -->
       <li *ngIf="showSupervisorDashboard">
         <a routerLink="/supervisor-dashboard" routerLinkActive="active">
           <span class="icon">📋</span>
@@ -153,7 +164,7 @@
     </ul>
   </nav>
 
-  <main class="main-content">
+  <main class="main-content" [class.with-header]="showSidebar">
     <router-outlet></router-outlet>
   </main>
 </div>

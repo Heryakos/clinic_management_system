@@ -271,11 +271,11 @@
               </span>
             </td>
             <td class="actions-cell">
-              <button class="action-btn view" (click)="viewRequestDetails(request)">View</button>
-              <button class="action-btn issue" (click)="issueItems(request)" 
+              <button type="button" class="action-btn view" (click)="viewRequestDetails(request)">View</button>
+              <button type="button" class="action-btn issue" (click)="issueItems(request)" 
                       *ngIf="request.status.toLowerCase() === 'approved'" 
                       [disabled]="isProcessing">Issue</button>
-              <button class="action-btn receive" (click)="confirmReceipt(request)" 
+              <button type="button" class="action-btn receive" (click)="confirmReceipt(request)" 
                       *ngIf="request.status.toLowerCase() === 'issued'" 
                       [disabled]="isProcessing">Confirm Receipt</button>
             </td>
@@ -315,7 +315,7 @@
               </span>
             </td>
             <td>
-              <button class="action-btn view" (click)="viewItemDetails(item)">View</button>
+              <button type="button" class="action-btn view" (click)="viewItemDetails(item)">View</button>
             </td>
           </tr>
         </tbody>
@@ -328,7 +328,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3>Request Details - {{ selectedRequest.requestNumber }}</h3>
-        <button class="close-btn" (click)="closeModal()">✖</button>
+        <button type="button" class="close-btn" (click)="closeModal()">✖</button>
       </div>
       <div class="modal-body">
         <div class="request-info">
@@ -396,17 +396,17 @@
       </div>
       
       <div class="modal-footer">
-        <button class="action-btn issue" (click)="confirmIssueItems()" 
+        <button type="button" class="action-btn issue" (click)="confirmIssueItems()" 
         *ngIf="selectedRequest?.status?.toLowerCase() === 'approved' && showCommentsInput"
         [disabled]="isProcessing">
           {{ isProcessing ? 'Processing...' : 'Confirm Issue' }}
         </button>
-        <button class="action-btn receive" (click)="confirmReceiptItems()" 
+        <button type="button" class="action-btn receive" (click)="confirmReceiptItems()" 
         *ngIf="selectedRequest?.status?.toLowerCase() === 'issued' && showCommentsInput"
         [disabled]="isProcessing">
           {{ isProcessing ? 'Processing...' : 'Confirm Receipt' }}
         </button>
-        <button class="action-btn cancel" (click)="closeModal()" [disabled]="isProcessing">Close</button>
+        <button type="button" class="action-btn cancel" (click)="closeModal()" [disabled]="isProcessing">Close</button>
       </div>
     </div>
   </div>
@@ -416,7 +416,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3>Item Details - {{ selectedItem.itemName }}</h3>
-        <button class="close-btn" (click)="closeItemModal()">✖</button>
+        <button type="button" class="close-btn" (click)="closeItemModal()">✖</button>
       </div>
       <div class="modal-body">
         <div class="item-info">
@@ -459,7 +459,7 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="action-btn cancel" (click)="closeItemModal()">Close</button>
+        <button type="button" class="action-btn cancel" (click)="closeItemModal()">Close</button>
       </div>
     </div>
   </div>

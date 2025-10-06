@@ -137,6 +137,7 @@ export interface PatientSummary {
 }
 
 export interface LaboratoryTest {
+  cardNumber: string;
   testID: string; // Added for API compatibility
   testNumber: string;
   patientId: number | string;

@@ -116,26 +116,21 @@
           </tr>
         </thead>
         <tbody>
-          <tr class="medication-row">
+          <tr *ngFor="let med of medications" class="medication-row">
             <td class="medication-cell">
-              <input type="text" class="table-input form-control" [value]="(prescriptionForm.get('MedicationName')?.value ? prescriptionForm.get('MedicationName')?.value + ', ' : '') + (prescriptionForm.get('MedicationDetails')?.value || '')" readonly />
+              {{ (med.MedicationName ? med.MedicationName + ', ' : '') + (med.MedicationDetails || '') }}
             </td>
             <td class="price-cell">
-              <input type="number" class="table-input price-input form-control" formControlName="TotalAmount" readonly />
             </td>
           </tr>
-          <tr class="medication-row">
-            <td class="medication-cell"></td>
-            <td class="price-cell"></td>
-          </tr>
-          <tr class="medication-row">
+          <tr *ngFor="let i of [].constructor(3 - medications.length)" class="medication-row">
             <td class="medication-cell"></td>
             <td class="price-cell"></td>
           </tr>
           <tr>
             <td class="total-label">Total price</td>
             <td class="total-price">
-              <input type="number" class="table-input price-input form-control" formControlName="TotalAmount" readonly />
+              {{ prescriptionForm.get('TotalAmount')?.value }}
             </td>
           </tr>
         </tbody>
