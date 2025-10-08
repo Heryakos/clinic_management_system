@@ -1,9 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MedicalService } from 'src/app/medical.service';
 import { environment } from 'src/environments/environment';
 import { MatDialog } from '@angular/material/dialog';
 import { InjectionDetailsDialogComponent } from '../injection-details-dialog/injection-details-dialog.component';
+import { InjectionPaperComponent } from '../injection-paper/injection-paper.component';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
     selector: 'app-injection',
@@ -18,17 +20,27 @@ export class InjectionComponent implements OnInit {
     nurseId: string | null = null;
     globalActiveInjections: any[] = [];
     selectedInjection: any | null = null;
+    
+    // New properties from InjectionManagementComponent
+    todaySchedules: any[] = [];
+    selectedTab: 'today' | 'all' | 'patient' = 'today';
+    isLoading = false;
+    currentUserID: string | null = null;
 
     constructor(
         private fb: FormBuilder,
         private medicalService: MedicalService,
-        private dialog: MatDialog
+        private dialog: MatDialog,
+        private snackBar: MatSnackBar,
+        private cdr: ChangeDetectorRef
     ) {}
 
     ngOnInit(): void {
         this.loadUserData();
         this.initializeSearchForm();
         this.loadActiveInjectionsQueue();
+        this.loadTodaySchedules();
+        this.currentUserID = environment.username;
     }
 
     loadUserData(): void {
@@ -36,11 +48,11 @@ export class InjectionComponent implements OnInit {
             (response: any) => {
                 const employee = response?.c_Employees?.[0];
                 this.nurseId = employee?.user_ID || null;
-                console.log('nurseIdemployee',this.nurseId)
+                console.log('nurseIdemployee', this.nurseId);
             },
             error => {
                 this.nurseId = null;
-                alert(`Error loading user data: ${error.message}`);
+                this.showSnackBar(`Error loading user data: ${error.message}`, 'error-snackbar');
             }
         );
     }
@@ -51,6 +63,55 @@ export class InjectionComponent implements OnInit {
         });
     }
 
+    // Tab management
+    selectTab(tab: 'today' | 'all' | 'patient'): void {
+        this.selectedTab = tab;
+        if (tab === 'today') {
+            this.loadTodaySchedules();
+        } else if (tab === 'all') {
+            this.loadActiveInjectionsQueue();
+        }
+        // 'patient' tab uses the existing search functionality
+    }
+
+    // Methods from InjectionManagementComponent
+    loadTodaySchedules(): void {
+        this.isLoading = true;
+        this.medicalService.getTodayPendingSchedules().subscribe({
+            next: (schedules) => {
+                // Convert PascalCase to camelCase and ensure proper field mapping
+                this.todaySchedules = (schedules || []).map((schedule: any) => this.convertToCamelCase(schedule));
+                this.isLoading = false;
+                this.cdr.detectChanges();
+            },
+            error: (error) => {
+                console.error('Error loading today schedules:', error);
+                this.showSnackBar('Error loading today\'s schedules', 'error-snackbar');
+                this.isLoading = false;
+                this.cdr.detectChanges();
+            }
+        });
+    }
+
+    loadActiveInjectionsQueue(): void {
+        this.isLoading = true;
+        this.medicalService.getActiveInjections().subscribe(
+            (rows) => { 
+                // Convert PascalCase to camelCase and ensure proper field mapping
+                this.globalActiveInjections = (rows || []).map((injection: any) => this.convertToCamelCase(injection));
+                this.isLoading = false;
+                this.cdr.detectChanges();
+            },
+            (error) => { 
+                this.globalActiveInjections = []; 
+                this.isLoading = false;
+                this.cdr.detectChanges();
+                this.showSnackBar('Error loading active injections', 'error-snackbar');
+            }
+        );
+    }
+
+    // Existing methods
     onSearchPatient(): void {
         if (this.searchForm.valid) {
             this.isSearching = true;
@@ -72,12 +133,13 @@ export class InjectionComponent implements OnInit {
                     this.patient = normalized;
                     this.loadPatientInjections(Number(p.PatientID));
                     this.isSearching = false;
+                    this.selectedTab = 'patient'; // Switch to patient tab after search
                 },
                 error => {
                     this.patient = null;
                     this.injections = [];
                     this.isSearching = false;
-                    alert(`Error fetching patient: ${error.message}`);
+                    this.showSnackBar(`Error fetching patient: ${error.message}`, 'error-snackbar');
                 }
             );
         }
@@ -86,53 +148,42 @@ export class InjectionComponent implements OnInit {
     loadPatientInjections(patientID: number): void {
         this.medicalService.getPatientInjections(patientID).subscribe(
             injections => {
-                this.injections = injections;
+                // Convert PascalCase to camelCase and ensure proper field mapping
+                this.injections = (injections || []).map((injection: any) => this.convertToCamelCase(injection));
             },
             error => {
                 this.injections = [];
-                alert(`Error loading injections: ${error.message}`);
+                this.showSnackBar(`Error loading injections: ${error.message}`, 'error-snackbar');
             }
         );
     }
 
-    private loadActiveInjectionsQueue(): void {
-        this.medicalService.getActiveInjections().subscribe(
-            (rows) => { this.globalActiveInjections = rows || []; },
-            () => { this.globalActiveInjections = []; }
-        );
-    }
+    // View injection details - enhanced version
+    viewInjectionDetails(injectionID: number, patientID?: number): void {
+        if (!injectionID) return;
 
-    viewInjectionDetails(injectionID: number): void {
-        const injection = this.injections.find(inj => inj.injectionID === injectionID);
-        if (injection) {
-          // Open the dialog with the injection data
-          this.dialog.open(InjectionDetailsDialogComponent, {
-            width: '800px',
+        console.log('Opening injection details for ID:', injectionID, 'Patient ID:', patientID);
+
+        const dialogRef = this.dialog.open(InjectionPaperComponent, {
+            width: '900px',
+            maxWidth: '95vw',
+            height: 'auto',
             maxHeight: '90vh',
-            data: { injection }, // Pass the injection data to the dialog
-            panelClass: 'custom-dialog-container' // Optional: for custom styling
-          });
-        } else {
-          // Fetch full details if not found in the injections array
-          this.medicalService.getPatientInjections(injectionID).subscribe(
-            (details) => {
-              this.dialog.open(InjectionDetailsDialogComponent, {
-                width: '800px',
-                maxHeight: '90vh',
-                data: { injection: details },
-                panelClass: 'custom-dialog-container'
-              });
-            },
-            (error) => {
-              alert(`Error fetching details: ${error.message}`);
+            data: {
+                injectionID: injectionID,
+                patientID: patientID,
+                dialogTitle: 'Injection Details'
             }
-          );
-        }
-      }
-    //   closeDialog(): void {
-    //     this.selectedInjection = null;
-    // }
+        });
 
+        dialogRef.afterClosed().subscribe(result => {
+            if (result && result.refresh) {
+                this.refreshData();
+            }
+        });
+    }
+
+    // Administer injection - enhanced version
     administerInjection(injectionID: number): void {
         if (this.nurseId) {
             this.medicalService.administerInjection(injectionID, this.nurseId).subscribe(
@@ -141,14 +192,146 @@ export class InjectionComponent implements OnInit {
                         this.loadPatientInjections(this.patient.patientID);
                     }
                     this.loadActiveInjectionsQueue();
-                    alert('Injection administered successfully!');
+                    this.loadTodaySchedules();
+                    this.showSnackBar('Injection administered successfully!', 'success-snackbar');
                 },
                 error => {
-                    alert(`Error administering injection: ${error.message}`);
+                    this.showSnackBar(`Error administering injection: ${error.message}`, 'error-snackbar');
                 }
             );
         } else {
-            alert('Nurse ID not found.');
+            this.showSnackBar('Nurse ID not found.', 'error-snackbar');
         }
+    }
+
+    // New method from InjectionManagementComponent
+    administerScheduledInjection(schedule: any): void {
+        if (!this.nurseId) {
+            this.showSnackBar('User not authenticated', 'error-snackbar');
+            return;
+        }
+
+        if (confirm(`Confirm administering injection for schedule #${schedule.scheduleID}?`)) {
+            const request = {
+                scheduleID: schedule.scheduleID,
+                administeredBy: this.nurseId,
+                administeredDate: new Date(),
+                notes: ''
+            };
+
+            this.isLoading = true;
+            this.medicalService.administerInjectionSchedules(request).subscribe({
+                next: () => {
+                    this.showSnackBar('Injection administered successfully', 'success-snackbar');
+                    this.refreshData();
+                    this.isLoading = false;
+                },
+                error: (error) => {
+                    console.error('Error administering injection:', error);
+                    this.showSnackBar('Error administering injection', 'error-snackbar');
+                    this.isLoading = false;
+                }
+            });
+        }
+    }
+
+    // Helper methods from InjectionManagementComponent
+    getScheduleStatusClass(status: string): string {
+        if (!status) return 'status-unknown';
+        
+        const statusMap: { [key: string]: string } = {
+            'Pending': 'status-pending',
+            'Administered': 'status-administered',
+            'Missed': 'status-missed',
+            'Cancelled': 'status-cancelled',
+            'Active': 'status-active',
+            'Completed': 'status-completed'
+        };
+        return statusMap[status] || 'status-unknown';
+    }
+
+    getScheduleProgress(injection: any): number {
+        if (!injection || !injection.totalDoses || injection.totalDoses === 0) return 0;
+        return Math.round((injection.administeredDoses || 0) / injection.totalDoses * 100);
+    }
+
+    getProgressBarClass(progress: number): string {
+        if (progress >= 75) return 'progress-high';
+        if (progress >= 50) return 'progress-medium';
+        if (progress >= 25) return 'progress-low';
+        return 'progress-very-low';
+    }
+
+    refreshData(): void {
+        if (this.selectedTab === 'today') {
+            this.loadTodaySchedules();
+        } else if (this.selectedTab === 'all') {
+            this.loadActiveInjectionsQueue();
+        } else if (this.selectedTab === 'patient' && this.patient?.patientID) {
+            this.loadPatientInjections(this.patient.patientID);
+        }
+    }
+
+    // Utility method to convert PascalCase to camelCase and ensure field mapping
+    private convertToCamelCase(obj: any): any {
+        if (!obj) return obj;
+
+        const result: any = {};
+        
+        for (const key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                // Convert PascalCase to camelCase
+                const camelKey = key.charAt(0).toLowerCase() + key.slice(1);
+                
+                // Handle specific field mappings
+                if (key === 'PatientName') {
+                    result['fullName'] = obj[key];
+                } else if (key === 'OrderingPhysicianName') {
+                    result['orderingPhysicianName'] = obj[key];
+                } else if (key === 'AdministeredByName') {
+                    result['administeredByName'] = obj[key];
+                } else if (key === 'MedicationName') {
+                    result['medicationName'] = obj[key];
+                } else if (key === 'DosageForm') {
+                    result['dosageForm'] = obj[key];
+                } else if (key === 'InjectionNumber') {
+                    result['injectionNumber'] = obj[key];
+                } else if (key === 'InjectionDate') {
+                    result['injectionDate'] = obj[key];
+                } else if (key === 'InjectionID') {
+                    result['injectionID'] = obj[key];
+                } else if (key === 'ScheduleID') {
+                    result['scheduleID'] = obj[key];
+                } else if (key === 'ScheduledDate') {
+                    result['scheduledDate'] = obj[key];
+                } else if (key === 'Status') {
+                    result['status'] = obj[key];
+                } else {
+                    result[camelKey] = obj[key];
+                }
+            }
+        }
+
+        // Ensure critical fields exist
+        if (!result.status && obj.Status) {
+            result.status = obj.Status;
+        }
+        if (!result.injectionID && obj.InjectionID) {
+            result.injectionID = obj.InjectionID;
+        }
+        if (!result.patientID && obj.PatientID) {
+            result.patientID = obj.PatientID;
+        }
+
+        return result;
+    }
+
+    private showSnackBar(message: string, panelClass: string = 'info-snackbar'): void {
+        this.snackBar.open(message, 'Close', {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'top',
+            panelClass: [panelClass]
+        });
     }
 }

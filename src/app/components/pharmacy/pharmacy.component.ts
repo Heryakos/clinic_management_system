@@ -575,57 +575,112 @@ loadRoomSpecificData(): void {
   }
 
   private processPrescriptions(prescriptions: any[]): void {
-    this.prescriptions = prescriptions.map((p, index) => ({
-      ...p,
-      prescriptionID: p.prescriptionID || `temp-${index}-${Date.now()}`
-    }));
+    // Filter out Dispensed prescriptions
+    const filteredPrescriptions = prescriptions.filter(p => {
+        const status = (p.Status || p.status || 'Unknown').toLowerCase();
+        return status !== 'dispensed';
+    });
 
-    console.log('Processed prescriptions:', this.prescriptions);
+    this.prescriptions = filteredPrescriptions.map((p, index) => {
+        const rawId = (p.prescriptionID ?? p.PrescriptionID) as any;
+        const numericId = typeof rawId === 'number' ? rawId : (rawId ? parseInt(rawId, 10) : NaN);
+        return {
+            ...p,
+            // Use numeric ID when valid; otherwise fall back to a temp marker
+            prescriptionID: Number.isInteger(numericId) && numericId > 0 ? numericId : `temp-${index}-${Date.now()}`
+        };
+    });
+
+    console.log('Processed prescriptions (excluding Dispensed):', this.prescriptions);
 
     if (this.prescriptions.length > 0) {
-      const detailPromises = this.prescriptions.map(prescription => {
-        if (!prescription.prescriptionID || prescription.prescriptionID.startsWith('temp-')) {
-          console.warn('Using temporary ID for prescription:', prescription);
-          this.prescriptionDetailsMap[prescription.prescriptionID] = {
-            MedicationName: prescription.MedicationName || ''
-          };
-          return Promise.resolve(this.prescriptionDetailsMap[prescription.prescriptionID]);
-        }
+        const detailPromises = this.prescriptions.map(prescription => {
+            if (!prescription.prescriptionID || prescription.prescriptionID.startsWith('temp-')) {
+                console.warn('Using temporary ID for prescription:', prescription);
+                this.prescriptionDetailsMap[prescription.prescriptionID] = {
+                    MedicationName: prescription.MedicationName || ''
+                };
+                return Promise.resolve(this.prescriptionDetailsMap[prescription.prescriptionID]);
+            }
 
-        return this.medicalService.getPrescriptionIDDetails(prescription.prescriptionID).toPromise()
-          .then(details => {
-            console.log(`Details for prescription ${prescription.prescriptionID}:`, details);
-            this.prescriptionDetailsMap[prescription.prescriptionID] = details || null;
-            return details;
-          })
-          .catch(error => {
-            console.error(`Error loading details for prescription ${prescription.prescriptionID}:`, error);
-            this.prescriptionDetailsMap[prescription.prescriptionID] = null;
-            return null;
-          });
-      });
-
-      Promise.all(detailPromises).then(() => {
-        const allMedications: Set<string> = new Set();
-        Object.values(this.prescriptionDetailsMap).forEach(details => {
-          if (details && details.MedicationName) {
-            this.extractMedicationNames(details.MedicationName).forEach(name => allMedications.add(name));
-          }
+            return this.medicalService.getPrescriptionIDDetails(prescription.prescriptionID).toPromise()
+                .then(details => {
+                    console.log(`Details for prescription ${prescription.prescriptionID}:`, details);
+                    this.prescriptionDetailsMap[prescription.prescriptionID] = details || null;
+                    return details;
+                })
+                .catch(error => {
+                    console.error(`Error loading details for prescription ${prescription.prescriptionID}:`, error);
+                    this.prescriptionDetailsMap[prescription.prescriptionID] = null;
+                    return null;
+                });
         });
-        this.medicationDetailsWithStock = Array.from(allMedications).map(name => ({
-          medication: name,
-          isInStock: false
-        }));
-        console.log('Populated medicationDetailsWithStock with all unique medications:', this.medicationDetailsWithStock);
 
+        Promise.all(detailPromises).then(() => {
+            // Resolve missing IDs by matching PrescriptionNumber against the global list
+            this.resolveMissingPrescriptionIds().then(() => {
+            const allMedications: Set<string> = new Set();
+            Object.values(this.prescriptionDetailsMap).forEach(details => {
+                if (details && details.MedicationName) {
+                    this.extractMedicationNames(details.MedicationName).forEach(name => allMedications.add(name));
+                }
+            });
+            this.medicationDetailsWithStock = Array.from(allMedications).map(name => ({
+                medication: name,
+                isInStock: false
+            }));
+            console.log('Populated medicationDetailsWithStock with all unique medications:', this.medicationDetailsWithStock);
+
+            this.showFormAndTable = true;
+            this.isSearching = false;
+            this.cdr.detectChanges(); // Force UI update
+            });
+        });
+    } else {
+        console.warn('No prescriptions found for card number:', this.cardNumber);
         this.showFormAndTable = true;
         this.isSearching = false;
-      });
-    } else {
-      console.warn('No prescriptions found for card number:', this.cardNumber);
-      this.showFormAndTable = true;
-      this.isSearching = false;
+        this.cdr.detectChanges();
     }
+}
+
+  private async resolveMissingPrescriptionIds(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      const hasTemp = this.prescriptions.some(p => typeof p.prescriptionID !== 'number');
+      if (!hasTemp) {
+        resolve();
+        return;
+      }
+
+      this.medicalService.getPrescriptions().subscribe({
+        next: (all: any[]) => {
+          const mapByNumber = new Map<string, number>();
+          (all || []).forEach(x => {
+            const id = (x.prescriptionID ?? x.PrescriptionID) as any;
+            const numId = typeof id === 'number' ? id : (id ? parseInt(id, 10) : NaN);
+            const number = x.prescriptionNumber || x.PrescriptionNumber;
+            if (number && Number.isInteger(numId) && numId > 0) {
+              mapByNumber.set(String(number), numId);
+            }
+          });
+
+          this.prescriptions = this.prescriptions.map(p => {
+            if (typeof p.prescriptionID === 'number' && p.prescriptionID > 0) {
+              return p;
+            }
+            const number = p.prescriptionNumber || p.PrescriptionNumber;
+            const found = number ? mapByNumber.get(String(number)) : undefined;
+            if (found) {
+              return { ...p, prescriptionID: found };
+            }
+            return p;
+          });
+
+          resolve();
+        },
+        error: () => resolve()
+      });
+    });
   }
 
   loadPatientDetails(): void {
@@ -899,50 +954,55 @@ loadRoomSpecificData(): void {
   //   );
   // }
   private loadPrescriptionQueue(): void {
-  this.isActivePrescriptions = true; // Set flag for Active Prescriptions
-  this.medicationDetailsWithStock = []; // Reset stock status
-  this.prescriptionDetailsMap = {}; // Reset details map
-
-  this.medicalService.getPrescriptions().subscribe({
-    next: (prescriptions: any[]) => {
-      const all = prescriptions || [];
-      const nonDispensed = all
-        .filter(p => {
-          const s = (p.status || p.Status || '').toString().toLowerCase();
-          // Explicitly exclude 'Dispensed' status
-          return s !== 'dispensed' && (s === '' || s === 'active' || s === 'pending' || s === 'ordered');
-        })
-        .map(p => ({
-          ...p,
-          CardNumber: p.CardNumber || p.cardNumber || 'N/A',
-          FullName: p.patientName || `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Unknown',
-          PrescriptionDate: p.prescriptionDate || p.PrescriptionDate,
-          Status: p.status || p.Status || 'Unknown', // Map to PascalCase
-          PrescriberName: p.prescriberName || p.PrescriberName || 'N/A',
-          PharmacistName: p.pharmacistName || p.PharmacistName || 'N/A',
-          prescriptionID: p.prescriptionID || p.PrescriptionID || `temp-${Date.now()}`,
-          UserName: p.UserName
-        }));
-
-      this.prescriptions = nonDispensed.length > 0 ? nonDispensed : [];
-      console.log('Final prescriptions array (excluding Dispensed):', this.prescriptions);
-
-      // Sort newest first
-      this.prescriptions.sort((a, b) =>
-        new Date(b.PrescriptionDate || 0).getTime() - new Date(a.PrescriptionDate || 0).getTime()
-      );
-
-      this.cdr.detectChanges(); // Ensure UI updates
-    },
-    error: (error) => {
-      console.error('Error in getPrescriptions:', error);
-      this.prescriptions = [];
-      this.cdr.detectChanges();
-    },
-    complete: () => {
-      console.log('getPrescriptionQueue subscription completed');
+    if (!this.isActivePrescriptions) {
+        return; // Skip refresh when in patient-specific mode
     }
-  });
+    
+    this.medicationDetailsWithStock = []; // Reset only in active mode
+    this.prescriptionDetailsMap = {}; // Reset only in active mode
+
+    this.medicalService.getPrescriptions().subscribe({
+        next: (prescriptions: any[]) => {
+            const all = prescriptions || [];
+            const nonDispensed = all
+                .filter(p => {
+                    const s = (p.status || p.Status || '').toString().toLowerCase();
+                    return s !== 'dispensed' && (s === '' || s === 'active' || s === 'pending' || s === 'ordered');
+                })
+                .map(p => {
+                    const rawId = (p.prescriptionID ?? p.PrescriptionID) as any;
+                    const numericId = typeof rawId === 'number' ? rawId : (rawId ? parseInt(rawId, 10) : NaN);
+                    return {
+                        ...p,
+                        CardNumber: p.CardNumber || p.cardNumber || 'N/A',
+                        FullName: p.patientName || `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Unknown',
+                        PrescriptionDate: p.prescriptionDate || p.PrescriptionDate,
+                        Status: p.status || p.Status || 'Unknown',
+                        PrescriberName: p.prescriberName || p.PrescriberName || 'N/A',
+                        PharmacistName: p.pharmacistName || p.PharmacistName || 'N/A',
+                        prescriptionID: Number.isInteger(numericId) && numericId > 0 ? numericId : `temp-${Date.now()}`,
+                        UserName: p.UserName
+                    };
+                });
+
+            this.prescriptions = nonDispensed.length > 0 ? nonDispensed : [];
+            console.log('Final prescriptions array (excluding Dispensed):', this.prescriptions);
+
+            this.prescriptions.sort((a, b) =>
+                new Date(b.PrescriptionDate || 0).getTime() - new Date(a.PrescriptionDate || 0).getTime()
+            );
+
+            this.cdr.detectChanges();
+        },
+        error: (error) => {
+            console.error('Error in getPrescriptions:', error);
+            this.prescriptions = [];
+            this.cdr.detectChanges();
+        },
+        complete: () => {
+            console.log('getPrescriptionQueue completed');
+        }
+    });
 }
   // private loadPrescriptionQueue(): void {
   //   this.isActivePrescriptions = true; // Set flag for Active Prescriptions
@@ -1013,6 +1073,12 @@ loadRoomSpecificData(): void {
   // }
   dispensePrescription(prescriptionID: number, event: Event): void {
     event.stopPropagation(); // Prevent the row click event from firing
+    // Guard: ensure we have a valid numeric prescription ID
+    if (typeof prescriptionID !== 'number' || !Number.isInteger(prescriptionID) || prescriptionID <= 0) {
+      alert('Invalid prescription ID. Please refresh and try again.');
+      return;
+    }
+
     if (this.pharmacistId) {
       this.medicalService.dispensePrescription(prescriptionID, this.pharmacistId).subscribe(
         () => {
@@ -1058,5 +1124,62 @@ loadRoomSpecificData(): void {
   onPrescriptionRowClick(prescription: any): void {
     this.searchPatientID = prescription.CardNumber;
     this.onSearch();
+  }
+
+  getValidPrescriptionId(prescription: any): number | null {
+    const rawId = prescription?.prescriptionID ?? prescription?.PrescriptionID;
+    const numericId = typeof rawId === 'number' ? rawId : (rawId ? parseInt(rawId, 10) : NaN);
+    return Number.isInteger(numericId) && numericId > 0 ? numericId : null;
+  }
+
+  onDispenseClick(prescription: any, event: Event): void {
+    event.stopPropagation();
+    const id = this.getValidPrescriptionId(prescription);
+    if (!id) {
+      // Resolve on-demand via global list by matching PrescriptionNumber and CardNumber
+      const number = prescription?.prescriptionNumber || prescription?.PrescriptionNumber;
+      const card = prescription?.CardNumber || prescription?.cardNumber;
+      const dateValue = prescription?.PrescriptionDate || prescription?.prescriptionDate;
+      // Proceed with resolver even if number is missing, using fallback
+      this.resolvePrescriptionIdForRow(number || '', card || '', (resolvedId) => {
+        if (!resolvedId) {
+          alert('Could not resolve prescription ID. Please refresh and try again.');
+          return;
+        }
+        this.dispensePrescription(resolvedId, event);
+      }, dateValue);
+      return;
+    }
+    this.dispensePrescription(id, event);
+  }
+
+  private resolvePrescriptionIdForRow(prescriptionNumber: string, cardNumber: string, cb: (id: number | null) => void, prescriptionDate?: any): void {
+    this.medicalService.getPrescriptions().subscribe({
+      next: (all: any[]) => {
+        const match = (all || []).find(p => {
+          const pn = p.prescriptionNumber || p.PrescriptionNumber;
+          const cn = p.CardNumber || p.cardNumber;
+          if (prescriptionNumber && cardNumber) {
+            return String(pn) === String(prescriptionNumber) && String(cn) === String(cardNumber);
+          }
+          if (cardNumber && prescriptionDate) {
+            const pd = p.prescriptionDate || p.PrescriptionDate;
+            const inputDate = new Date(prescriptionDate);
+            const rowDate = pd ? new Date(pd) : null;
+            const sameDay = rowDate && inputDate && inputDate.toDateString() === rowDate.toDateString();
+            return String(cn) === String(cardNumber) && !!sameDay;
+          }
+          return false;
+        });
+        if (!match) {
+          cb(null);
+          return;
+        }
+        const rawId = (match.prescriptionID ?? match.PrescriptionID) as any;
+        const numericId = typeof rawId === 'number' ? rawId : (rawId ? parseInt(rawId, 10) : NaN);
+        cb(Number.isInteger(numericId) && numericId > 0 ? numericId : null);
+      },
+      error: () => cb(null)
+    });
   }
 }

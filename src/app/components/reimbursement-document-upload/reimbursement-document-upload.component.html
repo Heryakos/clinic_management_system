@@ -1,83 +1,177 @@
 <div class="reimbursement-upload-container">
-    <div class="form-section">
-      <h2>Reimbursement Document Upload</h2>
-      <form [formGroup]="uploadForm" (ngSubmit)="onSubmit()" class="upload-form">
-        <div class="form-group">
-          <label for="reimbursementId">Select Reimbursement Request:</label>
-          <select id="reimbursementId" formControlName="reimbursementId" class="form-control">
-            <option value="">Select a reimbursement request</option>
-            <option *ngFor="let reimbursement of reimbursements" [value]="reimbursement.id">
-              {{ reimbursement.id }} - {{ reimbursement.patientName }} ({{ reimbursement.status }})
-            </option>
-          </select>
-          <div class="error-message" *ngIf="uploadForm.get('reimbursementId')?.invalid && uploadForm.get('reimbursementId')?.touched">
-            Reimbursement request is required
-          </div>
-        </div>
-  
-        <div class="form-group">
-          <label for="description">Document Description:</label>
-          <input
-            type="text"
-            id="description"
-            formControlName="description"
-            class="form-control"
-            placeholder="Enter description (e.g., Hospital Receipt)">
-          <div class="error-message" *ngIf="uploadForm.get('description')?.invalid && uploadForm.get('description')?.touched">
-            Description is required
-          </div>
-        </div>
-  
-        <div class="form-group">
-          <label for="files">Upload Files (Receipts/Documents):</label>
-          <input
-            type="file"
-            id="files"
-            (change)="onFileChange($event)"
-            multiple
-            class="form-control">
-          <div class="error-message" *ngIf="uploadForm.get('files')?.invalid && uploadForm.get('files')?.touched">
-            At least one file is required
-          </div>
-          <div *ngIf="selectedFiles.length > 0" class="file-list">
-            <p>Selected files:</p>
-            <ul>
-              <li *ngFor="let file of selectedFiles">{{ file.name }}</li>
-            </ul>
-          </div>
-        </div>
-  
-        <div class="form-actions">
-          <button
-            type="submit"
-            class="submit-btn"
-            [disabled]="uploadForm.invalid || isSubmitting">
-            {{ isSubmitting ? 'Uploading...' : 'Upload Documents' }}
-          </button>
-          <button
-            type="button"
-            class="messages-btn"
-            (click)="showDocuments()">
-            View Uploaded Documents
-          </button>
-        </div>
-      </form>
-    </div>
-  
-    <!-- Uploaded Documents Modal -->
-    <div class="modal" *ngIf="showDocumentsModal">
-      <div class="modal-content">
-        <h3>Uploaded Documents</h3>
-        <div class="documents-list">
-          <div *ngFor="let doc of uploadedDocuments" class="document-item">
-            <p><strong>Reimbursement ID:</strong> {{ doc.reimbursementId }}</p>
-            <p><strong>Description:</strong> {{ doc.description }}</p>
-            <p><strong>File Name:</strong> {{ doc.fileName }}</p>
-            <p><strong>Upload Date:</strong> {{ doc.uploadDate | date:'short' }}</p>
-            <a [href]="doc.filePath" target="_blank">Download</a>
-          </div>
-        </div>
-        <button type="button" class="close-btn" (click)="closeDocuments()">Close</button>
+  <div class="form-section">
+    <h2>Reimbursement Document Upload</h2>
+    <form [formGroup]="uploadForm" (ngSubmit)="onSubmit()" class="upload-form">
+      <div class="form-group">
+        <label for="employeeName">Employee Name:</label>
+        <div class="form-control">{{ employeeName || 'Loading...' }}</div>
       </div>
+
+      <div class="form-group">
+        <label for="payrollNumber">Payroll Number:</label>
+        <div class="form-control">{{ payrollNumber || 'Loading...' }}</div>
+      </div>
+
+      <div class="form-group">
+        <label for="formType">Form Type:</label>
+        <select id="formType" formControlName="formType" class="form-control">
+          <option value="">Select a form type</option>
+          <option *ngFor="let form of formTypes" [value]="form.value">
+            {{ form.label }}
+          </option>
+        </select>
+        <div class="error-message" *ngIf="uploadForm.get('formType')?.invalid && uploadForm.get('formType')?.touched">
+          Form type is required
+        </div>
+      </div>
+
+      <!-- <div class="form-group">
+        <label for="reimbursementId">Select Reimbursement Request:</label>
+        <select id="reimbursementId" formControlName="reimbursementId" class="form-control">
+          <option value="">Select a reimbursement request</option>
+          <option *ngFor="let reimbursement of reimbursements" [value]="reimbursement.reimbursementID.toString()">
+            {{ reimbursement.reimbursementNumber }} - {{ reimbursement.patientName }} ({{ reimbursement.status }})
+          </option>
+          
+        </select>
+        <div class="error-message" *ngIf="uploadForm.get('reimbursementId')?.invalid && uploadForm.get('reimbursementId')?.touched">
+          Reimbursement request is required
+        </div>
+      </div> -->
+
+      <div class="form-group">
+        <label for="description">Document Description:</label>
+        <input
+          type="text"
+          id="description"
+          formControlName="description"
+          class="form-control"
+          placeholder="Enter description (e.g., Hospital Receipt)"
+          [disabled]="uploadForm.get('formType')?.value === 'ClinicMedicalExpenseRefund'">
+        <div class="error-message" *ngIf="uploadForm.get('description')?.invalid && uploadForm.get('description')?.touched">
+          Description is required
+        </div>
+      </div>
+
+      <div class="investigation-section">
+        <h3>Existing Investigations</h3>
+        <div *ngFor="let inv of existingInvestigations; let i = index" class="investigation-row">
+          <div class="form-group">
+            <label>Investigation {{ i + 1 }}:</label>
+            <div class="form-control">{{ inv.InvestigationType }}</div>
+          </div>
+          <div class="form-group">
+            <label>Done At:</label>
+            <div class="form-control">{{ inv.Location }}</div>
+          </div>
+          <div class="form-group">
+            <label>Ordered From:</label>
+            <div class="form-control">{{ inv.OrderedFrom || 'N/A' }}</div>
+          </div>
+          <div class="form-group">
+            <label>Amount:</label>
+            <div class="form-control">{{ inv.Amount | currency:'ETB' }}</div>
+          </div>
+        </div>
+
+        <h3>Add New Investigations</h3>
+        <div *ngFor="let inv of investigations; let i = index" class="investigation-row">
+          <div class="form-group">
+            <label>Investigation {{ i + 1 }}:</label>
+            <input
+              type="text"
+              [(ngModel)]="inv.investigation"
+              [ngModelOptions]="{standalone: true}"
+              class="form-control"
+              placeholder="Enter investigation type">
+          </div>
+          <div class="form-group">
+            <label>Done At:</label>
+            <input
+              type="text"
+              [(ngModel)]="inv.doneAt"
+              [ngModelOptions]="{standalone: true}"
+              class="form-control"
+              placeholder="Enter location">
+          </div>
+          <div class="form-group">
+            <label>Ordered From:</label>
+            <input
+              type="text"
+              [(ngModel)]="inv.orderedFrom"
+              [ngModelOptions]="{standalone: true}"
+              class="form-control"
+              placeholder="Enter ordered from">
+          </div>
+          <div class="form-group">
+            <label>Amount:</label>
+            <input
+              type="number"
+              [(ngModel)]="inv.amount"
+              [ngModelOptions]="{standalone: true}"
+              class="form-control"
+              placeholder="Enter amount">
+          </div>
+          <button type="button" class="remove-btn" (click)="removeInvestigation(i)" [disabled]="investigations.length === 1">Remove</button>
+        </div>
+        <button type="button" class="add-btn" (click)="addInvestigation()">Add Investigation</button>
+      </div>
+
+      <div class="form-group" *ngIf="uploadForm.get('formType')?.value !== 'ClinicMedicalExpenseRefund'">
+        <label for="files">Upload Files (Receipts/Documents):</label>
+        <input
+          type="file"
+          id="files"
+          (change)="onFileChange($event)"
+          multiple
+          class="form-control"
+          [disabled]="uploadForm.get('files')?.disabled">
+        <div class="error-message" *ngIf="uploadForm.get('files')?.invalid && uploadForm.get('files')?.touched">
+          At least one file is required
+        </div>
+        <div *ngIf="selectedFiles.length > 0" class="file-list">
+          <p>Selected files:</p>
+          <ul>
+            <li *ngFor="let file of selectedFiles">{{ file.name }}</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="form-group" *ngIf="uploadForm.get('formType')?.value === 'ClinicMedicalExpenseRefund'">
+        <p>Default document: Clinic Medical Expense Refund Form will be uploaded.</p>
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="submit"
+          class="submit-btn"
+          [disabled]="uploadForm.invalid || isSubmitting || uploadForm.get('files')?.disabled">
+          {{ isSubmitting ? 'Uploading...' : 'Upload Documents' }}
+        </button>
+        <button
+          type="button"
+          class="messages-btn"
+          (click)="showDocuments()">
+          View Uploaded Documents
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Uploaded Documents Modal -->
+  <div class="modal" *ngIf="showDocumentsModal">
+    <div class="modal-content">
+      <h3>Uploaded Documents</h3>
+      <div class="documents-list">
+        <div *ngFor="let doc of uploadedDocuments" class="document-item">
+          <p><strong>Reimbursement ID:</strong> {{ doc.reimbursementId }}</p>
+          <p><strong>Description:</strong> {{ doc.description }}</p>
+          <p><strong>File Name:</strong> {{ doc.fileName }}</p>
+          <p><strong>Upload Date:</strong> {{ doc.uploadDate | date:'short' }}</p>
+          <a [href]="medicalService.getReimbursementDocumentDownloadUrl(doc.documentID)" target="_blank">Download</a>
+        </div>
+      </div>
+      <button type="button" class="close-btn" (click)="closeDocuments()">Close</button>
     </div>
   </div>
+</div>

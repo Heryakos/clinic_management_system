@@ -23,20 +23,20 @@
     <h3>Medication Stock Status</h3>
     <p class="stock-instruction">Check the medications that are currently in stock:</p>
     <div class="medication-stock-list">
-      <div class="medication-item" *ngFor="let item of medicationDetailsWithStock; let i = index">
-        <label>
-          <input 
-            type="checkbox" 
-            [(ngModel)]="item.isInStock" 
-            (change)="toggleStockStatus(i)"
-            class="stock-checkbox" 
-          />
-          <span class="medication-name">{{ item.medication }}</span>
-          <span class="stock-status" [class.in-stock]="item.isInStock" [class.out-of-stock]="!item.isInStock">
-            {{ item.isInStock ? '(In Stock)' : '(Out of Stock)' }}
-          </span>
-        </label>
-      </div>
+<!-- Keep the labels and remove (change) handler -->
+<div class="medication-item" *ngFor="let item of medicationDetailsWithStock; let i = index">
+  <label>
+      <input 
+          type="checkbox" 
+          [(ngModel)]="item.isInStock" 
+          class="stock-checkbox" 
+      />
+      <span class="medication-name">{{ item.medication }}</span>
+      <span class="stock-status" [class.in-stock]="item.isInStock" [class.out-of-stock]="!item.isInStock">
+          {{ item.isInStock ? '(In Stock)' : '(Out of Stock)' }}
+      </span>
+  </label>
+</div>
     </div>
   </div>
 
@@ -363,7 +363,7 @@
               <td>{{ prescription.PharmacistName || 'N/A' }}</td>
               <td>
                 <button type="button" class="action-btn view" (click)="viewPrescriptionDetails(prescription.prescriptionID, $event)">View</button>
-                <button type="button" class="action-btn dispense" (click)="dispensePrescription(prescription.prescriptionID, $event)" *ngIf="prescription.Status === 'Active'">Dispense</button>
+                <button type="button" class="action-btn dispense" (click)="onDispenseClick(prescription, $event)" *ngIf="prescription.Status === 'Active'" [disabled]="!(getValidPrescriptionId(prescription) || prescription.PrescriptionNumber || prescription.prescriptionNumber || (prescription.CardNumber && (prescription.PrescriptionDate || prescription.prescriptionDate)))">Dispense</button>
               </td>
             </tr>
           </tbody>

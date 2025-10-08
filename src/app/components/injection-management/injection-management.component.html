@@ -1,0 +1,159 @@
+<div class="injection-management-container">
+    <h2>Injection Management</h2>
+  
+    <!-- Tabs -->
+    <div class="tabs-container">
+      <div class="tabs">
+        <button
+          type="button"
+          class="tab-button"
+          [class.active]="selectedTab === 'today'"
+          (click)="selectTab('today')">
+          Today's Schedule
+        </button>
+        <button
+          type="button"
+          class="tab-button"
+          [class.active]="selectedTab === 'all'"
+          (click)="selectTab('all')">
+          All Active Injections
+        </button>
+      </div>
+    </div>
+  
+    <!-- Loading Indicator -->
+    <div *ngIf="isLoading" class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>Loading...</p>
+    </div>
+  
+    <!-- Today's Schedule Tab -->
+    <div *ngIf="selectedTab === 'today' && !isLoading" class="schedule-section">
+      <div class="section-header">
+        <h3>Today's Injection Schedule</h3>
+        <button type="button" class="refresh-btn" (click)="refreshData()">
+          <span>↻</span> Refresh
+        </button>
+      </div>
+  
+      <div *ngIf="todaySchedules.length === 0" class="no-data">
+        <p>No injections scheduled for today</p>
+      </div>
+  
+      <div *ngIf="todaySchedules.length > 0" class="schedules-grid">
+        <div *ngFor="let schedule of todaySchedules" class="schedule-card">
+          <div class="card-header">
+            <div class="status-badge" [ngClass]="getScheduleStatusClass(schedule.status)">
+              {{ schedule.status }}
+            </div>
+            <div class="schedule-time">
+              {{ schedule.scheduledDate | date:'shortTime' }}
+            </div>
+          </div>
+  
+          <div class="card-body">
+            <div class="patient-info">
+              <h4>Schedule #{{ schedule.scheduleID }}</h4>
+              <p>Injection ID: {{ schedule.injectionID }}</p>
+            </div>
+  
+            <div class="schedule-actions">
+              <button
+                type="button"
+                class="action-btn view-btn"
+                (click)="viewInjectionDetails(schedule.injectionID)">
+                View Details
+              </button>
+              <button
+                type="button"
+                *ngIf="schedule.status === 'Pending'"
+                class="action-btn administer-btn"
+                (click)="administerScheduledInjection(schedule)">
+                Administer
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <!-- All Active Injections Tab -->
+    <div *ngIf="selectedTab === 'all' && !isLoading" class="injections-section">
+      <div class="section-header">
+        <h3>Active Injections</h3>
+        <button type="button" class="refresh-btn" (click)="refreshData()">
+          <span>↻</span> Refresh
+        </button>
+      </div>
+  
+      <div *ngIf="activeInjections.length === 0" class="no-data">
+        <p>No active injections found</p>
+      </div>
+  
+      <div *ngIf="activeInjections.length > 0" class="table-container">
+        <table class="injections-table">
+          <thead>
+            <tr>
+              <th>Injection #</th>
+              <th>Patient</th>
+              <th>Medication</th>
+              <th>Frequency</th>
+              <th>Progress</th>
+              <th>Start Date</th>
+              <th>End Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let injection of activeInjections">
+              <td>{{ injection.injectionNumber }}</td>
+              <td>
+                <div class="patient-cell">
+                  <div class="patient-name">{{ injection.fullName }}</div>
+                  <div class="patient-card">Card: {{ injection.cardNumber }}</div>
+                </div>
+              </td>
+              <td>
+                <div class="medication-cell">
+                  <div class="med-name">{{ injection.medicationName }}</div>
+                  <div class="med-details">{{ injection.strength }} - {{ injection.dosageForm }}</div>
+                </div>
+              </td>
+              <td>{{ injection.frequency }}</td>
+              <td>
+                <div class="progress-container">
+                  <div class="progress-bar">
+                    <div
+                      class="progress-fill"
+                      [ngClass]="getProgressBarClass(getScheduleProgress(injection))"
+                      [style.width.%]="getScheduleProgress(injection)">
+                    </div>
+                  </div>
+                  <div class="progress-text">
+                    {{ injection.administeredDoses || 0 }} / {{ injection.totalDoses || 0 }}
+                  </div>
+                </div>
+              </td>
+              <td>{{ injection.startDate | date:'short' }}</td>
+              <td>{{ injection.endDate | date:'short' }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="'status-' + injection.status.toLowerCase()">
+                  {{ injection.status }}
+                </span>
+              </td>
+              <td>
+                <button
+                  type="button"
+                  class="action-btn view-btn-small"
+                  (click)="viewInjectionDetails(injection.injectionID!)">
+                  View Details
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  

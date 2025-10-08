@@ -1,13 +1,14 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { MedicalRequest, MedicalRequestView, SickLeave, InventoryItem, InventoryRequest } from './models/medical.model';
+import { MedicalRequest, MedicalRequestView, SickLeave, InventoryItem, InventoryRequest, ExpenseReimbursement } from './models/medical.model';
 import { environment } from '../environments/environment';
 import { MedicationCategory, MedicationSelection } from './components/medication-tree-dropdown/medication-tree-dropdown.component';
 import { ReasonCategory, ReasonSelection } from './components/reason-tree-dropdown/reason-tree-dropdown.component';
 import { Referral, ReferralFormData, ReferralStatusUpdate } from './components/interfaces/patient.interface';
 import { PurchaseRequest, ItemRegistration, RoomCategory, InventoryCategory, InventoryItemenhanced, InventoryPurchaseRequest, InventoryRequestEnhanced, InventoryRequestDetail, SupervisorRequest } from './models/inventory-enhanced.model';
+import { AdministerInjectionRequest } from './models/injection.model';
 
 // Interface definitions to resolve errors and support components
 interface ItemCategory {
@@ -37,6 +38,23 @@ export interface ReimbursementDocument {
   uploadDate: Date;
   uploadedBy: string;
 }
+interface ReimbursementResponse {
+  reimbursementID: number;
+  reimbursementNumber: string;
+  patientName: string;
+  employeeID: string | null;
+  payrollNumber: string | null;
+  department: string | null;
+  totalAmount: number;
+  status: string;
+  submissionDate: string;
+  approvedBy: string | null;
+  approvedDate: string | null;
+  paidDate: string | null;
+  comments: string | null;
+  createdBy: string;
+  createdByGuid: string;
+}
 // interface InventoryRequestDetail {
 //   itemID: string;
 //   itemName: string;
@@ -50,6 +68,7 @@ export interface ReimbursementDocument {
   providedIn: 'root'
 })
 export class MedicalService {
+  // private headers = new HttpHeaders({ 'Content-Type': 'application/json' });
   private chmsMedicalRequestsBase = environment.rootPath2 + 'CHMS_MedicalRequests/';
   private chmsDashboardBase = environment.rootPath2 + 'CHMS_Dashboard/';
   private chmsEmployeesBase = environment.rootPath2 + 'CHMS_Employees/';
@@ -79,16 +98,16 @@ export class MedicalService {
 
   constructor(private http: HttpClient) { }
 
-  private handleError(error: any): Observable<never> {
-    let errorMessage = 'An error occurred';
-    if (error.error instanceof ErrorEvent) {
-      errorMessage = `Error: ${error.error.message}`;
-    } else {
-      errorMessage = `Error Code: ${error.status}\nMessage: ${error.message}`;
-    }
-    console.error('Service Error:', errorMessage);
-    return throwError(() => new Error(errorMessage));
-  }
+  // private handleError(error: any): Observable<never> {
+  //   let errorMessage = 'An error occurred';
+  //   if (error.error instanceof ErrorEvent) {
+  //     errorMessage = `Error: ${error.error.message}`;
+  //   } else {
+  //     errorMessage = `Error Code: ${error.status}\nMessage: ${error.message}`;
+  //   }
+  //   console.error('Service Error:', errorMessage);
+  //   return throwError(() => new Error(errorMessage));
+  // }
 
   private getHeaders(): HttpHeaders {
     return new HttpHeaders({
@@ -129,7 +148,21 @@ export class MedicalService {
       catchError(this.handleError)
     );
   }
-
+  getTodayPendingSchedules(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.CHMSInjectionBase}schedules/today/pending`).pipe(
+      // map(schedules => schedules.map(sch => this.mapSchedule(sch))),
+      catchError(this.handleError)
+    );
+  }
+    administerInjectionSchedules(request: AdministerInjectionRequest): Observable<any> {
+    return this.http.put(
+      `${this.CHMSInjectionBase}schedules/${request.scheduleID}/administer`,
+      request,
+      { headers: this.headers }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
   // Add to MedicalService
 // getInjectionDetails(injectionID: number): Observable<any> {
 //   return this.http.get(`${this.CHMSInjectionBase}injections/${injectionID}`).pipe(
@@ -151,6 +184,12 @@ updateInjection(data: any): Observable<any> {
 
   getActiveInjections(): Observable<any[]> {
     return this.http.get<any[]>(`${this.CHMSInjectionBase}injections/active`).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  getInjectionDetails(injectionID: number): Observable<any> {
+    return this.http.get(`${this.CHMSInjectionBase}injections/${injectionID}`).pipe(
       catchError(this.handleError)
     );
   }
@@ -293,11 +332,11 @@ updateInjection(data: any): Observable<any> {
     );
   }
 
-  createExpenseReimbursement(reimbursement: any): Observable<any> {
-    return this.http.post<any>(this.chmsExpenseReimbursementBase, reimbursement, { headers: this.headers }).pipe(
-      catchError(this.handleError)
-    );
-  }
+  // createExpenseReimbursement(reimbursement: any): Observable<any> {
+  //   return this.http.post<any>(this.chmsExpenseReimbursementBase, reimbursement, { headers: this.headers }).pipe(
+  //     catchError(this.handleError)
+  //   );
+  // }
 
   getReimbursementDetails(reimbursementId: number): Observable<any> {
     return this.http.get<any>(`${this.chmsExpenseReimbursementBase}${reimbursementId}/details`).pipe(
@@ -305,10 +344,46 @@ updateInjection(data: any): Observable<any> {
     );
   }
 
-  addReimbursementDetail(reimbursementId: number, detail: any): Observable<any> {
-    return this.http.post<any>(`${this.chmsExpenseReimbursementBase}${reimbursementId}/details`, detail, { headers: this.headers }).pipe(
+  createExpenseReimbursement(data: ExpenseReimbursement): Observable<ReimbursementResponse> {
+    return this.http.post<ReimbursementResponse>(
+      this.chmsExpenseReimbursementBase,
+      data,
+      { headers: this.headers }
+    ).pipe(
       catchError(this.handleError)
     );
+  }
+
+  addReimbursementDetail(reimbursementId: number, detail: any): Observable<any> {
+    if (!reimbursementId || isNaN(reimbursementId)) {
+      return throwError(() => new Error('Invalid Reimbursement ID provided.'));
+    }
+    const url = `${this.chmsExpenseReimbursementBase}/${reimbursementId}/details`.replace(/\/+/g, '/'); // Normalize slashes
+    return this.http.post<any>(url, detail, { headers: this.headers }).pipe(
+      catchError(this.handleError)
+    );
+  }
+  getReimbursementDocumentDownloadUrl(documentId: number): string {
+    const base = this.chmsReimbursementDocumentsBase.replace(/\/+$/, '');
+    return `${base}/download/${documentId}`;
+  }
+  
+  uploadReimbursementDocument(formData: FormData): Observable<any> {
+    const url = `${this.chmsReimbursementDocumentsBase}/upload`.replace(/\/+/g, '/');
+    return this.http.post<any>(url, formData).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  private handleError(error: HttpErrorResponse): Observable<never> {
+    let errorMessage = 'An error occurred';
+    if (error.error instanceof ErrorEvent) {
+      errorMessage = `Client-side error: ${error.error.message}`;
+    } else {
+      errorMessage = `Server-side error: ${error.status} - ${error.error?.message || error.message}`;
+    }
+    console.error(errorMessage);
+    return throwError(() => new Error(errorMessage));
   }
 
   approveReimbursement(id: number, approval: any): Observable<void> {
@@ -1269,6 +1344,43 @@ updateInjection(data: any): Observable<any> {
   //     catchError(this.handleError)
   //   );
   // }
+  updateExpenseReimbursementStatus(id: number, status: string): Observable<any> {
+    // Backend currently exposes status update at CHMS_ReimbursementDocuments/{id}/status
+    return this.http.put(`${this.chmsReimbursementDocumentsBase}${id}/status`, { status }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  getExpenseReimbursementsByPayrollNumber(employeeID: string): Observable<ExpenseReimbursement[]> {
+    return this.http.get<any[]>(`${this.chmsReimbursementDocumentsBase}by-payroll/${employeeID}`).pipe(
+      map(reimbursements =>
+        reimbursements.map(r => ({
+          reimbursementID: r.ReimbursementID,
+          reimbursementNumber: r.ReimbursementNumber,
+          patientName: r.PatientName,
+          employeeID: r.EmployeeID || null,
+          payrollNo: r.PayrollNumber || null,
+          payrollNumber: r.PayrollNumber || null,
+          department: r.Department || null,
+          totalAmount: r.TotalAmount || 0,
+          status: r.Status || 'pending',
+          submissionDate: new Date(r.SubmissionDate),
+          approvedBy: r.ApprovedBy || null,
+          approvedDate: r.ApprovedDate ? new Date(r.ApprovedDate) : undefined,
+          paidDate: r.PaidDate ? new Date(r.PaidDate) : undefined,
+          comments: r.Comments || null,
+          createdBy: r.CreatedBy || null,
+          orderedFrom: r.OrderedFrom || null,
+          doneAt: r.DoneAt || null,
+          investigation: r.Investigation || null,
+          formType: r.FormType || null,
+          investigations: [] // Assume empty array if investigations are fetched separately
+        }))
+      ),
+      catchError(this.handleError)
+    );
+  }
+  
   getRequestDetails(requestId: number): Observable<InventoryRequestDetail[]> {
     return this.http.get<InventoryRequestDetail[]>(`${this.chmsInventoryBase}requests/${requestId}/details`).pipe(
       catchError(this.handleError)
@@ -1407,13 +1519,13 @@ updateInjection(data: any): Observable<any> {
   }
 
 //Reimbursement
-uploadReimbursementDocument(formData: FormData): Observable<any> {
-  return this.http.post<any>(`${this.chmsReimbursementDocumentsBase}upload`, formData).pipe(
-    catchError(this.handleError)
-  );
-}
+// uploadReimbursementDocument(formData: FormData): Observable<any> {
+//   return this.http.post<any>(`${this.chmsReimbursementDocumentsBase}upload`, formData).pipe(
+//     catchError(this.handleError)
+//   );
+// }
 
-getDocumentsByReimbursementId(reimbursementId: string): Observable<ReimbursementDocument[]> {
+getDocumentsByReimbursementId(reimbursementId: number): Observable<ReimbursementDocument[]> {
   return this.http.get<any[]>(`${this.chmsReimbursementDocumentsBase}by-reimbursement/${reimbursementId}`).pipe(
     map(documents =>
       documents.map(doc => ({

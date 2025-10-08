@@ -23,7 +23,6 @@ import { ItemReceivingComponent } from './components/item-receiving/item-receivi
 import { SupervisorInventoryComponent } from './components/supervisor-inventory/supervisor-inventory.component';
 import { ReimbursementDocumentUploadComponent } from './components/reimbursement-document-upload/reimbursement-document-upload.component';
 
-
 export const routes: Routes = [
   { path: '', redirectTo: '/medical-request', pathMatch: 'full' },
   {
@@ -42,7 +41,7 @@ export const routes: Routes = [
     path: 'supervisor-medical-requests',
     component: SupervisorMedicalRequestsComponent,
     canActivate: [RoleGuard],
-    data: { expectedRole: '96C1AB25-D15C-42CF-92FF-9F041AE6AE10' },
+    data: { expectedRole: '96c1ab25-d15c-42cf-92ff-9f041ae6ae10' },
   },
   {
     path: 'supervisor-dashboard',
@@ -98,7 +97,7 @@ export const routes: Routes = [
     path: 'expense-reimbursement',
     component: ExpenseReimbursementComponent,
     canActivate: [RoleGuard],
-    data: { expectedRole: '5b574f73-d45d-416d-a029-67f9fc0de049' },
+    data: { expectedRole: '05cdc20a-24c4-4ead-aaa5-b913b7d5c1e7' }, // Updated to doctor role
   },
   {
     path: 'inventory',

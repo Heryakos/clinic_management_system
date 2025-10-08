@@ -205,7 +205,7 @@ textarea.form-control {
 
 .test-item, .medication-item, .injection-item {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: 1fr;
   gap: 15px;
   padding: 15px;
   background: #f8f9fa;
@@ -301,6 +301,22 @@ textarea.form-control {
   height: 18px;
 }
 
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  margin-top: 25px; /* Adjust to align with other fields */
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  margin-right: 8px;
+}
+
 .tabs-container {
   margin-bottom: 20px;
 }
@@ -321,6 +337,58 @@ textarea.form-control {
   cursor: pointer;
   transition: all 0.3s;
   position: relative;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: capitalize;
+}
+
+.status-badge.active {
+  background-color: #e8f5e8;
+  color: #2e7d32;
+}
+
+.status-badge.completed {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.status-badge.pending {
+  background-color: #fff3e0;
+  color: #ef6c00;
+}
+
+.status-badge.cancelled {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.badge.recurring {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.badge.one-time {
+  background-color: #e8f5e8;
+  color: #2e7d32;
+}
+
+.no-results {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-style: italic;
 }
 
 .tab-button.active {

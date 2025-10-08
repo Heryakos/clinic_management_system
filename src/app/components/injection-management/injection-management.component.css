@@ -1,0 +1,417 @@
+.injection-management-container {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  
+  h2 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    font-size: 28px;
+    font-weight: 600;
+  }
+  
+  /* Tabs */
+  .tabs-container {
+    margin-bottom: 30px;
+  }
+  
+  .tabs {
+    display: flex;
+    gap: 10px;
+    border-bottom: 2px solid #e0e0e0;
+  }
+  
+  .tab-button {
+    padding: 12px 24px;
+    border: none;
+    background: transparent;
+    color: #666;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+  }
+  
+  .tab-button:hover {
+    color: #2c5aa0;
+    background: rgba(44, 90, 160, 0.05);
+  }
+  
+  .tab-button.active {
+    color: #2c5aa0;
+    border-bottom-color: #2c5aa0;
+    background: rgba(44, 90, 160, 0.1);
+  }
+  
+  /* Section Header */
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .section-header h3 {
+    color: #2c3e50;
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0;
+  }
+  
+  .refresh-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
+  
+  .refresh-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+  }
+  
+  .refresh-btn span {
+    font-size: 18px;
+    font-weight: bold;
+  }
+  
+  /* Loading */
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    color: #666;
+  }
+  
+  .loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #2c5aa0;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* No Data */
+  .no-data {
+    text-align: center;
+    padding: 60px 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 2px dashed #dee2e6;
+  }
+  
+  .no-data p {
+    color: #6c757d;
+    font-size: 16px;
+    margin: 0;
+  }
+  
+  /* Schedule Cards Grid */
+  .schedules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+  }
+  
+  .schedule-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  
+  .schedule-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+  }
+  
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 2px solid #dee2e6;
+  }
+  
+  .schedule-time {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+  }
+  
+  .card-body {
+    padding: 20px;
+  }
+  
+  .patient-info h4 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+    font-size: 18px;
+  }
+  
+  .patient-info p {
+    margin: 0 0 15px 0;
+    color: #666;
+    font-size: 14px;
+  }
+  
+  .schedule-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+  }
+  
+  /* Status Badges */
+  .status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .status-pending {
+    background: #fff3cd;
+    color: #856404;
+  }
+  
+  .status-administered {
+    background: #d4edda;
+    color: #155724;
+  }
+  
+  .status-missed {
+    background: #f8d7da;
+    color: #721c24;
+  }
+  
+  .status-cancelled {
+    background: #e2e3e5;
+    color: #383d41;
+  }
+  
+  .status-active {
+    background: #d1ecf1;
+    color: #0c5460;
+  }
+  
+  .status-completed {
+    background: #d4edda;
+    color: #155724;
+  }
+  
+  /* Table */
+  .table-container {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+  
+  .injections-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .injections-table thead {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a5f 100%);
+    color: white;
+  }
+  
+  .injections-table th {
+    padding: 15px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .injections-table td {
+    padding: 15px 12px;
+    border-bottom: 1px solid #e0e0e0;
+    color: #2c3e50;
+    font-size: 14px;
+  }
+  
+  .injections-table tbody tr:hover {
+    background: #f8f9fa;
+  }
+  
+  .injections-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+  
+  /* Patient Cell */
+  .patient-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .patient-name {
+    font-weight: 600;
+    color: #2c3e50;
+  }
+  
+  .patient-card {
+    font-size: 12px;
+    color: #6c757d;
+  }
+  
+  /* Medication Cell */
+  .medication-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .med-name {
+    font-weight: 600;
+    color: #2c3e50;
+  }
+  
+  .med-details {
+    font-size: 12px;
+    color: #6c757d;
+  }
+  
+  /* Progress Bar */
+  .progress-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+    border-radius: 4px;
+  }
+  
+  .progress-high {
+    background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+  }
+  
+  .progress-medium {
+    background: linear-gradient(90deg, #ffc107 0%, #ff9800 100%);
+  }
+  
+  .progress-low {
+    background: linear-gradient(90deg, #ff9800 0%, #ff5722 100%);
+  }
+  
+  .progress-very-low {
+    background: linear-gradient(90deg, #dc3545 0%, #c82333 100%);
+  }
+  
+  .progress-text {
+    font-size: 12px;
+    color: #6c757d;
+    text-align: center;
+    font-weight: 500;
+  }
+  
+  /* Action Buttons */
+  .action-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex: 1;
+  }
+  
+  .action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+  
+  .view-btn {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+  }
+  
+  .view-btn-small {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+  
+  .administer-btn {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+  }
+  
+  .administer-btn:hover {
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .injection-management-container {
+      padding: 15px;
+    }
+  
+    h2 {
+      font-size: 24px;
+    }
+  
+    .schedules-grid {
+      grid-template-columns: 1fr;
+    }
+  
+    .table-container {
+      overflow-x: auto;
+    }
+  
+    .injections-table {
+      min-width: 900px;
+    }
+  
+    .section-header {
+      flex-direction: column;
+      gap: 15px;
+      align-items: flex-start;
+    }
+  
+    .refresh-btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+  

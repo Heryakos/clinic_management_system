@@ -18,12 +18,12 @@ export const environment = {
   rootPath2: window.rootPath2,
   rootLookupApiPath: window.rootLookupApiPath,
   rootApiPath: window.rootApiPath,
-  // username: window._UserName,
+  username: window._UserName,
   // username: '10506', // this is supervisor and doctor
-  // username: 'C00066', // Laboratory
-  // username: '10522',  // this is the Pharmacy
+  // username: '08445', // Laboratory
+  // username: '10715',  // this is the Pharmacy
   // username: '10715', // doctor
-    username: 'C00113', // doctor
+    // username: 'C00113', // doctor
   // username: 'C00067', // patient
   // username: '11094', // patient
   // username: '10830', // cardroom

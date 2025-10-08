@@ -1,120 +1,12 @@
-<p>expense-reimbursement works!</p>
 <div class="expense-container">
   <h2>Medical Expense Reimbursement</h2>
   
-  <form [formGroup]="expenseForm" (ngSubmit)="onSubmit()" class="expense-form">
-    <div class="patient-info">
-      <h3>Patient Information</h3>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="patientName">Name of Patient:</label>
-          <input 
-            type="text" 
-            id="patientName" 
-            formControlName="patientName"
-            class="form-control"
-            placeholder="Enter patient name">
-          <div class="error-message" *ngIf="expenseForm.get('patientName')?.invalid && expenseForm.get('patientName')?.touched">
-            Patient name is required
-          </div>
-        </div>
+  <!-- Include ClinicMedicalExpenseFormComponent for form submission -->
+  <app-clinic-medical-expense-form (reimbursementSubmitted)="onReimbursementSubmitted($event)"></app-clinic-medical-expense-form>
 
-        <div class="form-group">
-          <label for="payrollNo">Payroll No:</label>
-          <input 
-            type="text" 
-            id="payrollNo" 
-            formControlName="payrollNo"
-            class="form-control"
-            placeholder="Enter payroll number">
-          <div class="error-message" *ngIf="expenseForm.get('payrollNo')?.invalid && expenseForm.get('payrollNo')?.touched">
-            Payroll number is required
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="department">Department:</label>
-          <input 
-            type="text" 
-            id="department" 
-            formControlName="department"
-            class="form-control"
-            placeholder="Enter department">
-          <div class="error-message" *ngIf="expenseForm.get('department')?.invalid && expenseForm.get('department')?.touched">
-            Department is required
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="investigations-section">
-      <div class="section-header">
-        <h3>Investigation Details</h3>
-        <button type="button" class="add-btn" (click)="addInvestigation()">+ Add Investigation</button>
-      </div>
-
-      <div formArrayName="investigations">
-        <div *ngFor="let investigation of investigationsFormArray.controls; let i = index" [formGroupName]="i" class="investigation-item">
-          <div class="investigation-header">
-            <h4>Investigation {{ i + 1 }}</h4>
-            <button type="button" class="remove-btn" (click)="removeInvestigation(i)" [disabled]="investigationsFormArray.length === 1">
-              Remove
-            </button>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Investigation Description:</label>
-              <input type="text" formControlName="description" class="form-control" placeholder="Enter investigation type">
-              <div class="error-message" *ngIf="investigation.get('description')?.invalid && investigation.get('description')?.touched">
-                Description is required
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>Done at (Location):</label>
-              <input type="text" formControlName="location" class="form-control" placeholder="Enter location/facility">
-              <div class="error-message" *ngIf="investigation.get('location')?.invalid && investigation.get('location')?.touched">
-                Location is required
-              </div>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Invoice Number:</label>
-              <input type="text" formControlName="invoiceNo" class="form-control" placeholder="Enter invoice number">
-              <div class="error-message" *ngIf="investigation.get('invoiceNo')?.invalid && investigation.get('invoiceNo')?.touched">
-                Invoice number is required
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>Amount (ETB):</label>
-              <input type="number" step="0.01" formControlName="amount" class="form-control" placeholder="Enter amount">
-              <div class="error-message" *ngIf="investigation.get('amount')?.invalid && investigation.get('amount')?.touched">
-                Valid amount is required
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="total-amount">
-        <strong>Total Amount: {{ calculateTotalAmount() | currency:'ETB':'symbol':'1.2-2' }}</strong>
-      </div>
-    </div>
-
-    <div class="form-footer">
-      <p class="note">The medical expense should be paid to the patient</p>
-      <button 
-        type="submit" 
-        class="submit-btn"
-        [disabled]="expenseForm.invalid || isSubmitting">
-        {{ isSubmitting ? 'Submitting...' : 'Submit Reimbursement Request' }}
-      </button>
-    </div>
-  </form>
+  <div class="search-container">
+    <input type="text" [(ngModel)]="searchTerm" (input)="filterReimbursements()" placeholder="Search by Payroll No or Patient Name">
+  </div>
 
   <div class="reimbursements-list">
     <h3>Reimbursement Requests</h3>
@@ -129,12 +21,13 @@
             <th>Total Amount</th>
             <th>Status</th>
             <th>Submission Date</th>
+            <th>Details</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let reimbursement of expenseReimbursements">
-            <td>{{ reimbursement.id }}</td>
+          <tr *ngFor="let reimbursement of filteredReimbursements">
+            <td>{{ reimbursement.reimbursementID }}</td>
             <td>{{ reimbursement.patientName }}</td>
             <td>{{ reimbursement.payrollNo }}</td>
             <td>{{ reimbursement.department }}</td>
@@ -144,30 +37,112 @@
                 {{ reimbursement.status | titlecase }}
               </span>
             </td>
-            <td>{{ reimbursement.submissionDate | date:'short' }}</td>
+            <td>{{ reimbursement.submissionDate ? (reimbursement.submissionDate | date:'short') : 'N/A' }}</td>
+            <td>
+              <button class="action-btn details" (click)="viewDetails(reimbursement)">View Details</button>
+            </td>
             <td>
               <button 
-                *ngIf="reimbursement.status === 'pending'" 
+                *ngIf="(reimbursement.status || '').toLowerCase() === 'pending'" 
                 class="action-btn approve"
-                (click)="updateReimbursementStatus(reimbursement.id, 'approved')">
+                (click)="updateReimbursementStatus(reimbursement.reimbursementID, 'approved')">
                 Approve
               </button>
               <button 
-                *ngIf="reimbursement.status === 'pending'" 
+                *ngIf="(reimbursement.status || '').toLowerCase() === 'pending'" 
                 class="action-btn reject"
-                (click)="updateReimbursementStatus(reimbursement.id, 'rejected')">
+                (click)="updateReimbursementStatus(reimbursement.reimbursementID, 'rejected')">
                 Reject
               </button>
               <button 
-                *ngIf="reimbursement.status === 'approved'" 
+                *ngIf="(reimbursement.status || '').toLowerCase() === 'approved'" 
                 class="action-btn pay"
-                (click)="updateReimbursementStatus(reimbursement.id, 'paid')">
+                (click)="updateReimbursementStatus(reimbursement.reimbursementID, 'paid')">
                 Mark as Paid
               </button>
             </td>
           </tr>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Details Modal -->
+  <div class="modal" *ngIf="showDetailsModal">
+    <div class="modal-content">
+      <h3>Reimbursement Details for ID: {{ selectedReimbursement?.reimbursementID }}</h3>
+      
+      <h4>Investigations</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>Investigation Type</th>
+            <th>Done At</th>
+            <th>Ordered From</th>
+            <th>Amount</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let inv of investigations">
+            <td>{{ inv.InvestigationType }}</td>
+            <td>{{ inv.Location }}</td>
+            <td>{{ inv.OrderedFrom || 'N/A' }}</td>
+            <td>{{ inv.Amount | currency:'ETB' }}</td>
+            <td>{{ inv.InvestigationDate ? (inv.InvestigationDate | date:'short') : 'N/A' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h4>Documents</h4>
+      <div class="documents-list">
+        <div *ngFor="let doc of documents" class="document-item">
+          <p><strong>Description:</strong> {{ doc.description }}</p>
+          <p><strong>File Name:</strong> {{ doc.fileName }}</p>
+          <p><strong>Upload Date:</strong> {{ doc.uploadDate ? (doc.uploadDate | date:'short') : 'N/A' }}</p>
+          <div *ngIf="doc.previewType !== 'none'" class="preview-container">
+            <ng-container *ngIf="doc.previewType === 'pdf'">
+              <embed [src]="doc.previewUrl" type="application/pdf" width="100%" height="400px" />
+            </ng-container>
+            <ng-container *ngIf="doc.previewType === 'image'">
+              <img [src]="doc.previewUrl" alt="{{doc.description}}" style="max-width: 100%; height: auto;">
+            </ng-container>
+            <ng-container *ngIf="doc.previewType === 'office'">
+              <iframe [src]="doc.previewUrl" width="100%" height="480" frameborder="0"></iframe>
+            </ng-container>
+          </div>
+          <a [attr.href]="doc.downloadUrl" download="{{doc.fileName}}" target="_blank">Download</a>
+        </div>
+        <div *ngIf="documents.length === 0">No documents uploaded.</div>
+      </div>
+      
+      <div class="modal-actions" *ngIf="selectedReimbursement as sr">
+        <div style="margin: 10px 0;">
+          <span class="status-badge" [ngClass]="(sr.status || '').toLowerCase()">Current Status: {{ (sr.status || 'Unknown') | titlecase }}</span>
+        </div>
+        <div>
+          <button 
+            *ngIf="(sr.status || '').toLowerCase() === 'pending'"
+            class="action-btn approve"
+            (click)="updateReimbursementStatus(sr.reimbursementID, 'approved')">
+            Approve
+          </button>
+          <button 
+            *ngIf="(sr.status || '').toLowerCase() === 'pending'"
+            class="action-btn reject"
+            (click)="updateReimbursementStatus(sr.reimbursementID, 'rejected')">
+            Reject
+          </button>
+          <button 
+            *ngIf="(sr.status || '').toLowerCase() === 'approved'"
+            class="action-btn pay"
+            (click)="updateReimbursementStatus(sr.reimbursementID, 'paid')">
+            Mark as Paid
+          </button>
+        </div>
+      </div>
+
+      <button type="button" class="close-btn" (click)="closeDetailsModal()">Close</button>
     </div>
   </div>
 </div>

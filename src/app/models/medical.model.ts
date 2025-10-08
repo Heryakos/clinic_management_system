@@ -153,6 +153,7 @@ export interface LaboratoryTest {
   }[];
   reportedBy: string;
   reportDate: Date;
+  reportedByName:string
 }
 
 export interface Prescription {
@@ -185,18 +186,25 @@ export interface Prescription {
 }
 
 export interface ExpenseReimbursement {
-  id: string;
+  reimbursementID: number;
+  reimbursementNumber: string;
   patientName: string;
-  payrollNo: string;
-  department: string;
-  investigations: {
-    description: string;
-    location: string;
-    invoiceNo: string;
-  }[];
+  employeeID: string | null;
+  payrollNumber: string | null;
+  payrollNo: string | null;
+  department: string | null;
   totalAmount: number;
-  status: 'pending' | 'approved' | 'rejected' | 'paid';
+  status: string;
   submissionDate: Date;
+  createdBy: string | null;
+  approvedBy: string | null;
+  investigations: {
+    investigationType: string;
+    location: string;
+    invoiceNumber: string;
+    amount: number;
+    investigationDate: Date;
+  }[];
 }
 
 export interface InventoryItem {

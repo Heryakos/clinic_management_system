@@ -5,7 +5,6 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { ASSETS } from '../../assets.config';
-// import { AMIRI_FONT_BASE64 } from '../../..assets/fonts/amiri-font-base64';
 
 @Component({
   selector: 'app-injection-paper',
@@ -26,13 +25,17 @@ export class InjectionPaperComponent implements OnInit {
     private medicalService: MedicalService,
     private cdr: ChangeDetectorRef,
     public dialogRef: MatDialogRef<InjectionPaperComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { injectionID: number; dialogTitle: string }
+    @Inject(MAT_DIALOG_DATA) public data: { 
+      injectionID: number; 
+      patientID: number;  // ✅ patientID is now required
+      dialogTitle: string 
+    }
   ) {}
 
   ngOnInit(): void {
     this.initializeForm();
-    if (this.data.injectionID) {
-      this.loadInjectionData(this.data.injectionID);
+    if (this.data.injectionID && this.data.patientID) {
+      this.loadInjectionData(this.data.injectionID, this.data.patientID);
     }
   }
 
@@ -66,12 +69,51 @@ export class InjectionPaperComponent implements OnInit {
     });
   }
 
-  loadInjectionData(patientID: number): void {
+  // ✅ FIXED: patientID is now required
+  loadInjectionData(injectionID: number, patientID: number): void {
     this.isLoading = true;
+    this.errorMessage = null;
+
+    // First, try to get the specific injection details
+    this.medicalService.getInjectionDetails(injectionID).subscribe(
+      (injectionDetails: any) => {
+        if (injectionDetails) {
+          this.injectionData = injectionDetails;
+          this.processInjectionResponse(injectionDetails);
+        } else {
+          // If no specific injection details found, fall back to patient injections
+          this.loadPatientInjectionsFallback(patientID, injectionID);
+        }
+      },
+      error => {
+        // If getting specific injection fails, fall back to patient injections
+        console.warn('Could not load specific injection, falling back to patient injections:', error);
+        this.loadPatientInjectionsFallback(patientID, injectionID);
+      }
+    );
+  }
+
+  // ✅ FIXED: patientID is now required (not optional)
+  private loadPatientInjectionsFallback(patientID: number, injectionID: number): void {
     this.medicalService.getPatientInjections(patientID).subscribe(
       (response: any) => {
-        this.injectionData = response;
-        this.processInjectionResponse(response);
+        let injectionData = null;
+        
+        if (Array.isArray(response)) {
+          // Find the specific injection by injectionID
+          injectionData = response.find((inj: any) => inj.injectionID === injectionID);
+        } else if (response && response.injectionID === injectionID) {
+          injectionData = response;
+        }
+
+        if (injectionData) {
+          this.injectionData = injectionData;
+          this.processInjectionResponse(injectionData);
+        } else {
+          this.errorMessage = 'Injection not found for this patient.';
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }
       },
       error => {
         this.errorMessage = 'Failed to load injection data: ' + (error.error?.message || 'Please try again.');
@@ -85,43 +127,47 @@ export class InjectionPaperComponent implements OnInit {
     let data: any;
 
     if (Array.isArray(response)) {
-      data = response[0] || {};
+        data = response[0] || {};
     } else {
-      data = response || {};
+        data = response || {};
     }
 
+    console.log('Raw API Response:', data); // Debug log
+
     const formData = {
-      FullName: data.FullName || '',
-      gender: data.gender || '',
-      age: data.age || null,
-      Weight: data.Weight || null,
-      CardNumber: data.CardNumber || '',
-      woreda: data.woreda || '',
-      houseNo: data.houseNo || '',
-      phone: data.phone || '',
-      MedicalHistory: data.MedicalHistory || '',
-      injectionNumber: data.injectionNumber || '',
-      injectionDate: data.injectionDate ? new Date(data.injectionDate).toISOString().split('T')[0] : '',
-      status: data.status || '',
-      orderingPhysicianName: data.orderingPhysicianName || '',
-      medicationName: data.medicationName || '',
-      strength: data.strength || '',
-      dosageForm: data.dosageForm || '',
-      dose: data.dose || '',
-      route: data.route || '',
-      site: data.site || '',
-      frequency: data.frequency || '',
-      duration: data.duration || '',
-      instructions: data.instructions || '',
-      administeredByName: data.administeredByName || '',
-      administeredDate: data.administeredDate ? new Date(data.administeredDate).toISOString().split('T')[0] : '',
-      notes: data.notes || ''
+        FullName: data.PatientName || data.FullName || '', // ✅ Fixed: PatientName → FullName
+        gender: data.gender || '', // This might not be in the API response
+        age: data.age || null, // This might not be in the API response
+        Weight: data.Weight || null, // This might not be in the API response
+        CardNumber: data.CardNumber || '',
+        woreda: data.woreda || '', // This might not be in the API response
+        houseNo: data.houseNo || data.HouseNumber || '', // This might not be in the API response
+        phone: data.phone || data.Phone || '', // This might not be in the API response
+        MedicalHistory: data.MedicalHistory || '', // This might not be in the API response
+        injectionNumber: data.InjectionNumber || data.injectionNumber || '', // ✅ Fixed: InjectionNumber
+        injectionDate: data.InjectionDate ? new Date(data.InjectionDate).toISOString().split('T')[0] : '', // ✅ Fixed: InjectionDate
+        status: data.Status || data.status || '',
+        orderingPhysicianName: data.OrderingPhysicianName || data.orderingPhysicianName || '',
+        medicationName: data.MedicationName || data.medicationName || '',
+        strength: data.Strength || data.strength || '',
+        dosageForm: data.DosageForm || data.dosageForm || '',
+        dose: data.Dose || data.dose || '',
+        route: data.Route || data.route || '',
+        site: data.Site || data.site || '',
+        frequency: data.Frequency || data.frequency || '',
+        duration: data.Duration || data.duration || '',
+        instructions: data.Instructions || data.instructions || '',
+        administeredByName: data.AdministeredByName || data.administeredByName || '',
+        administeredDate: data.AdministeredDate ? new Date(data.AdministeredDate).toISOString().split('T')[0] : '',
+        notes: data.Notes || data.notes || ''
     };
+
+    console.log('Form Data to Patch:', formData); // Debug log
 
     this.injectionForm.patchValue(formData);
     this.isLoading = false;
     this.cdr.detectChanges();
-  }
+}
 
   toggleEditMode(): void {
     this.isEditing = !this.isEditing;
@@ -137,7 +183,7 @@ export class InjectionPaperComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.injectionForm.valid) {
+    if (this.injectionForm.valid && this.data.injectionID) {
       this.isLoading = true;
       const formValue = this.injectionForm.getRawValue();
       const updateData = {

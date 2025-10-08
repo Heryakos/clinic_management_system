@@ -147,12 +147,12 @@ export class LaboratoryComponent implements OnInit {
     this.medicalService.getPatientLaboratoryTestscardNumber(this.cardNumberSearch).subscribe(
       (result: any) => {
         if (result && Array.isArray(result) && result.length > 0) {
-          this.allCardSearchResults = result;
-          this.cardSearchResult = result[0]; // Default to first result
-          this.availableTestCategories = [...new Set(result.map((r: any) => r.testCategory))];
+          this.allCardSearchResults = result.filter(r => !r.reportedByName); // Hide if reportedByName is not empty
+          this.cardSearchResult = this.allCardSearchResults[0] || null; // Default to first result if any
+          this.availableTestCategories = [...new Set(this.allCardSearchResults.map((r: any) => r.testCategory))];
           
           // Fetch test details for all testIDs
-          const detailPromises = result
+          const detailPromises = this.allCardSearchResults
             .filter((r: any) => r.testID)
             .map((r: any) =>
               this.medicalService.getLaboratoryTestDetails(r.testID).toPromise()
@@ -187,7 +187,7 @@ export class LaboratoryComponent implements OnInit {
     // Get all laboratory tests for the patient
     this.medicalService.getLaboratoryTests(this.cardNumberSearch).subscribe(
       (tests: LaboratoryTest[]) => {
-        this.filteredLaboratoryTests = tests || [];
+        this.filteredLaboratoryTests = (tests || []).filter(t => !t.reportedByName); // Hide if reportedByName is not empty
       },
       error => {
         this.filteredLaboratoryTests = [];
@@ -532,7 +532,11 @@ export class LaboratoryComponent implements OnInit {
         console.log('getLaboratoryTests response:', tests);
         const pending = Array.isArray(tests)
           ? tests
-              .filter(t => !t.status || ['Ordered', 'Sample_Collected', 'In_Progress'].includes(t.status))
+              .filter(t => {
+                  const statusCondition = !t.status || ['Ordered', 'Sample_Collected', 'In_Progress'].includes(t.status);
+                  const reportedCondition = !t.reportedByName; // Hide if reportedByName is not empty
+                  return statusCondition && reportedCondition;
+              })
               .map(t => ({
                 testID: t.testID,
                 testNumber: t.testNumber,
@@ -553,7 +557,8 @@ export class LaboratoryComponent implements OnInit {
                 sampleCollectionDate: t.sampleCollectionDate,
                 resultDate: t.resultDate,
                 testCount: t.testCount || 0,
-                abnormalCount: t.abnormalCount || 0
+                abnormalCount: t.abnormalCount || 0,
+                reportedByName: t.reportedByName
               }) as LaboratoryTest) // Cast to LaboratoryTest type
           : [];
   

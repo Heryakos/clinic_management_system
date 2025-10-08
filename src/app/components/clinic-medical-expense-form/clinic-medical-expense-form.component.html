@@ -1,0 +1,118 @@
+<div class="expense-form-container">
+    <h2>Clinic Medical Expense Refund Form</h2>
+    <form [formGroup]="expenseForm" (ngSubmit)="onSubmit()" class="expense-form">
+      <div class="form-group">
+        <label for="employeeName">Employee Name:</label>
+        <div class="form-control">{{ employeeName || 'Loading...' }}</div>
+      </div>
+  
+      <div class="form-group">
+        <label for="payrollNumber">Payroll Number:</label>
+        <input
+          type="text"
+          id="payrollNumber"
+          formControlName="payrollNumber"
+          class="form-control"
+          placeholder="Enter payroll number">
+        <div class="error-message" *ngIf="expenseForm.get('payrollNumber')?.invalid && expenseForm.get('payrollNumber')?.touched">
+          Payroll number is required
+        </div>
+      </div>
+  
+      <div class="form-group">
+        <label for="patientName">Patient Name:</label>
+        <input
+          type="text"
+          id="patientName"
+          formControlName="patientName"
+          class="form-control"
+          placeholder="Enter patient name">
+        <div class="error-message" *ngIf="expenseForm.get('patientName')?.invalid && expenseForm.get('patientName')?.touched">
+          Patient name is required
+        </div>
+      </div>
+  
+      <div class="form-group">
+        <label for="department">Department:</label>
+        <input
+          type="text"
+          id="department"
+          formControlName="department"
+          class="form-control"
+          placeholder="Enter department">
+        <div class="error-message" *ngIf="expenseForm.get('department')?.invalid && expenseForm.get('department')?.touched">
+          Department is required
+        </div>
+      </div>
+  
+      <div class="form-group">
+        <label for="invoiceNumber">Invoice Number:</label>
+        <input
+          type="text"
+          id="invoiceNumber"
+          formControlName="invoiceNumber"
+          class="form-control"
+          placeholder="Enter invoice number">
+        <div class="error-message" *ngIf="expenseForm.get('invoiceNumber')?.invalid && expenseForm.get('invoiceNumber')?.touched">
+          Invoice number is required
+        </div>
+      </div>
+  
+      <div class="form-group">
+        <label for="totalAmount">Total Amount:</label>
+        <input
+          type="number"
+          id="totalAmount"
+          formControlName="totalAmount"
+          class="form-control"
+          placeholder="Enter total amount">
+        <div class="error-message" *ngIf="expenseForm.get('totalAmount')?.invalid && expenseForm.get('totalAmount')?.touched">
+          Valid total amount is required
+        </div>
+      </div>
+  
+      <div class="investigation-section">
+        <h3>Investigations</h3>
+        <div *ngFor="let inv of investigations; let i = index" class="investigation-row">
+          <div class="form-group">
+            <label>Investigation {{ i + 1 }}:</label>
+            <input
+              type="text"
+              [(ngModel)]="inv.investigation"
+              [ngModelOptions]="{standalone: true}"
+              class="form-control"
+              placeholder="Enter investigation type">
+          </div>
+          <div class="form-group">
+            <label>Done At:</label>
+            <input
+              type="text"
+              [(ngModel)]="inv.doneAt"
+              [ngModelOptions]="{standalone: true}"
+              class="form-control"
+              placeholder="Enter location">
+          </div>
+          <div class="form-group">
+            <label>Ordered From:</label>
+            <input
+              type="text"
+              [(ngModel)]="inv.orderedFrom"
+              [ngModelOptions]="{standalone: true}"
+              class="form-control"
+              placeholder="Enter ordered from">
+          </div>
+          <button type="button" class="remove-btn" (click)="removeInvestigation(i)" [disabled]="investigations.length === 1">Remove</button>
+        </div>
+        <button type="button" class="add-btn" (click)="addInvestigation()">Add Investigation</button>
+      </div>
+  
+      <div class="form-actions">
+        <button
+        type="submit"
+        class="submit-btn"
+        [disabled]="isSubmitDisabled()">
+        {{ isSubmitting ? 'Submitting...' : 'Submit and Generate PDF' }}
+      </button>
+      </div>
+    </form>
+  </div>

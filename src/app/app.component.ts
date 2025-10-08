@@ -21,7 +21,7 @@ export class AppComponent implements OnInit {
     pharmacy: 'd14cdfed-4011-4086-b9c6-3ac6da444ff8',
     injection: '095e17ff-4497-4fa0-8be9-74dc4979de58',
     patient: '27aaf22f-40c3-444f-a17a-364b8b2abafc',
-    supervisor: '96C1AB25-D15C-42CF-92FF-9F041AE6AE10',
+    supervisor: '96c1ab25-d15c-42cf-92ff-9f041ae6ae10',
     supervisorDashboard: '05cdc20a-24c4-4ead-aaa5-b913b7d5c1e7',
     patient_card: 'cc1afad4-4cd7-435a-b100-fc6b62f264d1',
     report: 'ef06de41-276b-496f-b966-16849fe629f5',
@@ -157,7 +157,7 @@ export class AppComponent implements OnInit {
     this.showReports = false;
     this.showInjection = false;
     this.showPatientAssignment = false;
-    // showSickLeave = false;
+    this.showSickLeave = false;
     this.showNotifications = false;
     console.log('Default menu visibility set: Sidebar hidden, only Medical Requests route accessible');
   }
@@ -197,7 +197,6 @@ export class AppComponent implements OnInit {
       if (roleId === this.roles.dashboard) {
         this.showDashboard = true;
         this.showEmployeeRegistered = true;
-        this.showExpenses = true;
       }
       if (roleId === this.roles.supervisor) {
         this.showSupervisor = true;
@@ -210,6 +209,7 @@ export class AppComponent implements OnInit {
       }
       if (roleId === this.roles.doctor) {
         this.showDoctorRegistration = true;
+        this.showExpenses = true; // Enable Expenses for doctor role
       }
       if (roleId === this.roles.laboratory) {
         this.showLaboratory = true;

@@ -57,6 +57,8 @@ import { InjectionPaperComponent } from './components/injection-paper/injection-
 import { LucyCalendarDirective } from 'lucy-calendar';
 import { EthiopianDatePickerComponent } from './components/ethiopian-date-picker/ethiopian-date-picker.component';
 import { EthiopianDateAdapter } from './directive/ethiopian-date-adapter';
+import { ClinicMedicalExpenseFormComponent } from './components/clinic-medical-expense-form/clinic-medical-expense-form.component';
+import { InjectionManagementComponent } from './components/injection-management/injection-management.component';
 
 @NgModule({
   declarations: [
@@ -99,7 +101,9 @@ import { EthiopianDateAdapter } from './directive/ethiopian-date-adapter';
     ItemReceivingComponent,
     InjectionDetailsDialogComponent,
     ReimbursementDocumentUploadComponent,
-    InjectionPaperComponent
+    InjectionPaperComponent,
+    ClinicMedicalExpenseFormComponent,
+    InjectionManagementComponent
     // EthiopianDatePickerComponent,
     // StockRequestFormComponent
     // PatientMedicalHistoryComponent
