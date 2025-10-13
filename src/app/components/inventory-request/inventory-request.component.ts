@@ -1,16 +1,17 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MedicalService } from 'src/app/medical.service';
 import { ItemCategory, ItemSelection, InventoryRequestEnhanced, ReasonCategory, ReasonSelection, InventoryItemenhanced, DosageForm, RoomCategory } from 'src/app/models/inventory-enhanced.model';
 import { Subscription } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-inventory-request',
   templateUrl: './inventory-request.component.html',
   styleUrls: ['./inventory-request.component.css']
 })
-export class InventoryRequestComponent implements OnInit {
+export class InventoryRequestComponent implements OnInit, OnDestroy {
   requestForm!: FormGroup;
   categories: ItemCategory[] = [];
   reasons: ReasonCategory[] = [];
@@ -22,7 +23,8 @@ export class InventoryRequestComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private medicalService: MedicalService
+    private medicalService: MedicalService,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
@@ -72,13 +74,13 @@ export class InventoryRequestComponent implements OnInit {
           console.log('Requestedbyuser:',this.requestedByuser);
         } else {
           console.warn('No employee data found in response');
-          alert('No user data found. Please try again.');
+          this.showErrorMessage('No user data found. Please try again.');
         }
       },
       error => {
         console.error('Error loading user data:', error);
         this.requestedByuser = null;
-        alert(`Error loading user data: ${error.error?.message || error.message}`);
+        this.showErrorMessage(`Error loading user data: ${error.error?.message || error.message}`);
       }
     );
   }
@@ -90,7 +92,7 @@ export class InventoryRequestComponent implements OnInit {
           console.warn('No role IDs received');
           this.roomId = '';
           this.categories = [];
-          alert('No role IDs available. Cannot load inventory.');
+          this.showErrorMessage('No role IDs available. Cannot load inventory.');
           return;
         }
         this.roomId = roleIds.find(id => id && id.trim()) || '';
@@ -101,14 +103,14 @@ export class InventoryRequestComponent implements OnInit {
         } else {
           console.warn('No valid roomId found in roleIds');
           this.categories = [];
-          alert('No valid room ID found. Cannot load inventory.');
+          this.showErrorMessage('No valid room ID found. Cannot load inventory.');
         }
       },
       error => {
         console.error('Error fetching role IDs:', error);
         this.roomId = '';
         this.categories = [];
-        alert('Failed to fetch role IDs. Please try again.');
+        this.showErrorMessage('Failed to fetch role IDs. Please try again.');
       }
     );
   }
@@ -116,7 +118,7 @@ export class InventoryRequestComponent implements OnInit {
     if (!this.roomId) {
       console.warn('No roomId available for loading categories');
       this.categories = [];
-      alert('No room ID available. Cannot load inventory.');
+      this.showErrorMessage('No room ID available. Cannot load inventory.');
       return;
     }
     console.log('Fetching inventory items for roomId:', this.roomId);
@@ -126,7 +128,7 @@ export class InventoryRequestComponent implements OnInit {
         if (!categories || !Array.isArray(categories) || categories.length === 0) {
           console.error('Invalid or empty categories data:', categories);
           this.categories = [];
-          alert('No inventory categories available for this room.');
+          this.showErrorMessage('No inventory categories available for this room.');
           return;
         }
         
@@ -156,7 +158,7 @@ export class InventoryRequestComponent implements OnInit {
       error => {
         console.error('Error loading categories:', error);
         this.categories = [];
-        alert('Failed to load inventory categories. Please try again.');
+        this.showErrorMessage('Failed to load inventory categories. Please try again.');
       }
     );
   }
@@ -164,7 +166,7 @@ export class InventoryRequestComponent implements OnInit {
     if (!this.roomId) {
       console.warn('No roomId available for loading room names');
       this.roomNames = [];
-      alert('No room ID available. Cannot load room names.');
+      this.showErrorMessage('No room ID available. Cannot load room names.');
       return;
     }
     console.log('Fetching room categories for roomId:', this.roomId);
@@ -174,7 +176,7 @@ export class InventoryRequestComponent implements OnInit {
         if (!roomCategories || !Array.isArray(roomCategories) || roomCategories.length === 0) {
           console.warn('No room categories available:', roomCategories);
           this.roomNames = [];
-          alert('No room names available for this room ID.');
+          this.showErrorMessage('No room names available for this room ID.');
           return;
         }
         // Extract unique roomName values
@@ -188,7 +190,7 @@ export class InventoryRequestComponent implements OnInit {
       error => {
         console.error('Error loading room categories:', error);
         this.roomNames = [];
-        alert('Failed to load room names. Please try again.');
+        this.showErrorMessage('Failed to load room names. Please try again.');
       }
     );
   }
@@ -267,7 +269,7 @@ export class InventoryRequestComponent implements OnInit {
             requestedByuser: this.requestedByuser,
             roomId: this.roomId
         });
-        alert('Invalid form, user, or room data. Please ensure you are logged in and have selected a valid room.');
+        this.showErrorMessage('Invalid form, user, or room data. Please ensure you are logged in and have selected a valid room.');
         return;
     }
 
@@ -292,12 +294,12 @@ export class InventoryRequestComponent implements OnInit {
         next: () => {
             this.isSubmitting = false;
             this.requestForm.reset();
-            alert('Request submitted successfully');
+            this.showSuccessMessage('Request submitted successfully');
         },
         error: (error) => {
             this.isSubmitting = false;
             console.error('Error submitting request:', error);
-            alert(`Error submitting request: ${error.error?.message || error.message}`);
+            this.showErrorMessage(`Error submitting request: ${error.error?.message || error.message}`);
         }
     });
 }
@@ -305,5 +307,19 @@ export class InventoryRequestComponent implements OnInit {
     if (this.roleIdsSubscription) {
       this.roleIdsSubscription.unsubscribe();
     }
+  }
+
+  private showErrorMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['error-snackbar']
+    });
+  }
+
+  private showSuccessMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['success-snackbar']
+    });
   }
 }

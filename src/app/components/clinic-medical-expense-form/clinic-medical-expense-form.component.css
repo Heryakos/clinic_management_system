@@ -1,158 +1,180 @@
-.expense-form-container {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 20px;
-  }
-  
-  .expense-form-container h2 {
-    color: #2c3e50;
-    margin-bottom: 30px;
-    font-size: 2em;
-    font-weight: 500;
-  }
-  
-  .expense-form {
-    background: white;
-    padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    margin-bottom: 40px;
-  }
-  
-  .form-group {
-    margin-bottom: 20px;
-  }
-  
-  .form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-    color: #333;
-  }
-  
-  .form-control {
-    width: 100%;
-    padding: 10px;
-    border: 2px solid #e9ecef;
-    border-radius: 6px;
-    font-size: 16px;
-    transition: border-color 0.3s;
-  }
-  
-  .form-control:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-  
-  .error-message {
-    color: #e74c3c;
-    font-size: 14px;
-    margin-top: 5px;
-  }
-  
-  .investigation-section {
-    margin-top: 30px;
-  }
-  
-  .investigation-section h3 {
-    color: #2c3e50;
-    margin-bottom: 20px;
-  }
-  
-  .investigation-row {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 15px;
-    align-items: flex-end;
-  }
-  
-  .investigation-row .form-group {
-    flex: 1;
-  }
-  
-  .remove-btn {
-    background: #e74c3c;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 6px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s;
-  }
-  
-  .remove-btn:hover:not(:disabled) {
-    background: #c0392b;
-  }
-  
-  .remove-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-  
-  .add-btn {
-  background: #28a745;
-  color: #fff;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  margin-right: 5px;
-  transition: all 0.2s;
-  }
-  
-  .add-btn:hover {
-  background: #218838;
-  }
-  
-  .submit-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 12px 30px;
-    border: none;
-    border-radius: 6px;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s;
-  }
-  
-  .submit-btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  }
-  
-  .submit-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-  
-  .form-actions {
-    display: flex;
-    gap: 15px;
-    margin-top: 20px;
-  }
-  
-  @media (max-width: 768px) {
-    .expense-form-container {
-      padding: 10px;
-    }
-  
-    .expense-form {
-      padding: 20px;
-    }
-  
-    .investigation-row {
-      flex-direction: column;
-      align-items: stretch;
-    }
-  
-    .remove-btn,
-    .add-btn,
-    .submit-btn {
-      width: 100%;
-    }
-  }
+/* src/app/components/clinic-medical-expense-form/clinic-medical-expense-form.component.css - no change for UI, but for pdf-template use the provided CSS */
+
+.pdf-template {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  width: 210mm;
+  height: 297mm;
+  padding: 20mm;
+  background: white;
+  font-size: 12pt;
+}
+
+/* Paste the provided CSS here for .page, .header-top, etc. */
+
+@page { size: A4; margin: 20mm; }
+html, body {
+  height:100%;
+  margin:0;
+  font-family: "Times New Roman", Georgia, serif;
+  color:#000;
+}
+.page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 18mm;
+  margin: 10mm auto;
+  box-sizing: border-box;
+}
+
+/* Header layout */
+.header-top {
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  margin-bottom: 8mm;
+}
+
+.logo {
+  width:90px;
+}
+.logo img {
+  width:100%;
+  height:auto;
+}
+
+.no-date {
+  width:33%;
+  font-size:14px;
+}
+.no-date .line {
+  display:inline-block;
+  border-bottom:1px solid #000;
+  width:120px;
+  margin-left:6px;
+  vertical-align:middle;
+}
+.no-date .label {
+  font-size:13px;
+  margin-right:6px;
+}
+
+.title-block {
+  text-align:center;
+  flex:1;
+}
+.company {
+  font-size:18px;
+  font-weight:700;
+  margin-bottom:4px;
+  text-transform:uppercase;
+}
+.form-title {
+  font-size:16px;
+  text-transform:uppercase;
+  letter-spacing:1px;
+}
+
+/* Body styling */
+.form-body {
+  margin-top:6mm;
+  font-size:15px;
+  line-height:1.6;
+}
+.row {
+  display:flex;
+  align-items:center;
+  margin-bottom:8px;
+}
+.label {
+  min-width:190px;
+  font-weight:600;
+}
+.fill {
+  border-bottom:1px solid #000;
+  flex:1;
+  height:20px;
+  display:inline-block;
+}
+.short-fill {
+  width:200px;
+  display:inline-block;
+  border-bottom:1px solid #000;
+  height:20px;
+  vertical-align:middle;
+}
+
+/* Investigation section */
+.investigation {
+  display:flex;
+  gap:18px;
+  margin-top:6px;
+  margin-bottom:14px;
+}
+.investigation .left,
+.investigation .right {
+  flex:1;
+  display:flex;
+  align-items:center;
+}
+.small-label {
+  width:80px;
+  font-weight:600;
+}
+
+/* Invoice lines */
+.items {
+  margin-top:6mm;
+  margin-bottom:18px;
+}
+.items .line-item {
+  display:flex;
+  gap:12px;
+  align-items:center;
+  margin:4px 0;
+}
+.items .number {
+  width:36px;
+  text-align:left;
+  font-weight:600;
+}
+.items .blank {
+  border-bottom:1px solid #000;
+  flex:1;
+  height:18px;
+}
+
+/* Footer area */
+.footer-note {
+  margin-top:16px;
+  font-size:15px;
+  font-weight:600;
+}
+.sign-block {
+  display:flex;
+  justify-content:space-between;
+  margin-top:22px;
+  align-items:center;
+}
+.stamp {
+  width:40%;
+  text-align:center;
+}
+.sig {
+  width:40%;
+  text-align:center;
+}
+.sign-line {
+  border-top:1px solid #000;
+  margin-top:30px;
+  width:80%;
+  margin-left:auto;
+  margin-right:auto;
+  padding-top:6px;
+}
+
+@media print {
+  body { margin:0; }
+  .page { box-shadow:none; margin:0; }
+}

@@ -619,3 +619,33 @@ textarea.form-control {
     max-height: 40px;
   }
 }
+
+/* Tabs Styles */
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tabs button {
+  padding: 10px 20px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-bottom: none;
+  cursor: pointer;
+  border-radius: 4px 4px 0 0;
+}
+
+.tabs button.active-tab {
+  background: white;
+  font-weight: bold;
+  border-bottom: 2px solid white;
+}
+
+.no-results {
+  padding: 20px;
+  text-align: center;
+  color: #6c757d;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}

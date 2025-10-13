@@ -21,7 +21,8 @@ export class MedicalRequestComponent implements OnInit {
   employeeDisplayName: string = '';
   userRole: 'employee' | 'supervisor' = 'employee';
   showMessagesModal = false;
-  hasPendingOrApprovedRequest = false; // New property to track pending/approved requests
+  hasPendingOrApprovedRequest = false;
+  currentRequestStatus: string = ''; // Track the current request status
 
   constructor(
     private fb: FormBuilder,
@@ -108,12 +109,26 @@ export class MedicalRequestComponent implements OnInit {
         this.hasPendingOrApprovedRequest = requests.some(
           request => request.status.toLowerCase() === 'pending' || request.status.toLowerCase() === 'approved'
         );
+        
+        // Set current request status for display
+        if (this.hasPendingOrApprovedRequest) {
+          const activeRequest = requests.find(
+            request => request.status.toLowerCase() === 'pending' || request.status.toLowerCase() === 'approved'
+          );
+          this.currentRequestStatus = activeRequest?.status || '';
+        }
       },
       error => {
         console.error('Error loading medical requests:', error);
-        this.hasPendingOrApprovedRequest = false; // Default to false on error
+        this.hasPendingOrApprovedRequest = false;
+        this.currentRequestStatus = '';
       }
     );
+  }
+
+  getCurrentRequestStatus(): string {
+    if (!this.currentRequestStatus) return 'pending or approved';
+    return this.currentRequestStatus.toLowerCase();
   }
 
   onSubmit(): void {
@@ -137,8 +152,8 @@ export class MedicalRequestComponent implements OnInit {
       this.medicalService.createMedicalRequest(request).subscribe(
         (response) => {
           this.isSubmitting = false;
-          this.medicalRequestForm.reset();
-          this.loadMedicalRequests(environment.username); // Reload requests to update status
+          this.medicalRequestForm.reset({ requestNumber: this.generateId() });
+          this.loadMedicalRequests(environment.username);
           this.showSuccessMessage('Medical request submitted successfully!');
         },
         error => {
@@ -147,8 +162,10 @@ export class MedicalRequestComponent implements OnInit {
           console.error('Error submitting medical request:', error);
         }
       );
+    } else if (this.hasPendingOrApprovedRequest) {
+      this.showWarningMessage('You already have an active medical request. Please wait until it is processed before submitting a new one.');
     } else {
-      this.showWarningMessage('Please fill all required fields correctly or resolve existing pending/approved requests.');
+      this.showWarningMessage('Please fill all required fields correctly.');
     }
   }
 

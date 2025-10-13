@@ -5,6 +5,7 @@ import { SupervisorRequest, InventoryRequestDetail, InventoryItemenhanced } from
 import { environment } from 'src/environments/environment';
 import { Subscription } from 'rxjs';
 import { MedicationCategory, MedicationSelection } from '../medication-tree-dropdown/medication-tree-dropdown.component';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-inventory',
@@ -51,7 +52,9 @@ export class InventoryComponent implements OnInit, OnDestroy {
 
   constructor(
     private medicalService: MedicalService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private  snackBar:MatSnackBar
+    
   ) {}
 
   ngOnInit(): void {
@@ -103,7 +106,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error loading medications:', error);
-        alert('Failed to load medications. Please try again.');
+        this.showErrorMessage(`Failed to load medications. Please try again.`)
         this.categorizedMedications = [];
       }
     });
@@ -143,7 +146,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error adding new medication:', error);
-        alert('Failed to add new medication. Please try again.');
+        this.showErrorMessage(`Failed to add new medication. Please try again.`)
       }
     });
   }
@@ -161,7 +164,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error loading inventory requests:', error);
-        alert('Failed to load inventory requests. Please try again.');
+        this.showErrorMessage(`Failed to load inventory requests. Please try again.`)
       }
     });
   }
@@ -170,7 +173,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
   updateRequestStatus(id: number, status: string): void {
     this.isProcessing = true;
     if (!this.currentUserId) {
-      alert('User information not available. Please try again.');
+      this.showErrorMessage(`User information not available. Please try again.`)
       this.isProcessing = false;
       return;
     }
@@ -188,11 +191,11 @@ export class InventoryComponent implements OnInit, OnDestroy {
         this.loadApprovedRequests();
         this.loadInventoryRequests();
         this.isProcessing = false;
-        alert(`Request ${status} successfully!`);
+        this.showErrorMessage(`Request ${status} successfully`)
       },
       error: (error) => {
         console.error(`Error updating request status to ${status}:`, error);
-        alert(`Failed to update request status. Please try again.`);
+        this.showErrorMessage(`Failed to update request status. Please try again.`)
         this.isProcessing = false;
       }
     });
@@ -225,12 +228,12 @@ export class InventoryComponent implements OnInit, OnDestroy {
           this.initializeForm();
           this.loadApprovedRequests();
           this.loadInventoryRequests();
-          alert('Inventory request submitted successfully!');
+          this.showErrorMessage(`inventory request submitted successfully`)
         },
         error: (error) => {
           this.isSubmitting = false;
           console.error('Error submitting request:', error);
-          alert('Error submitting request. Please try again.');
+          this.showErrorMessage(`Error submitting request. Please try again: ${error.error?.message || error.message}`)
         }
       });
     }
@@ -252,12 +255,12 @@ export class InventoryComponent implements OnInit, OnDestroy {
           this.currentUserId = employee.user_ID ?? null;
         } else {
           console.warn('No employee data found');
-          alert('No user data found. Please try again.');
+          this.showErrorMessage(`No user data found. Please try again`);
         }
       },
       error => {
         console.error('Error loading user data:', error);
-        alert('Error loading user data. Please refresh the page.');
+        this.showErrorMessage(`Error loading user data. Please refresh the page.`);
       }
     );
   }
@@ -278,7 +281,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
       },
       error => {
         console.error('Error fetching role IDs:', error);
-        alert('Failed to fetch role IDs. Please try again.');
+        this.showErrorMessage(`Faild to fetch role IDs, Please try again.`);
       }
     );
   }
@@ -297,7 +300,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
       },
       error => {
         console.error('Error loading approved requests:', error);
-        alert('Error loading requests. Please try again.');
+        this.showErrorMessage(`Error loading requests.Please try again.`);
       }
     );
   }
@@ -311,7 +314,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
       },
       error => {
         console.error('Error loading inventory items:', error);
-        alert('Error loading inventory items. Please try again.');
+        this.showErrorMessage(`Error loading inventory items. Please tey again.`);
       }
     );
   }
@@ -393,7 +396,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
       },
       error => {
         console.error('Error loading request items:', error);
-        alert('Error loading request details.');
+        this.showErrorMessage(`Error loading request details.`)
       }
     );
   }
@@ -413,7 +416,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
 
   confirmIssueItems(): void {
     if (!this.selectedRequest || !this.currentUserId) {
-      alert('Missing request or user information');
+      this.showErrorMessage(`Missing request or user information`);
       return;
     }
 
@@ -423,7 +426,7 @@ export class InventoryComponent implements OnInit, OnDestroy {
 
     if (insufficientItems.length > 0) {
       const itemNames = insufficientItems.map(item => item.itemName).join(', ');
-      alert(`Insufficient stock for items: ${itemNames}. Cannot issue request.`);
+      this.showErrorMessage(`Insufficient stock for items: ${itemNames} Cannot issue request.`)
       return;
     }
 
@@ -439,19 +442,19 @@ export class InventoryComponent implements OnInit, OnDestroy {
         this.loadApprovedRequests();
         this.loadInventoryItems();
         this.loadInventoryRequests();
-        alert('Items issued successfully!');
+        this.showErrorMessage(`Items issued successfully`)
       },
       error => {
         this.isProcessing = false;
         console.error('Error issuing items:', error);
-        alert('Error issuing items. Please try again.');
+        this.showErrorMessage(`Error issuing Items. Please try again.`);
       }
     );
   }
 
   confirmReceiptItems(): void {
     if (!this.selectedRequest || !this.currentUserId) {
-      alert('Missing request or user information');
+      this.showErrorMessage(`Missing request or user inofrmatio`);
       return;
     }
 
@@ -466,12 +469,12 @@ export class InventoryComponent implements OnInit, OnDestroy {
         this.closeModal();
         this.loadApprovedRequests();
         this.loadInventoryRequests();
-        alert('Receipt confirmed successfully!');
+        this.showErrorMessage(`Receipt confirmed successfully`);
       },
       error => {
         this.isProcessing = false;
         console.error('Error confirming receipt:', error);
-        alert('Error confirming receipt. Please try again.');
+        this.showErrorMessage(`Error confirming receipt. Please try again.`)
       }
     );
   }
@@ -492,5 +495,19 @@ export class InventoryComponent implements OnInit, OnDestroy {
     if (this.roleIdsSubscription) {
       this.roleIdsSubscription.unsubscribe();
     }
+  }
+
+  private showErrorMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['error-snackbar']
+    });
+  }
+
+  private showSuccessMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['success-snackbar']
+    });
   }
 }

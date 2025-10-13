@@ -17,50 +17,26 @@ export class SickLeaveComponent implements OnInit {
   @Input() patientID: string | null = null; // CardNumber
   @Input() createdBy: string | null = null;
   sickLeaveForm!: FormGroup;
-  sickLeaves: SickLeave[] = [];
+  activeSickLeaves: SickLeave[] = [];
+  completedSickLeaves: SickLeave[] = [];
   isSubmitting = false;
   showPrintModal = false;
   selectedLeave: SickLeave | null = null;
+  currentTab: 'pending' | 'completed' = 'pending';
 
   constructor(
     private fb: FormBuilder,
     private medicalService: MedicalService,
     private cdr: ChangeDetectorRef
   ) {}
-  // ngOnInit(): void {
-  //   console.log('SickLeaveComponent initialized with patientID:', this.patientID, 'createdBy:', this.createdBy);
-  //   this.initializeForm();
-  //   this.loadSickLeaves();
-  //   this.prefillForm();
-  // }
   ngOnInit(): void {
-        console.log('SickLeaveComponent initialized with patientID:', this.patientID, 'createdBy:', this.createdBy);
-    this.sickLeaveForm = this.fb.group({
-      employeeId: [''],
-      employeeName: [''],
-      address: [''],
-      diagnosis: [''],
-      age: [null],
-      sex: [null],
-      startDate: [''],
-      endDate: [''],
-      totalDays: [null],
-      examinedOn: [null],
-      doctorName: [''],
-      recommendations: [''],
-      SignatureText: [''] // Make sure this is included
-    });
-    
-    // Call prefillForm if patientID is available
+    console.log('SickLeaveComponent initialized with patientID:', this.patientID, 'createdBy:', this.createdBy);
+    this.initializeForm();
+    this.loadSickLeaves();
     if (this.patientID) {
       this.prefillForm();
-      // this.initializeForm();
-      // this.loadSickLeaves();
     }
     this.subscribeToFormChanges();
-    this.loadSickLeaves();
-    this.initializeForm();
-      // this.prefillForm();
   }
   subscribeToFormChanges(): void {
     // Subscribe to changes in startDate and endDate
@@ -89,7 +65,7 @@ export class SickLeaveComponent implements OnInit {
       age: [{ value: '', disabled: true }],
       sex: [{ value: '', disabled: true }],
       examinedOn: [{ value: '', disabled: true }],
-      signature: [{ value: '', disabled: true }],
+      SignatureText: [{ value: '', disabled: true }],
       patientId: [{ value: '', disabled: true }]
     });
 
@@ -117,57 +93,6 @@ export class SickLeaveComponent implements OnInit {
     }
   }
 
-  // prefillForm(): void {
-  //   if (this.patientID) {
-  //     this.medicalService.getPatient(this.patientID).subscribe(
-  //       (patient: any) => {
-  //         console.log('Patient data:', patient);
-  //         this.sickLeaveForm.patchValue({
-  //           employeeId: patient.EmployeeID || '',
-  //           employeeName: patient.FullName || '',
-  //           address: patient.Address || '',
-  //           diagnosis: patient.MedicalHistory || 'To be determined',
-  //           age: patient.Age || null,
-  //           sex: patient.Gender === 'ወንድ / Male' ? 'Male' : patient.Gender === 'ሴት / Female' ? 'Female' : patient.Gender || null,
-  //           examinedOn: patient.LastVisitDate ? new Date(patient.LastVisitDate).toISOString().split('T')[0] : null,
-  //           patientId: patient.UserID || null // Assuming UserID is the GUID for PatientID
-  //         });
-  //         if (this.patientID) {
-  //         this.medicalService.getPatientByCardNumberHistory(this.patientID).subscribe(
-  //           (history: any[]) => {
-  //             const latestRecord = history.length > 0 ? history[0] : null;
-  //             if (latestRecord?.StaffUserID) {
-  //               this.medicalService.getDoctorByUserId(latestRecord.StaffUserID).subscribe(
-  //                 (doctor: any) => {
-  //                   this.sickLeaveForm.patchValue({
-  //                     doctorName: doctor.name || 'Unknown Doctor'
-  //                   });
-  //                 },
-  //                 error => {
-  //                   console.error('Error fetching doctor:', error);
-  //                   this.sickLeaveForm.patchValue({ doctorName: 'Unknown Doctor' });
-  //                 }
-  //               );
-  //             } else {
-  //               console.warn('No StaffUserID found in patient history');
-  //               this.sickLeaveForm.patchValue({ doctorName: 'Unknown Doctor' });
-  //             }
-  //           },
-  //           error => {
-  //             console.error('Error fetching patient history:', error);
-  //             this.sickLeaveForm.patchValue({ doctorName: 'Unknown Doctor' });
-  //           }
-  //         )};
-  //       },
-  //       error => {
-  //         console.error('Error fetching patient:', error);
-  //         alert('Error fetching patient data.');
-  //       }
-  //     );
-  //   } else {
-  //     alert('No Patient ID provided.');
-  //   }
-  // }
   prefillForm(): void {
     if (this.patientID) {
       this.medicalService.getPatient(this.patientID).subscribe(
@@ -289,7 +214,7 @@ handleSignatureError(event: any): void {
         age: formValue.age || null,
         sex: formValue.sex || null,
         examinedOn: formValue.examinedOn ? new Date(formValue.examinedOn) : null,
-        signature: formValue.signature || null,
+        signature: formValue.SignatureText || null,
         patientID: formValue.patientId || null
       };
 
@@ -319,11 +244,13 @@ handleSignatureError(event: any): void {
       this.medicalService.getSickLeaveCertificatebyemployee(this.patientID).subscribe(
         (leaves: SickLeave[]) => {
           console.log('asdeedc', leaves);
-          this.sickLeaves = leaves || [];
+          this.activeSickLeaves = leaves.filter(leave => leave.status === 'Active') || [];
+          this.completedSickLeaves = leaves.filter(leave => leave.status !== 'Active') || [];
         },
         error => {
           console.error('Error loading sick leaves:', error);
-          this.sickLeaves = [];
+          this.activeSickLeaves = [];
+          this.completedSickLeaves = [];
         }
       );
     }
@@ -353,9 +280,7 @@ handleSignatureError(event: any): void {
     const doc = new jsPDF();
     const logoUrl = 'assets/photo_2025-07-21_14-48-47.jpg';
 
-    const img = new Image();
-    img.src = logoUrl;
-    doc.addImage(img, 'JPEG', 15, 10, 30, 30);
+    doc.addImage(logoUrl, 'JPEG', 15, 10, 30, 30);
 
     doc.setFontSize(16);
     doc.text('FEDERAL HOUSING COOPERATION MEDIUM CLINIC', 60, 20);
@@ -396,7 +321,9 @@ handleSignatureError(event: any): void {
     doc.text("Doctor's Name:", 15, 130);
     doc.text(this.selectedLeave.doctorName || '', 40, 130);
     doc.text('Signature:', 15, 140);
-    doc.text(this.selectedLeave.signature || '', 40, 140);
+    if (this.selectedLeave.signature) {
+      doc.addImage(`data:image/png;base64,${this.selectedLeave.signature}`, 'PNG', 40, 135, 60, 20);
+    }
     doc.text('Date:', 15, 150);
     doc.text(this.selectedLeave.issueDate?.toLocaleDateString() || '', 30, 150);
 
@@ -409,9 +336,7 @@ handleSignatureError(event: any): void {
     const doc = new jsPDF();
     const logoUrl = 'assets/photo_2025-07-21_14-48-47.jpg';
 
-    const img = new Image();
-    img.src = logoUrl;
-    doc.addImage(img, 'JPEG', 15, 10, 30, 30);
+    doc.addImage(logoUrl, 'JPEG', 15, 10, 30, 30);
 
     doc.setFontSize(16);
     doc.text('FEDERAL HOUSING COOPERATION MEDIUM CLINIC', 60, 20);
@@ -452,7 +377,9 @@ handleSignatureError(event: any): void {
     doc.text("Doctor's Name:", 15, 130);
     doc.text(this.selectedLeave.doctorName || '', 40, 130);
     doc.text('Signature:', 15, 140);
-    doc.text(this.selectedLeave.signature || '', 40, 140);
+    if (this.selectedLeave.signature) {
+      doc.addImage(`data:image/png;base64,${this.selectedLeave.signature}`, 'PNG', 40, 135, 60, 20);
+    }
     doc.text('Date:', 15, 150);
     doc.text(this.selectedLeave.issueDate?.toLocaleDateString() || '', 30, 150);
 

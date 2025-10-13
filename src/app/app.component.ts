@@ -16,19 +16,21 @@ export class AppComponent implements OnInit {
 
   // Role IDs from aspnet_Roles table
   roles = {
-    doctor: '05cdc20a-24c4-4ead-aaa5-b913b7d5c1e7',
+    doctorOPD1: '05cdc20a-24c4-4ead-aaa5-b913b7d5c1e7',
+    doctorOPD2: '91f72e71-8392-4fee-9398-5155d6581559',
+    doctorOPD3: 'f694f00d-676e-4d9f-a0a3-845edd449b33',
     laboratory: '2c27c2f5-f0af-4e88-8e93-d09bcbc77731',
     pharmacy: 'd14cdfed-4011-4086-b9c6-3ac6da444ff8',
     injection: '095e17ff-4497-4fa0-8be9-74dc4979de58',
-    patient: '27aaf22f-40c3-444f-a17a-364b8b2abafc',
+    // patient: 'cc1afad4-4cd7-435a-b100-fc6b62f264d1',
     supervisor: '96c1ab25-d15c-42cf-92ff-9f041ae6ae10',
-    supervisorDashboard: '05cdc20a-24c4-4ead-aaa5-b913b7d5c1e7',
+    supervisorDashboard: '46dc8001-85ca-4e4f-921b-91d145f607a8',
     patient_card: 'cc1afad4-4cd7-435a-b100-fc6b62f264d1',
     report: 'ef06de41-276b-496f-b966-16849fe629f5',
     dashboard: '5b574f73-d45d-416d-a029-67f9fc0de049',
-    inventory: 'd14cdfed-4011-4086-b9c6-3ac6da444ff8',
-    inventory_extended: 'd14cdfed-4011-4086-b9c6-3ac6da444ff8',
-    notifications: '05cdc20a-24c4-4ead-aaa5-b913b7d5c1e7',
+    inventory: 'e0e5db04-7418-4cfb-8786-a72f70ccc557',
+    inventory_extended: 'e0e5db04-7418-4cfb-8786-a72f70ccc557',
+    notifications: '46dc8001-85ca-4e4f-921b-91d145f607a8',
   };
 
   // Boolean flags for menu item visibility
@@ -202,20 +204,24 @@ export class AppComponent implements OnInit {
         this.showSupervisor = true;
       }
       if (roleId === this.roles.supervisorDashboard) {
+        this.showExpenses = true;
         this.showSupervisorDashboard = true;
       }
       if (roleId === this.roles.patient_card) {
         this.showPatientCards = true;
       }
-      if (roleId === this.roles.doctor) {
+      if (roleId === this.roles.doctorOPD1 || roleId === this.roles.doctorOPD2 || roleId === this.roles.doctorOPD3) {
         this.showDoctorRegistration = true;
-        this.showExpenses = true; // Enable Expenses for doctor role
+        this.showInventoryRequest = true;
+         // Enable Expenses for doctor role
       }
       if (roleId === this.roles.laboratory) {
         this.showLaboratory = true;
+        this.showInventoryRequest = true;
       }
       if (roleId === this.roles.pharmacy) {
         this.showPharmacy = true;
+        this.showInventoryRequest = true;
       }
       if (roleId === this.roles.inventory) {
         this.showInventory = true;
@@ -232,11 +238,21 @@ export class AppComponent implements OnInit {
       if (roleId === this.roles.injection) {
         this.showInjection = true;
       }
-      if (roleId === this.roles.patient) {
-        this.showPatientAssignment = true;
-      }
+      // if (roleId === this.roles.patient) {
+      //   this.showPatientAssignment = true;
+      // }
       if (roleId === this.roles.notifications) {
         this.showNotifications = true;
+      }
+      if (
+        roleId === this.roles.doctorOPD1 ||
+        roleId === this.roles.doctorOPD2 ||
+        roleId === this.roles.doctorOPD3 ||
+        roleId === this.roles.laboratory ||
+        roleId === this.roles.pharmacy ||
+        roleId === this.roles.injection
+      ) {
+        this.showInventoryRequest = true;
       }
     });
 

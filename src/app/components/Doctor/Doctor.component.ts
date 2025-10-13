@@ -85,7 +85,7 @@ export class DoctorComponent implements OnInit {
         this.loadInjectableMedications();
         this.loadRooms();
         this.loadUserData();
-        this.loadActivePatients();
+        // this.loadActivePatients();
     }
     // Helper method to show snackbar messages
     private showSnackBar(message: string, action: string = 'Close', duration: number = 3000, panelClass: string = 'info-snackbar'): void {
@@ -117,18 +117,28 @@ export class DoctorComponent implements OnInit {
 
     loadUserData(): void {
         this.medicalService.getEmployeeById(environment.username).subscribe(
-            (response: any) => {
-                const employee = response?.c_Employees?.[0];
-                this.createdBy = employee?.user_ID ?? null;
-                this.employeeID = employee?.employee_Id ?? null;
-                console.log('doctorid', this.employeeID);
-            },
-
-            error => {
-                this.createdBy = null;
+          (response: any) => {
+            const employee = response?.c_Employees?.[0];
+            this.createdBy = employee?.user_ID ?? null;
+            this.employeeID = employee?.employee_Id ?? null;
+            console.log('doctorid', this.employeeID);
+            
+            // After loading user data, load doctor-specific patients
+            if (this.createdBy) {
+              this.loadActivePatients(this.createdBy);
+            } else {
+              console.error('No user ID found for current doctor');
+              this.activePatients = [];
             }
+          },
+          error => {
+            this.createdBy = null;
+            this.employeeID = null;
+            console.error('Error loading user data:', error);
+            this.activePatients = [];
+          }
         );
-    }
+      }
 
     // Modified loadMedications to categorize medications
     loadMedications(): void {
@@ -291,49 +301,50 @@ export class DoctorComponent implements OnInit {
             }
         );
     }
-    loadActivePatients(): void {
+    loadActivePatients(doctorID: string): void {
         this.isSearching = true;
-        this.medicalService.getAllActivePatients().subscribe(
-            (patients: any[]) => {
-                const all = patients.map(patient => ({
-                    PatientID: patient.PatientID,
-                    CardNumber: patient.CardNumber,
-                    FullName: patient.FullName,
-                    FatherName: patient.FatherName,
-                    DateOfBirth: new Date(patient.DateOfBirth),
-                    Age: patient.Age,
-                    gender: patient.gender,
-                    phone: patient.Phone,
-                    Address: patient.Address,
-                    BloodType: patient.BloodType,
-                    TotalVisits: patient.TotalVisits,
-                    LastVisitDate: patient.LastVisitDate ? new Date(patient.LastVisitDate) : undefined,
-                    LastDiagnosis: patient.LastDiagnosis,
-                    RegistrationDate: patient.RegistrationDate,
-                    SupervisorApproval: patient.SupervisorApproval,
-                    EmployeeID: patient.EmployeeID,
-                    Photo: patient.Photo,
-                    RequestType: patient.RequestType,
-                    RequestNumber: patient.RequestNumber,
-                    RoleName: patient.RoleName,
-                    RoomNumber: patient.RoomNumber,
-                    StaffUserID: patient.StaffUserID,
-                    IsActive: patient.IS_Active
-                }));
-                const examOnly = all.filter(p => {
-                    return p.RoleName === 'Examination(OPD-1)' || p.RoleName === 'Examination(OPD-2)' || p.RoleName === 'Examination(OPD-3)';
-                });
-                this.activePatients = examOnly.length > 0 ? examOnly : all;
-                this.isSearching = false;
-            },
-            error => {
-                console.error('Error loading active patients:', error);
-                this.activePatients = [];
-                this.isSearching = false;
-                this.showSnackBar('Error loading active patients.', 'Close', 5000, 'error-snackbar');
-            }
+        this.medicalService.getAllDoctorActivePatients(doctorID).subscribe(
+          (patients: any[]) => {
+            // Remove the role filtering since the API now returns only doctor-specific patients
+            this.activePatients = patients.map(patient => ({
+              PatientID: patient.PatientID,
+              CardNumber: patient.CardNumber,
+              FullName: patient.FullName,
+              FatherName: patient.FatherName,
+              DateOfBirth: new Date(patient.DateOfBirth),
+              Age: patient.Age,
+              gender: patient.gender,
+              phone: patient.phone,
+              Address: patient.Address,
+              BloodType: patient.BloodType,
+              TotalVisits: patient.TotalVisits,
+              LastVisitDate: patient.LastVisitDate ? new Date(patient.LastVisitDate) : undefined,
+              LastDiagnosis: patient.LastDiagnosis,
+              RegistrationDate: patient.RegistrationDate,
+              SupervisorApproval: patient.SupervisorApproval,
+              EmployeeID: patient.EmployeeID,
+              Photo: patient.Photo,
+              RequestType: patient.RequestType,
+              RequestNumber: patient.RequestNumber,
+              RoleName: patient.RoleName,
+              RoomNumber: patient.RoomNumber,
+              StaffUserID: patient.StaffUserID,
+              IsActive: patient.IS_Active,
+              DoctorID: patient.DoctorID, // Add DoctorID to the patient object
+              DoctorName: patient.DoctorFullName // Add doctor name
+            }));
+            
+            this.isSearching = false;
+            console.log('Loaded doctor-specific patients:', this.activePatients.length);
+          },
+          error => {
+            console.error('Error loading doctor-specific patients:', error);
+            this.activePatients = [];
+            this.isSearching = false;
+            this.showSnackBar('Error loading your assigned patients.', 'Close', 5000, 'error-snackbar');
+          }
         );
-    }
+      }
 
     onPatientRowClick(patient: PatientSummary): void {
         this.resetPatientData(); // Clear old data immediately
@@ -710,6 +721,7 @@ export class DoctorComponent implements OnInit {
             );
       
             this.prescriptions = filtered.map(p => ({
+              ...p,
               prescriptionID: p.prescriptionID || p.PrescriptionID,
               prescriptionNumber: p.prescriptionNumber || p.PrescriptionNumber,
               prescriptionDate: p.prescriptionDate || p.PrescriptionDate,
@@ -1151,9 +1163,9 @@ export class DoctorComponent implements OnInit {
         dialogRef.afterClosed().subscribe(result => {
             if (result) {
                 if (result.success) {
-                    alert(result.success);
+                    this.showSnackBar(`result.success`)
                 } else if (result.error) {
-                    alert(result.error);
+                    this.showSnackBar(`result.error`)
                 }
             }
         });
@@ -1178,6 +1190,6 @@ export class DoctorComponent implements OnInit {
         this.injections = [];
         this.searchForm.reset();
         this.editForm.reset();
-        this.loadActivePatients(); // Reload active patients
+        // this.loadActivePatients(); // Reload active patients
     }
 }

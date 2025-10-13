@@ -18,15 +18,15 @@ export const environment = {
   rootPath2: window.rootPath2,
   rootLookupApiPath: window.rootLookupApiPath,
   rootApiPath: window.rootApiPath,
-  username: window._UserName,
+  // username: window._UserName,
   // username: '10506', // this is supervisor and doctor
-  // username: '08445', // Laboratory
+  // username: '10335', // Laboratory
   // username: '10715',  // this is the Pharmacy
-  // username: '10715', // doctor
-    // username: 'C00113', // doctor
+  username: '10024', // doctor
+  // username: 'C00113', // doctor
   // username: 'C00067', // patient
   // username: '11094', // patient
-  // username: '10830', // cardroom
+  // username: '05350', // cardroom
   phisicalPath: "./assets/i18n/",
   assetBasePath: window.assetBasePath || 'assets/',
   Lang: "10D04E8B-3361-E111-95D5-00E04C05559B",

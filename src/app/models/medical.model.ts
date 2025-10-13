@@ -185,6 +185,10 @@ export interface Prescription {
   date: Date;
 }
 
+// medical.model.ts - add fields
+
+// medical.model.ts - update
+
 export interface ExpenseReimbursement {
   reimbursementID: number;
   reimbursementNumber: string;
@@ -201,10 +205,15 @@ export interface ExpenseReimbursement {
   investigations: {
     investigationType: string;
     location: string;
+    orderedFrom?: string;
     invoiceNumber: string;
     amount: number;
     investigationDate: Date;
   }[];
+  orderedFrom?: string | null;
+  doneAt?: string | null;
+  investigation?: string | null;
+  formType?: string | null;
 }
 
 export interface InventoryItem {

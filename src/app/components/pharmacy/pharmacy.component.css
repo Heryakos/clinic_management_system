@@ -233,7 +233,67 @@ textarea.form-control {
   margin-bottom: 20px;
 }
 
+.loading-message {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-style: italic;
+}
+
+.no-medications {
+  text-align: center;
+  padding: 10px;
+  color: #999;
+  font-style: italic;
+}
+
+.medication-stock-list {
+  margin: 10px 0;
+}
+
 .medication-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.medication-item:last-child {
+  border-bottom: none;
+}
+
+.medication-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.medication-name {
+  font-weight: 500;
+  flex: 1;
+}
+
+.stock-status {
+  font-size: 0.9em;
+  font-weight: 500;
+  margin-left: 10px;
+}
+
+.stock-status.in-stock {
+  color: #28a745;
+}
+
+.stock-status.out-of-stock {
+  color: #dc3545;
+}
+
+.stock-instruction {
+  color: #666;
+  font-style: italic;
+  margin-bottom: 15px;
+}
+
+.medication-item {
+  opacity: 0.5;
+  cursor: not-allowed;
   padding: 15px;
   background: #f8f9fa;
   border-radius: 8px;
@@ -502,6 +562,11 @@ textarea.form-control {
 .stock-status.out-of-stock {
   color: #e74c3c;
   background: #fdf2f2;
+}
+
+.stock-checkbox:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .stock-available {

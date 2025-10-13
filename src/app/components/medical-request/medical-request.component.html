@@ -2,10 +2,22 @@
   <!-- Employee Form -->
   <div class="form-section">
     <h2>Medical Request Form</h2>
+    
+    <!-- Warning message for pending/approved requests -->
+    <div *ngIf="hasPendingOrApprovedRequest" class="warning-banner">
+      <div class="warning-icon">⚠️</div>
+      <div class="warning-content">
+        <strong>Submission Restricted</strong>
+        <p>You cannot submit a new medical request because you already have a <strong>{{getCurrentRequestStatus()}}</strong> request. 
+           Please wait until your current request is processed or contact your supervisor for assistance.</p>
+      </div>
+    </div>
+
     <form [formGroup]="medicalRequestForm" (ngSubmit)="onSubmit()" class="request-form">
       <div class="form-group">
         <label for="requestType">Request Type:</label>
-        <select id="requestType" formControlName="requestType" class="form-control">
+        <select id="requestType" formControlName="requestType" class="form-control" 
+                [class.disabled-field]="hasPendingOrApprovedRequest">
           <option value="">Select request type</option>
           <option value="Examination">Examination</option>
           <option value="Emergency">Emergency</option>
@@ -19,14 +31,15 @@
 
       <div class="form-group">
         <label for="reason">Reason for Clinic Visit:</label>
-        <textarea id="reason" formControlName="reason" class="form-control" placeholder="Enter reason for clinic visit"
-          rows="4"></textarea>
+        <textarea id="reason" formControlName="reason" class="form-control" 
+                  placeholder="Enter reason for clinic visit" rows="4"
+                  [class.disabled-field]="hasPendingOrApprovedRequest"></textarea>
       </div>
 
       <div class="form-group">
         <label for="preferredDate">Preferred Date:</label>
         <app-ethiopian-date-picker id="preferredDate" formControlName="preferredDate"
-          placeholder="Select preferred date">
+          placeholder="Select preferred date" [disabled]="hasPendingOrApprovedRequest">
         </app-ethiopian-date-picker>
         <div class="error-message"
           *ngIf="medicalRequestForm.get('preferredDate')?.hasError('pastDate') && medicalRequestForm.get('preferredDate')?.touched">
@@ -41,7 +54,7 @@
       <div class="form-group">
         <label for="preferredTime">Preferred Time:</label>
         <input type="time" id="preferredTime" formControlName="preferredTime" class="form-control"
-          placeholder="Select preferred time">
+          placeholder="Select preferred time" [class.disabled-field]="hasPendingOrApprovedRequest">
         <div class="error-message"
           *ngIf="medicalRequestForm.get('preferredTime')?.hasError('invalidTime') && medicalRequestForm.get('preferredTime')?.touched">
           Preferred time must be between 8:00 AM and 6:30 PM
@@ -60,6 +73,12 @@
           View Messages
         </button>
       </div>
+
+      <!-- Additional info message -->
+      <div *ngIf="hasPendingOrApprovedRequest" class="info-message">
+        <p>💡 <strong>Note:</strong> You can only have one active medical request at a time. 
+           Check the "View Messages" section to see the status of your current request.</p>
+      </div>
     </form>
   </div>
 
@@ -71,7 +90,11 @@
         <div *ngFor="let request of medicalRequests" class="message-item">
           <p><strong>Request ID:</strong> {{ request.requestID }}</p>
           <p><strong>Employee:</strong> {{ request.employeeName }}</p>
-          <p><strong>Status:</strong> {{ request.status | titlecase }}</p>
+          <p><strong>Status:</strong> 
+            <span [class]="'status-badge ' + request.status.toLowerCase()">
+              {{ request.status | titlecase }}
+            </span>
+          </p>
           <p *ngIf="request.supervisorComments"><strong>Comments:</strong> {{ request.supervisorComments }}</p>
           <p *ngIf="request.approvedByName"><strong>Approved By:</strong> {{ request.approvedByName }}</p>
           <p><strong>Request Date:</strong> {{ request.requestDate | date:'short' }}</p>

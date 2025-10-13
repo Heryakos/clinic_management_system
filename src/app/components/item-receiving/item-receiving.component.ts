@@ -5,6 +5,7 @@ import { ItemRegistration, InventoryPurchaseRequest } from 'src/app/models/inven
 import { environment } from 'src/environments/environment';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { Observable } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-item-receiving',
@@ -34,7 +35,8 @@ export class ItemReceivingComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private medicalService: MedicalService
+    private medicalService: MedicalService,
+    private snackBar:MatSnackBar
   ) { }
 
   ngOnInit(): void {
@@ -77,12 +79,12 @@ export class ItemReceivingComponent implements OnInit {
           this.currentUserId = employee.user_ID ?? null;
         } else {
           console.warn('No employee data found');
-          alert('No user data found. Please try again.');
+          this.showErrorMessage('No user data found. Please try again.');
         }
       },
       error => {
         console.error('Error loading user data:', error);
-        alert('Error loading user data. Please refresh the page.');
+        this.showErrorMessage('Error loading user data. Please refresh the page.');
       }
     );
   }
@@ -98,7 +100,7 @@ export class ItemReceivingComponent implements OnInit {
       },
       error => {
         console.error('Error loading purchase requests:', error);
-        alert('Error loading purchase requests. Please try again.');
+        this.showErrorMessage(`Error loading purchase request. Please try again.`);
       }
     );
   }
@@ -200,7 +202,7 @@ export class ItemReceivingComponent implements OnInit {
   submitReceiving(): void {
     if (this.receivingForm.invalid || !this.currentUserId) {
       if (!this.currentUserId) {
-        alert('User information not available. Please refresh the page.');
+        this.showErrorMessage(`User information not available. Please refresh the page.`);
       }
       return;
     }
@@ -212,7 +214,7 @@ export class ItemReceivingComponent implements OnInit {
 
     if (!selectedPurchase) {
       this.isSubmitting = false;
-      alert('Selected purchase request not found.');
+      this.showErrorMessage(`Selected purchase request not found.`);
       return;
     }
 
@@ -248,12 +250,12 @@ export class ItemReceivingComponent implements OnInit {
         this.resetForm();
         this.loadPurchaseRequests();
         this.loadRecentlyReceived();
-        alert('Items received and registered successfully!');
+        this.showErrorMessage(`Items recivied and registerd successfully!`)
       },
       error => {
         this.isSubmitting = false;
         console.error('Error receiving items:', error);
-        alert('Error receiving items. Please try again.');
+        this.showErrorMessage(`Error receiving items. Please try again.`)
       }
     );
   }
@@ -304,6 +306,20 @@ export class ItemReceivingComponent implements OnInit {
     const year = new Date().getFullYear();
     const sequence = this.getNextSequence();
     return `${prefix}${year}-${sequence.toString().padStart(4, '0')}`;
+  }
+
+  private showErrorMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['error-snackbar']
+    });
+  }
+
+  private showSuccessMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['success-snackbar']
+    });
   }
 
 }

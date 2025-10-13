@@ -88,9 +88,23 @@
       <button 
         type="button" 
         class="assignment-btn"
-        (click)="toggleAssignmentForm()">
+        (click)="toggleAssignmentForm()"
+        [disabled]="!canAssignPatient">
         {{ showAssignmentForm ? 'Cancel Assignment' : 'Assign to Room' }}
       </button>
+      
+      <div *ngIf="!canAssignPatient" class="pending-assignment-message">
+        <i class="warning-icon">⚠️</i>
+        <span *ngIf="pendingCount >= 2">
+          This patient already has 2 or more pending assignments. Please complete some before assigning again.
+        </span>
+        <span *ngIf="pendingCount < 2 && hasPendingAssignment">
+          This patient already has a pending assignment. Please wait for the current assignment to be completed before assigning again.
+        </span>
+        <span *ngIf="!hasPendingAssignment && patientHistory[0]?.assignmentStatus">
+          Current assignment status: {{ patientHistory[0].assignmentStatus }}. Please resolve the current assignment before creating a new one.
+        </span>
+      </div>
     </div>
 
     <div class="assignment-form-container" *ngIf="showAssignmentForm && patient">

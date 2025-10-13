@@ -14,6 +14,7 @@ export const environment = {
   certReportPath: (window as any)["certReportPath"],
   LetterReportPath: (window as any)["LetterReportPath"],
   PaymentReportPath: (window as any)["PaymentReportPath"],
+  imagepath: "./images/",
   ValidateReportPath: (window as any)["ValidateReportPath"],
   GISURL: (window as any)["GISURL"],
-};
+}; 

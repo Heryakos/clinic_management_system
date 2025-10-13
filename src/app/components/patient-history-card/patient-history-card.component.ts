@@ -33,7 +33,7 @@ export class PatientHistoryCardComponent implements OnInit {
   createdBy: string | null = null;
   employeeID: string | null = null;
   selectedDoctorUserName: string | null = null;
-
+  pendingCount: number = 0;
   constructor(
     private fb: FormBuilder,
     private medicalService: MedicalService,
@@ -46,6 +46,7 @@ export class PatientHistoryCardComponent implements OnInit {
     this.loadRooms();
     this.loadUserData();
     this.loadActivePatients();
+    this.pendingCount = this.patientHistory.filter(history => history.assignmentStatus?.toLowerCase() === 'pending').length;
   }
 
   initializeSearchForm(): void {
@@ -158,6 +159,24 @@ export class PatientHistoryCardComponent implements OnInit {
         }
       }
     });
+  }
+
+  get hasPendingAssignment(): boolean {
+    return this.patientHistory.some(history => 
+      history.assignmentStatus?.toLowerCase() === 'pending'
+    );
+  }
+
+  get canAssignPatient(): boolean {
+    if (!this.patientHistory || this.patientHistory.length === 0) {
+      return true;
+    }
+    
+    const latestAssignment = this.patientHistory[0]; // Assuming sorted by date descending
+    const status = latestAssignment.assignmentStatus?.toLowerCase();
+    
+    // Allow assignment only if the latest assignment is completed, rejected, or doesn't exist
+    return !status || status === 'completed' || status === 'rejected' || status === 'cancelled';
   }
 
   onPatientRowClick(patient: PatientSummary): void {
@@ -284,7 +303,6 @@ export class PatientHistoryCardComponent implements OnInit {
       }
     );
   }
-
   onAssignmentSubmit(): void {
     if (this.assignmentForm.valid && this.patient) {
       this.isAssigning = true;
@@ -292,12 +310,37 @@ export class PatientHistoryCardComponent implements OnInit {
         (response: any) => {
           const employee = response?.c_Employees?.[0];
           this.createdBy = employee.user_ID ?? null;
+          
+          // Find the selected doctor to get their UserID
+          const selectedDoctor = this.availableDoctors.find(
+            doctor => doctor.userId === this.assignmentForm.value.doctorID
+          );
+  
+          if (!selectedDoctor) {
+            alert('Selected doctor not found.');
+            this.isAssigning = false;
+            return;
+          }
+  
+          // Find the room to get RoomID
+          const selectedRoom = this.rooms.find(
+            room => room.roomType === this.assignmentForm.value.assignedRoom
+          );
+  
+          if (!selectedRoom) {
+            alert('Selected room not found.');
+            this.isAssigning = false;
+            return;
+          }
+  
           const assignment = {
             cardID: this.patientHistory[0]?.CardID,
-            assignedRoom: this.rooms.find(r => r.roomType === this.assignmentForm.value.assignedRoom)?.roomID,
-            doctorID: this.assignmentForm.value.doctorID,
-            assignedBy: this.createdBy,
+            assignedRoom: selectedRoom.roomID, // RoomID (GUID)
+            doctorID: selectedDoctor.userId, // UserID (GUID)
+            assignedBy: this.createdBy, // UserID of the current user
           };
+  
+          console.log('Assignment data:', assignment); // For debugging
           
           this.medicalService.assignPatient(assignment).subscribe(
             () => {
@@ -309,13 +352,50 @@ export class PatientHistoryCardComponent implements OnInit {
             },
             error => {
               this.isAssigning = false;
+              console.error('Assignment error:', error);
               alert('Error assigning patient to room. Please try again.');
             }
           );
+        },
+        error => {
+          this.isAssigning = false;
+          console.error('Error loading employee data:', error);
+          alert('Error loading user data. Please try again.');
         }
       );
     }
   }
+  // onAssignmentSubmit(): void {
+  //   if (this.assignmentForm.valid && this.patient) {
+  //     this.isAssigning = true;
+  //     this.medicalService.getEmployeeById(environment.username).subscribe(
+  //       (response: any) => {
+  //         const employee = response?.c_Employees?.[0];
+  //         this.createdBy = employee.user_ID ?? null;
+  //         const assignment = {
+  //           cardID: this.patientHistory[0]?.CardID,
+  //           assignedRoom: this.rooms.find(r => r.roomType === this.assignmentForm.value.assignedRoom)?.roomID,
+  //           doctorID: this.assignmentForm.value.doctorID,
+  //           assignedBy: this.createdBy,
+  //         };
+          
+  //         this.medicalService.assignPatient(assignment).subscribe(
+  //           () => {
+  //             this.isAssigning = false;
+  //             this.assignmentForm.reset();
+  //             this.showAssignmentForm = false;
+  //             this.loadPatientHistory(this.patient!.CardNumber);
+  //             alert('Patient assigned to room successfully!');
+  //           },
+  //           error => {
+  //             this.isAssigning = false;
+  //             alert('Error assigning patient to room. Please try again.');
+  //           }
+  //         );
+  //       }
+  //     );
+  //   }
+  // }
 
   toggleAssignmentForm(): void {
     this.showAssignmentForm = !this.showAssignmentForm;

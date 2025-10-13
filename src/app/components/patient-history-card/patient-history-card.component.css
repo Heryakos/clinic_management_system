@@ -16,6 +16,33 @@
   margin-bottom: 20px;
 }
 
+.pending-assignment-message {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.warning-icon {
+  font-size: 16px;
+}
+
+.assignment-btn:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.assignment-btn:disabled:hover {
+  background-color: #6c757d;
+}
+
 .notification-btn {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;

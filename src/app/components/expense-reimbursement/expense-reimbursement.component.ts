@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { MedicalService } from 'src/app/medical.service';
 import { ExpenseReimbursement } from 'src/app/models/medical.model';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-expense-reimbursement',
@@ -17,7 +18,7 @@ export class ExpenseReimbursementComponent implements OnInit {
   investigations: any[] = [];
   documents: any[] = [];
 
-  constructor(public medicalService: MedicalService, private sanitizer: DomSanitizer) {}
+  constructor(public medicalService: MedicalService, private sanitizer: DomSanitizer, private snackBar: MatSnackBar) {}
 
   ngOnInit(): void {
     this.loadExpenseReimbursements();
@@ -114,7 +115,7 @@ export class ExpenseReimbursementComponent implements OnInit {
       this.medicalService.updateExpenseReimbursementStatus(id, status).subscribe(
         () => {
           this.loadExpenseReimbursements();
-          alert(`Reimbursement ${id} status updated to ${status}.`);
+          this.showSuccessMessage(`Reimbursement ${id} status updated to ${status}.`)
           try {
             const notification = {
               title: 'Reimbursement Status Updated',
@@ -130,7 +131,7 @@ export class ExpenseReimbursementComponent implements OnInit {
         },
         error => {
           console.error('Error updating reimbursement status:', error);
-          alert('Error updating reimbursement status. Please try again.');
+          this.showErrorMessage('Error updating reimbursement status. Please try again.')
         }
       );
     }
@@ -141,12 +142,27 @@ export class ExpenseReimbursementComponent implements OnInit {
     this.medicalService.createExpenseReimbursement(reimbursement).subscribe(
       (response: any) => {
         this.loadExpenseReimbursements();
-        alert(`Expense reimbursement created with ID ${response.ReimbursementID}`);
+        this.showSuccessMessage(`Expense reimbursement created with ID ${response.ReimbursementID}`)
       },
       error => {
         console.error('Error submitting reimbursement:', error);
-        alert('Error submitting reimbursement. Please try again.');
+        this.showErrorMessage('Error submitting reimbursement. Please try again.')
+
       }
     );
+  }
+
+  private showErrorMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['error-snackbar']
+    });
+  }
+
+  private showSuccessMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['success-snackbar']
+    });
   }
 }

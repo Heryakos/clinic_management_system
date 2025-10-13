@@ -1,15 +1,16 @@
-import { Component, OnInit, EventEmitter, Output } from '@angular/core';
+// src/app/components/clinic-medical-expense-form/clinic-medical-expense-form.component.ts
+
+import { Component, OnInit, EventEmitter, Output, ViewChild, ElementRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MedicalService } from 'src/app/medical.service';
 import { ExpenseReimbursement } from 'src/app/models/medical.model';
 import { environment } from 'src/environments/environment';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
 import { HttpErrorResponse } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs'; // Import firstValueFrom
+import { firstValueFrom } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
-// Define interface for server response
 interface ReimbursementResponse {
   reimbursementID: number;
   reimbursementNumber: string;
@@ -35,8 +36,9 @@ interface ReimbursementResponse {
 })
 export class ClinicMedicalExpenseFormComponent implements OnInit {
   @Output() reimbursementSubmitted = new EventEmitter<ExpenseReimbursement>();
+  @ViewChild('pdfTemplate') pdfTemplate!: ElementRef;
   expenseForm!: FormGroup;
-  investigations: { investigation: string, doneAt: string, orderedFrom: string }[] = [];
+  investigations: { investigation: string, invoiceNumber: string, amount: number }[] = [];
   createdBy: string | null = null;
   employeeName: string | null = null;
   payrollNumber: string | null = null;
@@ -46,7 +48,8 @@ export class ClinicMedicalExpenseFormComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private medicalService: MedicalService
+    private medicalService: MedicalService,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
@@ -59,17 +62,22 @@ export class ClinicMedicalExpenseFormComponent implements OnInit {
       patientName: ['', Validators.required],
       payrollNumber: ['', Validators.required],
       department: ['', Validators.required],
-      invoiceNumber: ['', Validators.required],
-      totalAmount: [0, [Validators.required, Validators.min(0.01)]]
+      doneAt: ['', Validators.required],
+      orderedFrom: ['', Validators.required]
     });
     this.addInvestigation();
+  }
+
+  get totalAmount(): number {
+    return this.investigations.reduce((sum, inv) => sum + (inv.amount || 0), 0);
   }
 
   isSubmitDisabled(): boolean {
     return (
       this.expenseForm.invalid ||
       this.isSubmitting ||
-      this.investigations.some(inv => !inv.investigation || !inv.doneAt || !inv.orderedFrom)
+      this.investigations.some(inv => !inv.investigation || !inv.invoiceNumber || inv.amount <= 0) ||
+      this.totalAmount <= 0
     );
   }
 
@@ -86,42 +94,52 @@ export class ClinicMedicalExpenseFormComponent implements OnInit {
             this.expenseForm.patchValue({ payrollNumber: this.payrollNumber });
           } else {
             console.error('Invalid user_ID format:', employee.user_ID);
-            alert('Error: Invalid user ID format. Please contact support.');
+            this.showErrorMessage('Error: Invalid user ID format. Please contact support.');
             this.createdBy = null;
           }
         } else {
           console.warn('No employee data found');
-          alert('Error: Employee data not found. Please contact support.');
+          this.showErrorMessage('Error: Employee data not found. Please contact support.');
           this.createdBy = null;
         }
       },
       error => {
         console.error('Error fetching employee data:', error);
-        alert('Error fetching employee data. Please try again.');
+        this.showErrorMessage('Error fetching employee data. Please try again.');
         this.createdBy = null;
       }
     );
   }
 
   async onSubmit(): Promise<void> {
-    if (this.expenseForm.valid && this.investigations.every(inv => inv.investigation && inv.doneAt && inv.orderedFrom)) {
+    if (this.expenseForm.valid && this.investigations.every(inv => inv.investigation && inv.invoiceNumber && inv.amount > 0)) {
       this.isSubmitting = true;
       try {
         const patientName = this.expenseForm.get('patientName')?.value;
         const payrollNumber = this.expenseForm.get('payrollNumber')?.value;
         const department = this.expenseForm.get('department')?.value;
+        const doneAt = this.expenseForm.get('doneAt')?.value;
+        const orderedFrom = this.expenseForm.get('orderedFrom')?.value;
 
         // Validate string lengths
         if (patientName.length > 100) {
-          alert('Error: Patient Name exceeds 100 characters.');
+          this.showErrorMessage('Error: Patient Name exceeds 100 characters.');
           return;
         }
         if (payrollNumber?.length > 50) {
-          alert('Error: Payroll Number exceeds 50 characters.');
+          this.showErrorMessage('Error: Payroll Number exceeds 50 characters.');
           return;
         }
         if (department?.length > 100) {
-          alert('Error: Department exceeds 100 characters.');
+          this.showErrorMessage('Error: Department exceeds 100 characters.');
+          return;
+        }
+        if (doneAt.length > 255) {
+          this.showErrorMessage('Error: Done At exceeds 255 characters.');
+          return;
+        }
+        if (orderedFrom.length > 255) {
+          this.showErrorMessage('Error: Ordered From exceeds 255 characters.');
           return;
         }
 
@@ -132,37 +150,24 @@ export class ClinicMedicalExpenseFormComponent implements OnInit {
           payrollNumber: payrollNumber,
           payrollNo: payrollNumber,
           department: department,
-          totalAmount: this.expenseForm.get('totalAmount')?.value,
+          totalAmount: this.totalAmount,
           status: 'pending',
           submissionDate: new Date(),
           createdBy: this.createdBy || '',
-          investigations: this.investigations.map(inv => ({
-            investigationType: inv.investigation,
-            location: inv.doneAt,
-            invoiceNumber: this.expenseForm.get('invoiceNumber')?.value,
-            amount: this.expenseForm.get('totalAmount')?.value / this.investigations.length,
-            investigationDate: new Date()
-          })),
+          investigations: [],
           reimbursementID: 0,
-          approvedBy: null
+          approvedBy: null,
+          orderedFrom: orderedFrom,
+          doneAt: doneAt,
+          investigation: this.investigations.map(inv => inv.investigation).join(', '),
+          formType: 'ClinicMedicalExpenseRefund'
         };
-
-        if (reimbursementData.reimbursementNumber.length > 50) {
-          alert('Error: Reimbursement Number exceeds 50 characters.');
-          return;
-        }
 
         const reimbursementResponse: ReimbursementResponse = await firstValueFrom(
           this.medicalService.createExpenseReimbursement(reimbursementData)
         );
-        console.log('Reimbursement Response:', reimbursementResponse); // Debugging
-        if (!reimbursementResponse.reimbursementID || isNaN(reimbursementResponse.reimbursementID)) {
-          throw new Error('Invalid Reimbursement ID received from server: ' + JSON.stringify(reimbursementResponse));
-        }
         this.reimbursementId = reimbursementResponse.reimbursementID;
-        console.log('Reimbursement ID:', this.reimbursementId); // Debugging
 
-        // Ensure reimbursementId is non-null for TypeScript
         if (this.reimbursementId === null) {
           throw new Error('Reimbursement ID is null after assignment.');
         }
@@ -170,25 +175,18 @@ export class ClinicMedicalExpenseFormComponent implements OnInit {
         for (const inv of this.investigations) {
           const detail = {
             InvestigationType: inv.investigation,
-            Location: inv.doneAt,
-            OrderedFrom: inv.orderedFrom,
-            InvoiceNumber: this.expenseForm.get('invoiceNumber')?.value,
-            Amount: this.expenseForm.get('totalAmount')?.value / this.investigations.length,
+            Location: doneAt,
+            OrderedFrom: orderedFrom,
+            InvoiceNumber: inv.invoiceNumber,
+            Amount: inv.amount,
             InvestigationDate: new Date()
           };
 
-          // Validate detail fields
           if (!detail.InvestigationType || detail.InvestigationType.trim() === '') {
             throw new Error('Investigation Type is required.');
           }
-          if (!detail.Location || detail.Location.trim() === '') {
-            throw new Error('Location is required.');
-          }
           if (!detail.InvoiceNumber || detail.InvoiceNumber.trim() === '') {
-            throw new Error('Invoice Number is required.');
-          }
-          if (!detail.Amount || detail.Amount <= 0) {
-            throw new Error('Amount must be greater than 0.');
+            throw new Error('Invoice Number is required for each investigation.');
           }
 
           await firstValueFrom(this.medicalService.addReimbursementDetail(this.reimbursementId, detail));
@@ -206,9 +204,9 @@ export class ClinicMedicalExpenseFormComponent implements OnInit {
         await firstValueFrom(this.medicalService.uploadReimbursementDocument(formData));
 
         this.reimbursementSubmitted.emit(reimbursementData);
-        alert('Reimbursement created and PDF uploaded successfully!');
+        this.showSuccessMessage('Reimbursement created and PDF uploaded successfully!');
         this.expenseForm.reset();
-        this.investigations = [{ investigation: '', doneAt: '', orderedFrom: '' }];
+        this.investigations = [{ investigation: '', invoiceNumber: '', amount: 0 }];
         this.reimbursementId = null;
         this.pdfFile = null;
       } catch (error: unknown) {
@@ -216,10 +214,13 @@ export class ClinicMedicalExpenseFormComponent implements OnInit {
         let errorMessage = 'Please try again.';
         if (error instanceof HttpErrorResponse) {
           errorMessage = error.error?.message || error.message || errorMessage;
+          if (errorMessage.includes('Invoice number already used')) {
+            errorMessage = 'Invoice number already used in another reimbursement. Please use a unique invoice number.';
+          }
         } else if (error instanceof Error) {
           errorMessage = error.message || errorMessage;
         }
-        alert('Error submitting form: ' + errorMessage);
+        this.showErrorMessage('Error submitting form: ' + errorMessage);
       } finally {
         this.isSubmitting = false;
       }
@@ -227,7 +228,7 @@ export class ClinicMedicalExpenseFormComponent implements OnInit {
   }
 
   addInvestigation(): void {
-    this.investigations.push({ investigation: '', doneAt: '', orderedFrom: '' });
+    this.investigations.push({ investigation: '', invoiceNumber: '', amount: 0 });
   }
 
   removeInvestigation(index: number): void {
@@ -239,90 +240,47 @@ export class ClinicMedicalExpenseFormComponent implements OnInit {
   generateReimbursementNumber(): string {
     const timestamp = Date.now();
     const random = Math.floor(Math.random() * 1000);
-    const reimbursementNumber = `REIMB-${timestamp}-${random}`;
+    let reimbursementNumber = `REIMB-${timestamp}-${random}`;
     if (reimbursementNumber.length > 50) {
-      console.warn('Generated ReimbursementNumber too long, truncating to 50 characters');
-      return reimbursementNumber.substring(0, 50);
+      reimbursementNumber = reimbursementNumber.substring(0, 50);
     }
     return reimbursementNumber;
   }
 
-  generatePDF(): Promise<File> {
-    const doc = new jsPDF('p', 'mm', 'a4');
-    (doc as any).autoTable = autoTable;
-    const pageWidth = 210;
-    const pageHeight = 297;
-    const margin = 15;
-    const lineHeight = 7;
-
-    doc.setFont('Times', 'bold');
-    doc.setFontSize(24);
-    doc.text('Federal Housing Corporation', pageWidth / 2, 20, { align: 'center' });
-    doc.setFontSize(20);
-    doc.text('Clinic Medical Expense Refund Form', pageWidth / 2, 30, { align: 'center' });
-    doc.setLineWidth(0.5);
-    doc.line(margin, 40, pageWidth - margin, 40);
-
-    doc.setFont('Times', 'normal');
-    doc.setFontSize(18);
-    let y = 50;
-    const fields = [
-      { label: '1. Name of patient', value: this.expenseForm.get('patientName')?.value || '' },
-      { label: '2. Payroll no', value: this.expenseForm.get('payrollNumber')?.value || '' },
-      { label: '3. Department', value: this.expenseForm.get('department')?.value || '' }
-    ];
-    fields.forEach(field => {
-      doc.text(field.label, margin, y);
-      doc.text(field.value, margin + 50, y);
-      doc.line(margin + 50, y + 1, pageWidth - margin, y + 1);
-      y += 10;
+  async generatePDF(): Promise<File> {
+    const element = this.pdfTemplate.nativeElement;
+    element.style.display = 'block'; // Make visible for rendering
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      logging: true,
+      allowTaint: true
     });
+    element.style.display = 'none'; // Hide again
 
-    // Investigation section header
-    y += 10;
-    doc.text('4. Investigation', margin, y);
-    y += 5;
-    doc.setFontSize(14);
-    doc.text('Done at', margin + 50, y);
-    doc.text('Ordered from', pageWidth / 2, y);
-    y += 5;
-    doc.line(margin + 50, y, pageWidth - margin, y);
-    doc.setFontSize(16);
+    const imgData = canvas.toDataURL('image/png');
 
-    // Two-column grid 1..20 matching provided template
-    const startY = y + 5;
-    const rows = 10;
-    const col1X = margin;
-    const col2X = pageWidth / 2;
-    let rowY = startY;
-    for (let i = 0; i < rows; i++) {
-      const idx1 = i + 1;
-      const idx2 = i + 11;
-      // Left column number and line
-      doc.text(`${idx1}.`, col1X, rowY);
-      doc.line(col1X + 10, rowY + 1, pageWidth / 2 - 10, rowY + 1);
-      // Right column number and line
-      doc.text(`${idx2}.`, col2X, rowY);
-      doc.line(col2X + 10, rowY + 1, pageWidth - margin, rowY + 1);
-      rowY += lineHeight + 3;
-    }
-
-    y += 15;
-    doc.text(`As per invoice attached (number: ${this.expenseForm.get('invoiceNumber')?.value || ''})`, margin, y);
-
-    y += 20;
-    doc.text(`The medical expense should be paid to the patient`, margin, y);
-
-    y += 30;
-    doc.text('Stamp', margin, y);
-    doc.line(margin, y - 2, margin + 50, y - 2);
-    doc.text('sig of head of clinic', pageWidth - margin - 50, y);
-    doc.line(pageWidth - margin - 50, y - 2, pageWidth - margin, y - 2);
-
-    doc.setFontSize(14);
-    doc.text('Page 1', pageWidth - margin - 20, pageHeight - margin);
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const imgProps = doc.getImageProperties(imgData);
+    const pdfWidth = doc.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
 
     const pdfBlob = doc.output('blob');
-    return Promise.resolve(new File([pdfBlob], `Clinic_Medical_Expense_Form_${this.reimbursementId || 'temp'}.pdf`, { type: 'application/pdf' }));
+    return new File([pdfBlob], `Clinic_Medical_Expense_Form_${this.reimbursementId || 'temp'}.pdf`, { type: 'application/pdf' });
+  }
+
+  private showErrorMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['error-snackbar']
+    });
+  }
+
+  private showSuccessMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['success-snackbar']
+    });
   }
 }

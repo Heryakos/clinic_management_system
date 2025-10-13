@@ -59,6 +59,7 @@ import { EthiopianDatePickerComponent } from './components/ethiopian-date-picker
 import { EthiopianDateAdapter } from './directive/ethiopian-date-adapter';
 import { ClinicMedicalExpenseFormComponent } from './components/clinic-medical-expense-form/clinic-medical-expense-form.component';
 import { InjectionManagementComponent } from './components/injection-management/injection-management.component';
+import { MatExpansionModule } from '@angular/material/expansion';
 
 @NgModule({
   declarations: [
@@ -126,7 +127,8 @@ import { InjectionManagementComponent } from './components/injection-management/
     StockRequestFormComponent, // Standalone component
     BrowserAnimationsModule,
     LucyCalendarDirective,
-    EthiopianDatePickerComponent
+    EthiopianDatePickerComponent,
+    MatExpansionModule
   ],
   providers: [
     MedicalService,

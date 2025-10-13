@@ -309,7 +309,7 @@
                   <th>Priority</th>
                   <th>Status</th>
                   <th>Physician</th>
-                  <th>Technician</th>
+                  <!-- <th>Technician</th> -->
                   <th>Reported By</th>
                   <th>Actions</th>
                 </tr>
@@ -322,7 +322,7 @@
                   <td>{{ test.priority }}</td>
                   <td>{{ test.status }}</td>
                   <td>{{ test.orderingPhysicianName }}</td>
-                  <td>{{ test.technicianName || 'N/A' }}</td>
+                  <!-- <td>{{ test.technicianName || 'N/A' }}</td> -->
                   <td>{{ test.reportedByName || 'N/A' }}</td>
                   <td>
                     <button type="button" class="action-btn view" (click)="viewTestDetails(test.testID)">View

@@ -649,6 +649,18 @@ updateInjection(data: any): Observable<any> {
     );
   }
 
+  // getAllDoctorActivePatients(): Observable<any> {
+  //   return this.http.get<any[]>(`${this.chmsPatientsBase}doctoractivepatients`).pipe(
+  //     catchError(this.handleError)
+  //   );
+  // }
+
+  getAllDoctorActivePatients(doctorID: string): Observable<any> {
+    return this.http.get<any[]>(`${this.chmsPatientsBase}doctoractivepatients/${doctorID}`).pipe(
+      catchError(this.handleError)
+    );
+  }
+
   getPatientCard(cardId: number): Observable<any> {
     return this.http.get<any>(`${this.chmsPatientsBase}cards/${cardId}`).pipe(
       catchError(this.handleError)
@@ -1514,6 +1526,24 @@ updateInjection(data: any): Observable<any> {
   }
   getSupervisorMonitoring(requestId: number): Observable<any> {
     return this.http.get<any>(`${this.chmsInventoryBase}requests/${requestId}/monitoring`).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  createInventoryCategory(category: { categoryName: string; description?: string; isActive?: boolean }): Observable<any> {
+    return this.http.post<any>(`${this.chmsInventoryBase}categories`, category, { headers: this.headers }).pipe(
+      catchError(this.handleError)
+    );
+  }
+  
+  createInventoryItem(item: InventoryItemenhanced): Observable<any> {
+    return this.http.post<any>(`${this.chmsInventoryBase}items`, item, { headers: this.headers }).pipe(
+      catchError(this.handleError)
+    );
+  }
+  
+  addRoomCategory(roomCategory: RoomCategory): Observable<any> {
+    return this.http.post<any>(`${this.chmsInventoryBase}room-categories`, roomCategory, { headers: this.headers }).pipe(
       catchError(this.handleError)
     );
   }

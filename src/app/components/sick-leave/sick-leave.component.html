@@ -126,49 +126,108 @@
 
   <div class="sick-leaves-list">
     <h3>Sick Leave Records</h3>
-    <div class="table-container">
-      <table class="sick-leaves-table">
-        <thead>
-          <tr>
-            <th>Certificate ID</th>
-            <th>Employee Name</th>
-            <th>Diagnosis</th>
-            <th>Start Date</th>
-            <th>End Date</th>
-            <th>Total Days</th>
-            <th>Doctor Name</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let leave of sickLeaves">
-            <td>{{ leave.certificateID }}</td>
-            <td>{{ leave.employeeName }}</td>
-            <td>{{ leave.diagnosis }}</td>
-            <td>{{ leave.startDate | date:'short' }}</td>
-            <td>{{ leave.endDate | date:'short' }}</td>
-            <td>{{ leave.totalDays }}</td>
-            <td>{{ leave.doctorName }}</td>
-            <td>
-              <span class="status-badge" [ngClass]="leave.status">
-                {{ leave.status | titlecase }}
-              </span>
-            </td>
-            <td>
-              <button type="button" *ngIf="leave.status === 'Active'" class="action-btn complete"
-                (click)="updateLeaveStatus(leave.certificateID, 'Completed')">
-                Mark Complete
-              </button>
-              <button type="button" *ngIf="leave.status === 'Active'" class="action-btn cancel"
-                (click)="updateLeaveStatus(leave.certificateID, 'Cancelled')">
-                Cancel
-              </button>
-              <button type="button" class="action-btn print" (click)="openPrintModal(leave)">Print</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="tabs">
+      <button type="button" [class.active-tab]="currentTab === 'pending'" (click)="currentTab = 'pending'">Pending</button>
+      <button type="button" [class.active-tab]="currentTab === 'completed'" (click)="currentTab = 'completed'">Completed</button>
+    </div>
+    <div *ngIf="currentTab === 'pending'">
+      <div class="table-container" *ngIf="activeSickLeaves.length > 0; else noPending">
+        <table class="sick-leaves-table">
+          <thead>
+            <tr>
+              <th>Certificate ID</th>
+              <th>Employee Name</th>
+              <th>Diagnosis</th>
+              <th>Start Date</th>
+              <th>End Date</th>
+              <th>Total Days</th>
+              <th>Doctor Name</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let leave of activeSickLeaves">
+              <td>{{ leave.certificateID }}</td>
+              <td>{{ leave.employeeName }}</td>
+              <td>{{ leave.diagnosis }}</td>
+              <td>{{ leave.startDate | date:'short' }}</td>
+              <td>{{ leave.endDate | date:'short' }}</td>
+              <td>{{ leave.totalDays }}</td>
+              <td>{{ leave.doctorName }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="leave.status">
+                  {{ leave.status | titlecase }}
+                </span>
+              </td>
+              <td>
+                <button type="button" *ngIf="leave.status === 'Active'" class="action-btn complete"
+                  (click)="updateLeaveStatus(leave.certificateID, 'Completed')">
+                  Mark Complete
+                </button>
+                <button type="button" *ngIf="leave.status === 'Active'" class="action-btn cancel"
+                  (click)="updateLeaveStatus(leave.certificateID, 'Cancelled')">
+                  Cancel
+                </button>
+                <button type="button" class="action-btn print" (click)="openPrintModal(leave)">Print</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <ng-template #noPending>
+        <div class="no-results">No pending sick leaves found.</div>
+      </ng-template>
+    </div>
+
+    <div *ngIf="currentTab === 'completed'">
+      <div class="table-container" *ngIf="completedSickLeaves.length > 0; else noCompleted">
+        <table class="sick-leaves-table">
+          <thead>
+            <tr>
+              <th>Certificate ID</th>
+              <th>Employee Name</th>
+              <th>Diagnosis</th>
+              <th>Start Date</th>
+              <th>End Date</th>
+              <th>Total Days</th>
+              <th>Doctor Name</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let leave of completedSickLeaves">
+              <td>{{ leave.certificateID }}</td>
+              <td>{{ leave.employeeName }}</td>
+              <td>{{ leave.diagnosis }}</td>
+              <td>{{ leave.startDate | date:'short' }}</td>
+              <td>{{ leave.endDate | date:'short' }}</td>
+              <td>{{ leave.totalDays }}</td>
+              <td>{{ leave.doctorName }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="leave.status">
+                  {{ leave.status | titlecase }}
+                </span>
+              </td>
+              <td>
+                <button type="button" *ngIf="leave.status === 'Active'" class="action-btn complete"
+                  (click)="updateLeaveStatus(leave.certificateID, 'Completed')">
+                  Mark Complete
+                </button>
+                <button type="button" *ngIf="leave.status === 'Active'" class="action-btn cancel"
+                  (click)="updateLeaveStatus(leave.certificateID, 'Cancelled')">
+                  Cancel
+                </button>
+                <button type="button" class="action-btn print" (click)="openPrintModal(leave)">Print</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <ng-template #noCompleted>
+        <div class="no-results">No completed sick leaves found.</div>
+      </ng-template>
     </div>
   </div>
 

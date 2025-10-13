@@ -1,74 +1,72 @@
-<div class="inventory-management-container">
-    <h2>Approved Requests</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Request #</th>
-          <th>Room</th>
-          <th>Date</th>
-          <th>Items</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let request of approvedRequests">
-          <td>{{ request.requestNumber }}</td>
-          <td>{{ request.roomID }}</td>
-          <td>{{ request.requestDate | date }}</td>
-          <td>{{ request.items.length }}</td>
-          <td>
-            <button (click)="issueItems(request)">Issue All</button>
-            <button (click)="viewDetails(request)">View & Partial Issue/Purchase</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+<!-- src/app/components/inventory-management/inventory-management.component.html -->
+
+<div class="inventory-management">
+  <h2>Inventory Management</h2>
   
-    <h2>Purchase Requests</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Purchase #</th>
-          <th>Item</th>
-          <th>Quantity</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let purchase of purchaseRequests">
-          <td>{{ purchase.requestNumber }}</td>
-          <td>{{ purchase.itemName }}</td>
-          <td>{{ purchase.quantity }}</td>
-          <td>{{ purchase.status }}</td>
-          <td>
-            <button (click)="markPurchased(purchase)" *ngIf="purchase.status === 'Pending'">Mark Purchased</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+  <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
   
-    <!-- Modal for details -->
-    <div *ngIf="selectedRequest" class="modal">
-      <h3>Request Details: {{ selectedRequest.requestNumber }}</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Item</th>
-            <th>Requested Quantity</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of selectedRequestDetails">
-            <td>{{ item.itemName }}</td>
-            <td>{{ item.requestedQuantity }}</td>
-            <td>
-              <button (click)="createPurchase(selectedRequest, item)">Create Purchase</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <button (click)="selectedRequest = undefined">Close</button>
-    </div>
+  <div class="section">
+    <h3>Add New Category</h3>
+    <form [formGroup]="categoryForm" (ngSubmit)="onAddCategory()">
+      <div class="form-group">
+        <label for="categoryName">Category Name</label>
+        <input id="categoryName" formControlName="categoryName" type="text" required>
+      </div>
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" formControlName="description"></textarea>
+      </div>
+      <button type="submit" [disabled]="categoryForm.invalid">Add Category</button>
+    </form>
   </div>
+  
+  <div class="section">
+    <h3>Add New Item</h3>
+    <form [formGroup]="itemForm" (ngSubmit)="onAddItem()">
+      <div class="form-group">
+        <label for="itemCode">Item Code</label>
+        <input id="itemCode" formControlName="itemCode" type="text" required>
+      </div>
+      <div class="form-group">
+        <label for="itemName">Item Name</label>
+        <input id="itemName" formControlName="itemName" type="text" required>
+      </div>
+      <div class="form-group">
+        <label for="categoryID">Category</label>
+        <select id="categoryID" formControlName="categoryID" required>
+          <option *ngFor="let cat of categories" [value]="cat.categoryID">{{ cat.categoryName }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="unit">Unit</label>
+        <input id="unit" formControlName="unit" type="text" required>
+      </div>
+      <div class="form-group">
+        <label for="minimumStock">Minimum Stock</label>
+        <input id="minimumStock" formControlName="minimumStock" type="number" required>
+      </div>
+      <div class="form-group">
+        <label for="maximumStock">Maximum Stock</label>
+        <input id="maximumStock" formControlName="maximumStock" type="number">
+      </div>
+      <div class="form-group">
+        <label for="unitPrice">Unit Price</label>
+        <input id="unitPrice" formControlName="unitPrice" type="number" step="0.01">
+      </div>
+      <div class="form-group">
+        <label for="expiryDate">Expiry Date</label>
+        <input id="expiryDate" formControlName="expiryDate" type="date">
+      </div>
+      <div class="form-group">
+        <label for="manufacturer">Manufacturer</label>
+        <input id="manufacturer" formControlName="manufacturer" type="text">
+      </div>
+      <div class="form-group">
+        <label for="batchNumber">Batch Number</label>
+        <input id="batchNumber" formControlName="batchNumber" type="text">
+      </div>
+      <button type="submit" [disabled]="itemForm.invalid">Add Item</button>
+    </form>
+  </div>
+</div>
