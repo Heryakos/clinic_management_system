@@ -249,26 +249,48 @@ export class ClinicMedicalExpenseFormComponent implements OnInit {
 
   async generatePDF(): Promise<File> {
     const element = this.pdfTemplate.nativeElement;
-    element.style.display = 'block'; // Make visible for rendering
+    
+    // Make visible for rendering with white background
+    element.style.display = 'block';
+    element.style.visibility = 'visible';
+    element.style.position = 'absolute';
+    element.style.left = '0';
+    element.style.top = '0';
+    element.style.backgroundColor = '#ffffff';
+    
+    // Wait for rendering
+    await new Promise(resolve => setTimeout(resolve, 500));
+  
     const canvas = await html2canvas(element, {
       scale: 2,
       useCORS: true,
-      logging: true,
-      allowTaint: true
+      logging: false,
+      backgroundColor: '#ffffff',
+      windowWidth: 794, // A4 width in pixels at 96 DPI (210mm)
+      windowHeight: 1123 // A4 height in pixels at 96 DPI (297mm)
     });
-    element.style.display = 'none'; // Hide again
-
+  
+    // Hide again
+    element.style.display = 'none';
+    element.style.visibility = 'hidden';
+    element.style.position = '';
+    element.style.left = '';
+    element.style.top = '';
+  
     const imgData = canvas.toDataURL('image/png');
-
+  
     const doc = new jsPDF('p', 'mm', 'a4');
-    const imgProps = doc.getImageProperties(imgData);
     const pdfWidth = doc.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    const pdfHeight = doc.internal.pageSize.getHeight();
+    
     doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-
+  
     const pdfBlob = doc.output('blob');
-    return new File([pdfBlob], `Clinic_Medical_Expense_Form_${this.reimbursementId || 'temp'}.pdf`, { type: 'application/pdf' });
+    return new File([pdfBlob], `Clinic_Medical_Expense_Form_${this.reimbursementId || 'temp'}.pdf`, { 
+      type: 'application/pdf' 
+    });
   }
+  
 
   private showErrorMessage(message: string): void {
     this.snackBar.open(message, 'Close', {

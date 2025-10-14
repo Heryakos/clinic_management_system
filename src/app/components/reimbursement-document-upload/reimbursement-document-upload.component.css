@@ -232,6 +232,192 @@
   transform: translateY(-2px);
 }
 
+#pdf-template {
+  font-family: "Times New Roman", Georgia, serif;
+  color: #000;
+  background: white;
+}
+
+#pdf-template .page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 18mm;
+  margin: 10mm auto;
+  box-sizing: border-box;
+  background: white;
+}
+
+#pdf-template .header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8mm;
+}
+
+#pdf-template .logo {
+  width: 90px;
+}
+
+#pdf-template .logo img {
+  width: 100%;
+  height: auto;
+}
+
+#pdf-template .no-date {
+  width: 33%;
+  font-size: 14px;
+}
+
+#pdf-template .no-date .line {
+  display: inline-block;
+  border-bottom: 1px solid #000;
+  width: 120px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+#pdf-template .no-date .label {
+  font-size: 13px;
+  margin-right: 6px;
+}
+
+#pdf-template .title-block {
+  text-align: center;
+  flex: 1;
+}
+
+#pdf-template .company {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+#pdf-template .form-title {
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#pdf-template .form-body {
+  margin-top: 6mm;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+#pdf-template .row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+#pdf-template .label {
+  min-width: 190px;
+  font-weight: 600;
+}
+
+#pdf-template .fill {
+  border-bottom: 1px solid #000;
+  flex: 1;
+  height: 20px;
+  display: inline-block;
+  padding: 0 4px;
+}
+
+#pdf-template .short-fill {
+  width: 200px;
+  display: inline-block;
+  border-bottom: 1px solid #000;
+  height: 20px;
+  vertical-align: middle;
+  padding: 0 4px;
+}
+
+#pdf-template .investigation {
+  display: flex;
+  gap: 18px;
+  margin-top: 6px;
+  margin-bottom: 14px;
+}
+
+#pdf-template .investigation .left,
+#pdf-template .investigation .right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+#pdf-template .small-label {
+  width: 80px;
+  font-weight: 600;
+}
+
+#pdf-template .items {
+  margin-top: 6mm;
+  margin-bottom: 18px;
+}
+
+#pdf-template .items .line-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 4px 0;
+}
+
+#pdf-template .items .number {
+  width: 36px;
+  text-align: left;
+  font-weight: 600;
+}
+
+#pdf-template .items .blank {
+  border-bottom: 1px solid #000;
+  flex: 1;
+  height: 18px;
+}
+
+#pdf-template .footer-note {
+  margin-top: 16px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+#pdf-template .sign-block {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 22px;
+  align-items: center;
+}
+
+#pdf-template .stamp {
+  width: 40%;
+  text-align: center;
+}
+
+#pdf-template .sig {
+  width: 40%;
+  text-align: center;
+}
+
+#pdf-template .sign-line {
+  border-top: 1px solid #000;
+  margin-top: 30px;
+  width: 80%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-top: 6px;
+}
+
+/* Ensure the PDF template is properly styled when shown */
+#pdf-template[style*="display: block"] {
+  display: block !important;
+  visibility: visible !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  z-index: 9999 !important;
+}
+
 @media (max-width: 768px) {
   .reimbursement-upload-container {
     padding: 10px;

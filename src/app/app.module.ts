@@ -4,6 +4,11 @@ import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatInputModule } from '@angular/material/input';
+
 
 import { AppComponent } from './app.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
@@ -59,7 +64,8 @@ import { EthiopianDatePickerComponent } from './components/ethiopian-date-picker
 import { EthiopianDateAdapter } from './directive/ethiopian-date-adapter';
 import { ClinicMedicalExpenseFormComponent } from './components/clinic-medical-expense-form/clinic-medical-expense-form.component';
 import { InjectionManagementComponent } from './components/injection-management/injection-management.component';
-import { MatExpansionModule } from '@angular/material/expansion';
+import { MatTableModule } from '@angular/material/table';
+
 
 @NgModule({
   declarations: [
@@ -111,6 +117,10 @@ import { MatExpansionModule } from '@angular/material/expansion';
     // PatientInfoCardComponent
   ],
   imports: [
+    MatTableModule,
+    MatPaginatorModule,
+    MatInputModule,
+    MatFormFieldModule,
     MatSnackBarModule,
     MatDialogModule,
     NgxEchartsModule.forRoot({

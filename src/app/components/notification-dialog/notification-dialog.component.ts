@@ -7,6 +7,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MatDialogModule } from '@angular/material/dialog';
 import { ImagePreviewDialogComponent } from '../image-preview-dialog/image-preview-dialog.component';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-notification-dialog',
@@ -43,6 +44,7 @@ export class NotificationDialogComponent implements OnInit {
     private medicalService: MedicalService,
     public dialogRef: MatDialogRef<NotificationDialogComponent>,
     private dialog: MatDialog,
+    private snackBar: MatSnackBar,
     @Inject(MAT_DIALOG_DATA) public data: { employeeID: string | null, selectedDoctorUserName: string | null, defaultTab?: 'send' | 'view' }
   ) {
     this.activeTab = data.defaultTab || 'view';
@@ -170,7 +172,7 @@ export class NotificationDialogComponent implements OnInit {
       },
       error => {
         console.error('Error marking notification as read:', error);
-        alert('Failed to mark notification as read. Please try again.');
+        this.showErrorMessage(`Failed to mark notification as read. Please try again.`);
       }
     );
   }
@@ -334,5 +336,18 @@ export class NotificationDialogComponent implements OnInit {
 
   onCancel(): void {
     this.dialogRef.close();
+  }
+  private showErrorMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['error-snackbar']
+    });
+  }
+
+  private showSuccessMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['success-snackbar']
+    });
   }
 }

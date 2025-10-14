@@ -5,6 +5,7 @@ import { SickLeave } from 'src/app/models/medical.model';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { ASSETS } from '../../assets.config';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-sick-leave',
@@ -27,7 +28,8 @@ export class SickLeaveComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private medicalService: MedicalService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private snackBar: MatSnackBar
   ) {}
   ngOnInit(): void {
     console.log('SickLeaveComponent initialized with patientID:', this.patientID, 'createdBy:', this.createdBy);
@@ -158,12 +160,12 @@ export class SickLeaveComponent implements OnInit {
         },
         (error: any) => {
           console.error('Error fetching patient:', error);
-          alert('Error fetching patient data.');
+          this.showErrorMessage(`Error fetching patient: ${error}`)
         }
       );
     } else {
       console.warn('No Patient ID provided.');
-      alert('No Patient ID provided.');
+      this.showErrorMessage(`No Patient ID provided.`)
     }
   }
   
@@ -225,16 +227,16 @@ handleSignatureError(event: any): void {
           this.initializeForm();
           this.prefillForm();
           this.loadSickLeaves();
-          alert('Sick leave certificate issued successfully!');
+          this.showSuccessMessage(`Sick leave certificate issued successfully!`)
         },
         error => {
           this.isSubmitting = false;
           console.error('Error issuing sick leave:', error);
-          alert('Error issuing sick leave: ' + (error.error?.message || 'Please try again.'));
+          this.showErrorMessage(`Error issuing sick leave: ${(error.error?.message || 'Please try again.')}`)
         }
       );
     } else {
-      alert('Please fill all required fields and ensure a valid Created By ID is provided.');
+      this.showErrorMessage('Please fill all required fields and ensure a valid Created By ID is provided.')
     }
   }
 
@@ -385,5 +387,19 @@ handleSignatureError(event: any): void {
 
     doc.autoPrint();
     window.open(doc.output('bloburl'), '_blank');
+  }
+
+  private showErrorMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['error-snackbar']
+    });
+  }
+
+  private showSuccessMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['success-snackbar']
+    });
   }
 }

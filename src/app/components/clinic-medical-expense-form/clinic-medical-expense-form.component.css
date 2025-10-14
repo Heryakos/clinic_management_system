@@ -1,180 +1,169 @@
-/* src/app/components/clinic-medical-expense-form/clinic-medical-expense-form.component.css - no change for UI, but for pdf-template use the provided CSS */
-
 .pdf-template {
-  position: absolute;
-  left: -9999px;
-  top: -9999px;
-  width: 210mm;
-  height: 297mm;
-  padding: 20mm;
-  background: white;
-  font-size: 12pt;
-}
+  /* The CSS you provided */
+  /* Page setup */
+  @page { size: A4; margin: 20mm; }
+  html, body {
+    height:100%;
+    margin:0;
+    font-family: "Times New Roman", Georgia, serif;
+    color:#000;
+  }
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 18mm;
+    margin: 10mm auto;
+    box-sizing: border-box;
+  }
 
-/* Paste the provided CSS here for .page, .header-top, etc. */
+  /* Header layout */
+  .header-top {
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom: 8mm;
+  }
 
-@page { size: A4; margin: 20mm; }
-html, body {
-  height:100%;
-  margin:0;
-  font-family: "Times New Roman", Georgia, serif;
-  color:#000;
-}
-.page {
-  width: 210mm;
-  min-height: 297mm;
-  padding: 18mm;
-  margin: 10mm auto;
-  box-sizing: border-box;
-}
+  .logo {
+    width:90px;
+  }
+  .logo img {
+    width:100%;
+    height:auto;
+  }
 
-/* Header layout */
-.header-top {
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  margin-bottom: 8mm;
-}
+  .no-date {
+    width:33%;
+    font-size:14px;
+  }
+  .no-date .line {
+    display:inline-block;
+    border-bottom:1px solid #000;
+    width:120px;
+    margin-left:6px;
+    vertical-align:middle;
+  }
+  .no-date .label {
+    font-size:13px;
+    margin-right:6px;
+  }
 
-.logo {
-  width:90px;
-}
-.logo img {
-  width:100%;
-  height:auto;
-}
+  .title-block {
+    text-align:center;
+    flex:1;
+  }
+  .company {
+    font-size:18px;
+    font-weight:700;
+    margin-bottom:4px;
+    text-transform:uppercase;
+  }
+  .form-title {
+    font-size:16px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+  }
 
-.no-date {
-  width:33%;
-  font-size:14px;
-}
-.no-date .line {
-  display:inline-block;
-  border-bottom:1px solid #000;
-  width:120px;
-  margin-left:6px;
-  vertical-align:middle;
-}
-.no-date .label {
-  font-size:13px;
-  margin-right:6px;
-}
+  /* Body styling */
+  .form-body {
+    margin-top:6mm;
+    font-size:15px;
+    line-height:1.6;
+  }
+  .row {
+    display:flex;
+    align-items:center;
+    margin-bottom:8px;
+  }
+  .label {
+    min-width:190px;
+    font-weight:600;
+  }
+  .fill {
+    border-bottom:1px solid #000;
+    flex:1;
+    height:20px;
+    display:inline-block;
+  }
+  .short-fill {
+    width:200px;
+    display:inline-block;
+    border-bottom:1px solid #000;
+    height:20px;
+    vertical-align:middle;
+  }
 
-.title-block {
-  text-align:center;
-  flex:1;
-}
-.company {
-  font-size:18px;
-  font-weight:700;
-  margin-bottom:4px;
-  text-transform:uppercase;
-}
-.form-title {
-  font-size:16px;
-  text-transform:uppercase;
-  letter-spacing:1px;
-}
+  /* Investigation section */
+  .investigation {
+    display:flex;
+    gap:18px;
+    margin-top:6px;
+    margin-bottom:14px;
+  }
+  .investigation .left,
+  .investigation .right {
+    flex:1;
+    display:flex;
+    align-items:center;
+  }
+  .small-label {
+    width:80px;
+    font-weight:600;
+  }
 
-/* Body styling */
-.form-body {
-  margin-top:6mm;
-  font-size:15px;
-  line-height:1.6;
-}
-.row {
-  display:flex;
-  align-items:center;
-  margin-bottom:8px;
-}
-.label {
-  min-width:190px;
-  font-weight:600;
-}
-.fill {
-  border-bottom:1px solid #000;
-  flex:1;
-  height:20px;
-  display:inline-block;
-}
-.short-fill {
-  width:200px;
-  display:inline-block;
-  border-bottom:1px solid #000;
-  height:20px;
-  vertical-align:middle;
-}
+  /* Invoice lines */
+  .items {
+    margin-top:6mm;
+    margin-bottom:18px;
+  }
+  .items .line-item {
+    display:flex;
+    gap:12px;
+    align-items:center;
+    margin:4px 0;
+  }
+  .items .number {
+    width:36px;
+    text-align:left;
+    font-weight:600;
+  }
+  .items .blank {
+    border-bottom:1px solid #000;
+    flex:1;
+    height:18px;
+  }
 
-/* Investigation section */
-.investigation {
-  display:flex;
-  gap:18px;
-  margin-top:6px;
-  margin-bottom:14px;
-}
-.investigation .left,
-.investigation .right {
-  flex:1;
-  display:flex;
-  align-items:center;
-}
-.small-label {
-  width:80px;
-  font-weight:600;
-}
+  /* Footer area */
+  .footer-note {
+    margin-top:16px;
+    font-size:15px;
+    font-weight:600;
+  }
+  .sign-block {
+    display:flex;
+    justify-content:space-between;
+    margin-top:22px;
+    align-items:center;
+  }
+  .stamp {
+    width:40%;
+    text-align:center;
+  }
+  .sig {
+    width:40%;
+    text-align:center;
+  }
+  .sign-line {
+    border-top:1px solid #000;
+    margin-top:30px;
+    width:80%;
+    margin-left:auto;
+    margin-right:auto;
+    padding-top:6px;
+  }
 
-/* Invoice lines */
-.items {
-  margin-top:6mm;
-  margin-bottom:18px;
-}
-.items .line-item {
-  display:flex;
-  gap:12px;
-  align-items:center;
-  margin:4px 0;
-}
-.items .number {
-  width:36px;
-  text-align:left;
-  font-weight:600;
-}
-.items .blank {
-  border-bottom:1px solid #000;
-  flex:1;
-  height:18px;
-}
-
-/* Footer area */
-.footer-note {
-  margin-top:16px;
-  font-size:15px;
-  font-weight:600;
-}
-.sign-block {
-  display:flex;
-  justify-content:space-between;
-  margin-top:22px;
-  align-items:center;
-}
-.stamp {
-  width:40%;
-  text-align:center;
-}
-.sig {
-  width:40%;
-  text-align:center;
-}
-.sign-line {
-  border-top:1px solid #000;
-  margin-top:30px;
-  width:80%;
-  margin-left:auto;
-  margin-right:auto;
-  padding-top:6px;
-}
-
-@media print {
-  body { margin:0; }
-  .page { box-shadow:none; margin:0; }
+  @media print {
+    body { margin:0; }
+    .page { box-shadow:none; margin:0; }
+  }
 }

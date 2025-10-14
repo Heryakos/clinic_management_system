@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MedicalService } from 'src/app/medical.service';
 import { PatientAssignment, Room, PatientSummary } from 'src/app/models/medical.model';
 
@@ -22,7 +23,8 @@ export class PatientAssignmentComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private medicalService: MedicalService
+    private medicalService: MedicalService,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
@@ -56,7 +58,7 @@ export class PatientAssignmentComponent implements OnInit {
       },
       error => {
         console.error('Error loading rooms:', error);
-        alert('Error loading rooms. Please try again.');
+        this.showErrorMessage(`Error loading rooms. Please try again.`);
       }
     );
   }
@@ -68,7 +70,7 @@ export class PatientAssignmentComponent implements OnInit {
       },
       error => {
         console.error('Error loading assignments:', error);
-        alert('Error loading patient assignments. Please try again.');
+        this.showErrorMessage(`Error loading patient assignments. Please try again.`);
       }
     );
   }
@@ -92,7 +94,7 @@ export class PatientAssignmentComponent implements OnInit {
         error => {
           this.selectedPatient = null;
           this.isSearching = false;
-          alert('No patient found or error occurred. Please try again.');
+          this.showErrorMessage(`No patient found or error occurred. Please try again.`);
         }
       );
     }
@@ -121,11 +123,11 @@ export class PatientAssignmentComponent implements OnInit {
           this.selectedPatient = null;
           this.searched = false;
           this.loadAssignments();
-          alert('Patient assigned successfully!');
+          this.showSuccessMessage(`Patient assigned successfully!`);
         },
         error => {
           this.isSubmitting = false;
-          alert('Error assigning patient. Please try again.');
+          this.showErrorMessage(`Error assigning patient. Please try again.`);
         }
       );
     }
@@ -135,10 +137,10 @@ export class PatientAssignmentComponent implements OnInit {
     this.medicalService.updateAssignmentStatus(assignmentId, status).subscribe(
       () => {
         this.loadAssignments();
-        alert('Assignment status updated successfully!');
+        this.showSuccessMessage(`Assignment status updated successfully!`);
       },
       error => {
-        alert('Error updating assignment status. Please try again.');
+        this.showErrorMessage(`Error updating assignment status. Please try again.`);
       }
     );
   }
@@ -156,5 +158,18 @@ export class PatientAssignmentComponent implements OnInit {
   getPatientName(patientId: number): string {
     const patient = this.patients.find(p => p.PatientID === patientId);
     return patient ? patient.FullName : 'Unknown Patient';
+  }
+  private showErrorMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['error-snackbar']
+    });
+  }
+
+  private showSuccessMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['success-snackbar']
+    });
   }
 } 

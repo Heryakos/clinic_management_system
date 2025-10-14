@@ -8,6 +8,7 @@ import { PatientSummary, PatientHistory, Room } from 'src/app/models/medical.mod
 import { environment } from 'src/environments/environment';
 import { PatientInfoCardComponent } from '../patient-info-card/patient-info-card.component';
 import { NotificationDialogComponent } from '../notification-dialog/notification-dialog.component';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-patient-history-card',
@@ -37,7 +38,8 @@ export class PatientHistoryCardComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private medicalService: MedicalService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
@@ -153,9 +155,9 @@ export class PatientHistoryCardComponent implements OnInit {
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         if (result.success) {
-          alert(result.success);
+          this.showSuccessMessage(result.success);
         } else if (result.error) {
-          alert(result.error);
+          this.showErrorMessage(result.error);
         }
       }
     });
@@ -265,7 +267,7 @@ export class PatientHistoryCardComponent implements OnInit {
           this.patient = null;
           this.patientHistory = [];
           this.isSearching = false;
-          alert('No record found or error occurred. Please try again.');
+          this.showErrorMessage(`No record found or error occurred. Please try again.`);
         }
       );
     }
@@ -317,7 +319,7 @@ export class PatientHistoryCardComponent implements OnInit {
           );
   
           if (!selectedDoctor) {
-            alert('Selected doctor not found.');
+            this.showErrorMessage(`Selected doctor not found.`);
             this.isAssigning = false;
             return;
           }
@@ -328,7 +330,7 @@ export class PatientHistoryCardComponent implements OnInit {
           );
   
           if (!selectedRoom) {
-            alert('Selected room not found.');
+            this.showErrorMessage(`Selected room not found.`);
             this.isAssigning = false;
             return;
           }
@@ -348,19 +350,19 @@ export class PatientHistoryCardComponent implements OnInit {
               this.assignmentForm.reset();
               this.showAssignmentForm = false;
               this.loadPatientHistory(this.patient!.CardNumber);
-              alert('Patient assigned to room successfully!');
+              this.showErrorMessage(`Patient assigned to room successfully!`);
             },
             error => {
               this.isAssigning = false;
               console.error('Assignment error:', error);
-              alert('Error assigning patient to room. Please try again.');
+              this.showErrorMessage(`Error assigning patient to room. Please try again.`);
             }
           );
         },
         error => {
           this.isAssigning = false;
           console.error('Error loading employee data:', error);
-          alert('Error loading user data. Please try again.');
+          this.showErrorMessage(`Error loading user data. Please try again.`);
         }
       );
     }
@@ -421,5 +423,18 @@ export class PatientHistoryCardComponent implements OnInit {
   getRoomName(roomId: string): string {
     const room = this.rooms.find(r => r.roomID === roomId);
     return room ? `${room.roomNumber} - ${room.roomName}` : 'Unknown Room';
+  }
+  private showErrorMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['error-snackbar']
+    });
+  }
+
+  private showSuccessMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['success-snackbar']
+    });
   }
 }

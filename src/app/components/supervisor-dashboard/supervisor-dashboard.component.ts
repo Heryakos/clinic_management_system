@@ -3,6 +3,7 @@ import { FormBuilder } from '@angular/forms';
 import { MedicalService } from 'src/app/medical.service';
 import { SupervisorRequest, PurchaseRequest, InventoryRequestDetail, ItemRegistration, InventoryPurchaseRequest } from '../../models/inventory-enhanced.model';
 import { environment } from 'src/environments/environment';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-supervisor-dashboard',
@@ -38,7 +39,8 @@ export class SupervisorDashboardComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private medicalService: MedicalService
+    private medicalService: MedicalService,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
@@ -58,7 +60,7 @@ export class SupervisorDashboardComponent implements OnInit {
       },
       error => {
         console.error('Error loading user data:', error);
-        alert('Error loading user data. Please refresh the page.');
+        this.showErrorMessage(`Error loading user data. Please refresh the page.`);
       }
     );
   }
@@ -73,7 +75,7 @@ export class SupervisorDashboardComponent implements OnInit {
       },
       error => {
         console.error('Error loading requests:', error);
-        alert('Error loading requests. Please try again.');
+        this.showErrorMessage(`Error loading requests. Please try again.`);
       }
     );
   }
@@ -147,7 +149,7 @@ export class SupervisorDashboardComponent implements OnInit {
       },
       error => {
         console.error('Error loading request items:', error);
-        alert('Error loading request details.');
+        this.showErrorMessage(`Error loading request details.`);
       }
     );
   }
@@ -177,12 +179,12 @@ export class SupervisorDashboardComponent implements OnInit {
         this.closeModal();
         this.loadRequests();
         this.loadPurchaseRequests();
-        alert('Request approved successfully!');
+        this.showSuccessMessage(`Request approved successfully!`);
       },
       error => {
         this.isProcessing = false;
         console.error('Error approving request:', error);
-        alert('Error approving request. Please try again.');
+        this.showErrorMessage(`Error approving request. Please try again.`);
       }
     );
   }
@@ -201,12 +203,12 @@ export class SupervisorDashboardComponent implements OnInit {
         this.isProcessing = false;
         this.closeModal();
         this.loadRequests();
-        alert('Request rejected.');
+        this.showErrorMessage(`Request rejected.`);
       },
       error => {
         this.isProcessing = false;
         console.error('Error rejecting request:', error);
-        alert('Error rejecting request. Please try again.');
+        this,this.showErrorMessage(`Error rejecting request. Please try again.`);
       }
     );
   }
@@ -222,11 +224,11 @@ export class SupervisorDashboardComponent implements OnInit {
     ).subscribe(
       () => {
         this.loadRequests();
-        alert('Items issued successfully!');
+        this.showSuccessMessage(`Items issued successfully!`);
       },
       error => {
         console.error('Error issuing items:', error);
-        alert('Error issuing items. Please try again.');
+        this.showErrorMessage(`Error issuing items. Please try again.`);
       }
     );
   }
@@ -247,7 +249,7 @@ export class SupervisorDashboardComponent implements OnInit {
         error => {
           console.error('Error loading purchase item registrations:', error);
           this.selectedPurchaseItems = [];
-          alert('Error loading purchase details.');
+          this.showErrorMessage(`Error loading purchase details.`);
         }
       );
     } else {
@@ -264,5 +266,19 @@ export class SupervisorDashboardComponent implements OnInit {
     this.showCommentsInput = false;
     this.actionComments = '';
     this.isProcessing = false;
+  }
+
+  private showErrorMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['error-snackbar']
+    });
+  }
+
+  private showSuccessMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['success-snackbar']
+    });
   }
 }

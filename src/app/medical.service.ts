@@ -684,6 +684,11 @@ updateInjection(data: any): Observable<any> {
       catchError(this.handleError)
     );
   }
+  updateMedication(data: any): Observable<any> {
+    return this.http.put(`${this.chmsPharmacyBase}medications/${data.medicationID}`, data).pipe(
+      catchError(this.handleError)
+    );
+  }
 
   getPharmacyRequestReasons(): Observable<ReasonCategory[]> {
     return this.http.get<any>(`${this.chmsPharmacyBase}request-reasons`).pipe(

@@ -10,11 +10,13 @@ import { Medication, DosageForm, MedicationCategory, MedicationSelection } from 
 import { NotificationDialogComponent } from '../notification-dialog/notification-dialog.component';
 import { PrescriptionPaperComponent } from '../prescription-paper/prescription-paper.component';
 import { InjectionPaperComponent } from '../injection-paper/injection-paper.component'; // Adjust path
+import { EthiopianDatePickerComponent } from '../ethiopian-date-picker/ethiopian-date-picker.component'; // Adjust path as needed
+import { EthiopianDate } from '../../models/ethiopian-date'; // Adjust path as needed
 
 @Component({
     selector: 'app-doctor',
     templateUrl: './doctor.component.html',
-    styleUrls: ['./doctor.component.css']
+    styleUrls: ['./doctor.component.css'],
 })
 export class DoctorComponent implements OnInit {
     selectedCardNumber: string = '';
@@ -64,6 +66,7 @@ export class DoctorComponent implements OnInit {
     employeeID: string | null = null;
     selectedDoctorUserName: string | null = null;
     selectedTestData: any = null; // Add this property
+    hasPendingLabs: boolean = false;
 
     constructor(
         private fb: FormBuilder,
@@ -104,6 +107,10 @@ export class DoctorComponent implements OnInit {
     // Switch between tabs
     selectTab(tab: string): void {
         console.log('Selected tab:', tab, 'patientID:', this.patient?.cardNumber, 'createdBy:', this.createdBy);
+        if (tab === 'prescriptions' && this.hasPendingLabs) {
+            this.showSnackBar('Please complete pending laboratory tests before accessing pharmacy.', 'OK', 5000);
+            return;
+        }
         this.selectedTab = tab;
         if (tab === 'prescriptions') {
             if (this.patient?.CardNumber) {
@@ -335,7 +342,7 @@ export class DoctorComponent implements OnInit {
             }));
             
             this.isSearching = false;
-            console.log('Loaded doctor-specific patients:', this.activePatients.length);
+            console.log('Loaded doctor-specific patients:', this.activePatients.length, this.activePatients);
           },
           error => {
             console.error('Error loading doctor-specific patients:', error);
@@ -500,6 +507,7 @@ export class DoctorComponent implements OnInit {
           notes: [''],
           isRecurring: [false], // Add this field
           startDate: [null], // Add this field
+          startTime: [null], // Add time field
           totalDoses: [1, [Validators.required, Validators.min(1)]] // Add this field
         });
       }
@@ -661,9 +669,9 @@ export class DoctorComponent implements OnInit {
                                 this.loadPatientLaboratory(Number(patient.PatientID));
                                 this.loadPatientPrescriptions(patient.CardNumber);
                                 this.loadPatientInjections(patient.PatientID);
-                                // If Pharmacy tab is active, also load all prescriptions
+                                // If Pharmacy tab is active, reload prescriptions for this specific patient
                                 if (this.selectedTab === 'prescriptions') {
-                                    this.loadPrescriptions();
+                                    this.loadPatientPrescriptions(patient.CardNumber);
                                 }
                             },
                             error => {
@@ -694,6 +702,7 @@ export class DoctorComponent implements OnInit {
         this.injections = [];
         this.patientAssignments = []; // Reset patient assignments
         this.medicalHistories = []; // Clear medical histories
+        this.hasPendingLabs = false;
         console.log('Patient data reset - prescriptions cleared');
     }
 
@@ -701,9 +710,11 @@ export class DoctorComponent implements OnInit {
         this.medicalService.getPatientLaboratoryTests(patientId).subscribe(
             tests => {
                 this.laboratoryTests = tests;
+                this.hasPendingLabs = this.laboratoryTests.some(test => test.status.toLowerCase() !== 'completed');
             },
             error => {
                 this.laboratoryTests = [];
+                this.hasPendingLabs = false;
                 this.showSnackBar(`Error loading laboratory tests: ${error.message}`, 'Close', 5000, 'error-snackbar');
             }
         );
@@ -1097,6 +1108,16 @@ export class DoctorComponent implements OnInit {
           }
       
           // Prepare the injection data matching the stored procedure parameters
+          let startDateIso = null;
+          if (form.startDate) {
+            const gregDate = this.convertEthToGreg(form.startDate);
+            if (form.startTime) {
+              const [hours, minutes] = form.startTime.split(':');
+              gregDate.setHours(parseInt(hours), parseInt(minutes));
+            }
+            startDateIso = gregDate.toISOString();
+          }
+
           const injection = {
             injectionNumber: form.injectionNumber,
             patientID: patientID,
@@ -1112,7 +1133,7 @@ export class DoctorComponent implements OnInit {
             notes: form.notes || null,
             createdBy: this.createdBy,
             isRecurring: form.isRecurring || false,
-            startDate: form.startDate ? new Date(form.startDate).toISOString() : null,
+            startDate: startDateIso,
             totalDoses: form.totalDoses || 1
           };
       
@@ -1143,6 +1164,21 @@ export class DoctorComponent implements OnInit {
           }
         }
       }
+
+    convertEthToGreg(eth: EthiopianDate): Date {
+      const jd = 1723856 + 365 * (eth.year - 1) + Math.floor(eth.year / 4) + 30 * eth.month + eth.day - 31.5;
+      const l = Math.floor(jd + 0.5) + 68569;
+      const n = Math.floor(4 * l / 146097);
+      const l1 = l - Math.floor((146097 * n + 3) / 4);
+      const i = Math.floor(4000 * (l1 + 1) / 1461001);
+      const l2 = l1 - Math.floor(1461 * i / 4) + 31;
+      const j = Math.floor(80 * l2 / 2447);
+      const day = l2 - Math.floor(2447 * j / 80);
+      const l3 = Math.floor(j / 11);
+      const month = j + 2 - 12 * l3;
+      const year = 100 * (n - 49) + i + l3;
+      return new Date(year, month - 1, day);
+    }
 
     formatDate(dateString: string | undefined): string {
 
@@ -1192,4 +1228,4 @@ export class DoctorComponent implements OnInit {
         this.editForm.reset();
         // this.loadActivePatients(); // Reload active patients
     }
-}
+}   

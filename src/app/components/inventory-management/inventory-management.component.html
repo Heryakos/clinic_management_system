@@ -2,11 +2,17 @@
 
 <div class="inventory-management">
   <h2>Inventory Management</h2>
-  
+
+  <div class="tabs">
+    <button type="button" [class.active]="selectedTab === 'categories'" (click)="selectTab('categories')">Categories</button>
+    <button type="button" [class.active]="selectedTab === 'items'" (click)="selectTab('items')">Items</button>
+    <button type="button" [class.active]="selectedTab === 'medications'" (click)="selectTab('medications')">Medications</button>
+  </div>
+
   <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
   <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
-  
-  <div class="section">
+
+  <div *ngIf="selectedTab === 'categories'" class="section">
     <h3>Add New Category</h3>
     <form [formGroup]="categoryForm" (ngSubmit)="onAddCategory()">
       <div class="form-group">
@@ -20,8 +26,8 @@
       <button type="submit" [disabled]="categoryForm.invalid">Add Category</button>
     </form>
   </div>
-  
-  <div class="section">
+
+  <div *ngIf="selectedTab === 'items'" class="section">
     <h3>Add New Item</h3>
     <form [formGroup]="itemForm" (ngSubmit)="onAddItem()">
       <div class="form-group">
@@ -68,5 +74,237 @@
       </div>
       <button type="submit" [disabled]="itemForm.invalid">Add Item</button>
     </form>
+  </div>
+
+  <div *ngIf="selectedTab === 'medications'" class="section">
+    <h3>Manage Medications</h3>
+
+    <!-- Add New Medication Form -->
+    <div class="subsection">
+      <h4>Add New Medication</h4>
+      <form [formGroup]="medicationForm" (ngSubmit)="onAddMedication()">
+        <div class="form-group">
+          <label for="medicationName">Medication Name</label>
+          <input id="medicationName" formControlName="medicationName" type="text" required>
+        </div>
+        <div class="form-group">
+          <label for="genericName">Generic Name</label>
+          <input id="genericName" formControlName="genericName" type="text">
+        </div>
+        <div class="form-group">
+          <label for="strength">Strength</label>
+          <input id="strength" formControlName="strength" type="text">
+        </div>
+        <div class="form-group">
+          <label for="dosageForm">Dosage Form</label>
+          <select id="dosageForm" formControlName="dosageForm" required>
+            <option value="Tablet">Tablet</option>
+            <option value="Capsule">Capsule</option>
+            <option value="Vial">Vial</option>
+            <option value="Injection">Injection</option>
+            <option value="Inhaler">Inhaler</option>
+            <option value="Syrup">Syrup</option>
+            <option value="Drops">Drops</option>
+            <option value="Cream">Cream</option>
+            <option value="Ointment">Ointment</option>
+            <option value="Effervescent Tablet">Effervescent Tablet</option>
+            <option value="Patch">Patch</option>
+            <option value="Prefilled Syringe">Prefilled Syringe</option>
+            <option value="Suppository">Suppository</option>
+            <option value="Pessary">Pessary</option>
+            <option value="Suspension">Suspension</option>
+            <option value="Implant">Implant</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="manufacturer">Manufacturer</label>
+          <input id="manufacturer" formControlName="manufacturer" type="text">
+        </div>
+        <div class="form-group">
+          <label for="category">Category</label>
+          <select id="category" formControlName="category" required>
+            <option value="Analgesics">Analgesics</option>
+            <option value="Antibiotics">Antibiotics</option>
+            <option value="Antidiabetic">Antidiabetic</option>
+            <option value="Antihypertensives">Antihypertensives</option>
+            <option value="Proton Pump Inhibitor">Proton Pump Inhibitor</option>
+            <option value="Antiplatelet">Antiplatelet</option>
+            <option value="Antidepressants">Antidepressants</option>
+            <option value="Antipsychotics">Antipsychotics</option>
+            <option value="Antifungals">Antifungals</option>
+            <option value="Antivirals">Antivirals</option>
+            <option value="Steroids">Steroids</option>
+            <option value="Antacids & Antigastric">Antacids & Antigastric</option>
+            <option value="Vitamins & Supplements">Vitamins & Supplements</option>
+            <option value="Hormonal Treatments">Hormonal Treatments</option>
+            <option value="Immunosuppressants">Immunosuppressants</option>
+            <option value="Sedatives & Hypnotics">Sedatives & Hypnotics</option>
+            <option value="Diuretics">Diuretics</option>
+            <option value="Local Anesthetics">Local Anesthetics</option>
+            <option value="Muscle Relaxants">Muscle Relaxants</option>
+            <option value="Bronchodilators">Bronchodilators</option>
+            <option value="Cough and Cold Medications">Cough and Cold Medications</option>
+            <option value="Antiemetics">Antiemetics</option>
+            <option value="Anticonvulsants">Anticonvulsants</option>
+            <option value="Antihistamines">Antihistamines</option>
+            <option value="Laxatives & Stool Softeners">Laxatives & Stool Softeners</option>
+            <option value="Anthelmintics">Anthelmintics</option>
+            <option value="Antituberculars">Antituberculars</option>
+            <option value="Antimalarials">Antimalarials</option>
+            <option value="Antineoplastics">Antineoplastics</option>
+            <option value="Statins">Statins</option>
+            <option value="Ophthalmic Agents">Ophthalmic Agents</option>
+            <option value="Topical Dermatologicals">Topical Dermatologicals</option>
+            <option value="Antispasmodics">Antispasmodics</option>
+            <option value="Expectorants">Expectorants</option>
+            <option value="Biologics">Biologics</option>
+            <option value="Anticoagulants">Anticoagulants</option>
+            <option value="Vaccines">Vaccines</option>
+            <option value="Enzyme Replacement Therapies">Enzyme Replacement Therapies</option>
+            <option value="Smoking Cessation">Smoking Cessation</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="unitPrice">Unit Price</label>
+          <input id="unitPrice" formControlName="unitPrice" type="number" step="0.01" required>
+        </div>
+        <button type="submit" [disabled]="medicationForm.invalid">Add Medication</button>
+      </form>
+    </div>
+
+    <!-- Edit Medication Form -->
+    <div *ngIf="selectedMedication" class="subsection">
+      <h4>Edit Medication: {{ selectedMedication.medicationName }}</h4>
+      <form [formGroup]="editMedicationForm" (ngSubmit)="onUpdateMedication()">
+        <div class="form-group">
+          <label for="editMedicationID">Medication ID</label>
+          <input id="editMedicationID" formControlName="medicationID" type="text" readonly>
+        </div>
+        <div class="form-group">
+          <label for="editMedicationName">Medication Name</label>
+          <input id="editMedicationName" formControlName="medicationName" type="text" required>
+        </div>
+        <div class="form-group">
+          <label for="editGenericName">Generic Name</label>
+          <input id="editGenericName" formControlName="genericName" type="text">
+        </div>
+        <div class="form-group">
+          <label for="editStrength">Strength</label>
+          <input id="editStrength" formControlName="strength" type="text">
+        </div>
+        <div class="form-group">
+          <label for="editDosageForm">Dosage Form</label>
+          <select id="editDosageForm" formControlName="dosageForm" required>
+            <option value="Tablet">Tablet</option>
+            <option value="Capsule">Capsule</option>
+            <option value="Vial">Vial</option>
+            <option value="Injection">Injection</option>
+            <option value="Inhaler">Inhaler</option>
+            <option value="Syrup">Syrup</option>
+            <option value="Drops">Drops</option>
+            <option value="Cream">Cream</option>
+            <option value="Ointment">Ointment</option>
+            <option value="Effervescent Tablet">Effervescent Tablet</option>
+            <option value="Patch">Patch</option>
+            <option value="Prefilled Syringe">Prefilled Syringe</option>
+            <option value="Suppository">Suppository</option>
+            <option value="Pessary">Pessary</option>
+            <option value="Suspension">Suspension</option>
+            <option value="Implant">Implant</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="editManufacturer">Manufacturer</label>
+          <input id="editManufacturer" formControlName="manufacturer" type="text">
+        </div>
+        <div class="form-group">
+          <label for="editCategory">Category</label>
+          <select id="editCategory" formControlName="category" required>
+            <option value="Analgesics">Analgesics</option>
+            <option value="Antibiotics">Antibiotics</option>
+            <!-- Add all categories as above -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="editUnitPrice">Unit Price</label>
+          <input id="editUnitPrice" formControlName="unitPrice" type="number" step="0.01" required>
+        </div>
+        <button type="submit" [disabled]="editMedicationForm.invalid">Update Medication</button>
+        <button type="button" (click)="onCancelEdit()">Cancel</button>
+      </form>
+    </div>
+
+    <!-- Medications List -->
+    <div class="subsection">
+      <h4>Existing Medications</h4>
+    
+      <!-- Search -->
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Search medications</mat-label>
+        <input matInput (keyup)="applyFilter($event)" placeholder="Search..." />
+      </mat-form-field>
+    
+      <!-- Material table -->
+      <table mat-table [dataSource]="dataSource" class="mat-elevation-z2">
+    
+        <ng-container matColumnDef="medicationID">
+          <th mat-header-cell *matHeaderCellDef>ID</th>
+          <td mat-cell *matCellDef="let med">{{ med.medicationID }}</td>
+        </ng-container>
+    
+        <ng-container matColumnDef="medicationName">
+          <th mat-header-cell *matHeaderCellDef>Name</th>
+          <td mat-cell *matCellDef="let med">{{ med.medicationName }}</td>
+        </ng-container>
+    
+        <ng-container matColumnDef="genericName">
+          <th mat-header-cell *matHeaderCellDef>Generic Name</th>
+          <td mat-cell *matCellDef="let med">{{ med.genericName || '-' }}</td>
+        </ng-container>
+    
+        <ng-container matColumnDef="strength">
+          <th mat-header-cell *matHeaderCellDef>Strength</th>
+          <td mat-cell *matCellDef="let med">{{ med.strength || '-' }}</td>
+        </ng-container>
+    
+        <ng-container matColumnDef="dosageForm">
+          <th mat-header-cell *matHeaderCellDef>Dosage Form</th>
+          <td mat-cell *matCellDef="let med">{{ med.dosageForm }}</td>
+        </ng-container>
+    
+        <ng-container matColumnDef="manufacturer">
+          <th mat-header-cell *matHeaderCellDef>Manufacturer</th>
+          <td mat-cell *matCellDef="let med">{{ med.manufacturer || '-' }}</td>
+        </ng-container>
+    
+        <ng-container matColumnDef="category">
+          <th mat-header-cell *matHeaderCellDef>Category</th>
+          <td mat-cell *matCellDef="let med">{{ med.category }}</td>
+        </ng-container>
+    
+        <ng-container matColumnDef="unitPrice">
+          <th mat-header-cell *matHeaderCellDef>Unit Price</th>
+          <td mat-cell *matCellDef="let med">{{ med.unitPrice | number:'1.2-2' }}</td>
+        </ng-container>
+    
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let med">
+            <button type="button" (click)="onEditMedication(med)">Edit</button>
+          </td>
+        </ng-container>
+    
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    
+      <!-- Pagination -->
+      <mat-paginator [pageSizeOptions]="[5, 10, 25, 50]" showFirstLastButtons></mat-paginator>
+    </div>
+    
+  </div>
+
+  <div *ngIf="selectedTab === 'medications'" class="section">
+    <!-- Medications management content -->
   </div>
 </div>

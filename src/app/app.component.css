@@ -21,7 +21,7 @@
   background: linear-gradient(135deg, #2563eb 0%, #3678be 100%);
   color: white;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   padding: 0 30px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
@@ -64,16 +64,32 @@
   top: 8px;
 }
 
-.header-left {
-  flex: 1;
+.header-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
 }
 
-.header-left h1 {
+.header-center h1 {
   margin: 0;
   font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.5px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-center .employee-welcome {
+  margin-top: 5px;
+  font-size: 14px;
+  opacity: 0.95;
+  font-weight: 400;
+}
+
+.header-right {
+  margin-left: auto; /* Push notification bell to far right */
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
 .employee-welcome {

@@ -123,3 +123,87 @@
     </div>
   </form>
 </div>
+
+<!-- Hidden PDF Template -->
+<div #pdfTemplate id="pdf-template" style="display: none; position: absolute; left: -9999px;">
+  <div style="width: 210mm; min-height: 297mm; padding: 18mm; margin: 0; box-sizing: border-box; background: white; font-family: 'Times New Roman', Georgia, serif; color: #000;">
+    
+    <!-- Header Section -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8mm;">
+      <div style="width: 90px;">
+        <img src="https://efhc.gov.et/xokaerp/datepicker/img/fhc_log.jpg" alt="FHC Logo" style="width: 100%; height: auto;" />
+      </div>
+
+      <div style="text-align: center; flex: 1;">
+        <div style="font-size: 18px; font-weight: 700; margin-bottom: 4px; text-transform: uppercase;">Federal Housing Corporation</div>
+        <div style="font-size: 16px; text-transform: uppercase; letter-spacing: 1px;">Clinic Medical Expense Refund Form</div>
+      </div>
+
+      <div style="width: 33%; font-size: 14px;">
+        <div><span style="font-size: 13px; margin-right: 6px;">No.</span><span style="display: inline-block; border-bottom: 1px solid #000; width: 120px; margin-left: 6px; vertical-align: middle; height: 20px;"></span></div>
+        <div style="margin-top: 8px;"><span style="font-size: 13px; margin-right: 6px;">Date</span><span style="display: inline-block; border-bottom: 1px solid #000; width: 180px; margin-left: 6px; vertical-align: middle; height: 20px;"></span></div>
+      </div>
+    </div>
+
+    <!-- Form Body -->
+    <div style="margin-top: 6mm; font-size: 15px; line-height: 1.6;">
+      <div style="display: flex; align-items: center; margin-bottom: 8px;">
+        <div style="min-width: 190px; font-weight: 600;">1. Name of patient</div>
+        <div style="border-bottom: 1px solid #000; flex: 1; height: 20px; padding: 0 4px;">{{ expenseForm.get('patientName')?.value }}</div>
+      </div>
+
+      <div style="display: flex; align-items: center; margin-bottom: 8px;">
+        <div style="min-width: 190px; font-weight: 600;">2. Payroll no</div>
+        <div style="width: 200px; display: inline-block; border-bottom: 1px solid #000; height: 20px; padding: 0 4px;">{{ expenseForm.get('payrollNumber')?.value }}</div>
+      </div>
+
+      <div style="display: flex; align-items: center; margin-bottom: 8px;">
+        <div style="min-width: 190px; font-weight: 600;">3. Department</div>
+        <div style="width: 200px; display: inline-block; border-bottom: 1px solid #000; height: 20px; padding: 0 4px;">{{ expenseForm.get('department')?.value }}</div>
+      </div>
+
+      <div style="margin-top: 6px; margin-bottom: 8px;">
+        <div style="width: 100%;">4. <span style="font-weight: 600;">Investigation</span></div>
+      </div>
+
+      <div style="display: flex; gap: 18px; margin-top: 6px; margin-bottom: 14px;">
+        <div style="flex: 1; display: flex; align-items: center;">
+          <span style="width: 80px; font-weight: 600;">Done at</span>
+          <span style="width: 260px; display: inline-block; border-bottom: 1px solid #000; height: 20px; padding: 0 4px;">{{ expenseForm.get('doneAt')?.value }}</span>
+        </div>
+        <div style="flex: 1; display: flex; align-items: center;">
+          <span style="width: 110px; font-weight: 600;">Ordered from</span>
+          <span style="width: 260px; display: inline-block; border-bottom: 1px solid #000; height: 20px; padding: 0 4px;">{{ expenseForm.get('orderedFrom')?.value }}</span>
+        </div>
+      </div>
+
+      <div style="font-style: italic; margin-bottom: 6px;">As per invoice attached (number of invoice)</div>
+
+      <!-- Invoice Items -->
+      <div style="margin-top: 6mm; margin-bottom: 18px;">
+        <div *ngFor="let inv of investigations; let i = index" style="display: flex; gap: 12px; align-items: center; margin: 4px 0;">
+          <div style="width: 36px; text-align: left; font-weight: 600;">{{i+1}}.</div>
+          <div style="border-bottom: 1px solid #000; flex: 1; height: 18px; padding: 0 4px;">{{ inv.investigation }} (Invoice: {{ inv.invoiceNumber }}, Amount: {{ inv.amount }})</div>
+        </div>
+        <!-- Fill remaining to 20 -->
+        <ng-container *ngFor="let dummy of [].constructor(20 - investigations.length); let j = index">
+          <div style="display: flex; gap: 12px; align-items: center; margin: 4px 0;">
+            <div style="width: 36px; text-align: left; font-weight: 600;">{{investigations.length + j + 1}}.</div>
+            <div style="border-bottom: 1px solid #000; flex: 1; height: 18px;"></div>
+          </div>
+        </ng-container>
+      </div>
+
+      <div style="margin-top: 16px; font-size: 15px; font-weight: 600;">The medical expense should be paid to the patient</div>
+
+      <div style="display: flex; justify-content: space-between; margin-top: 22px; align-items: center;">
+        <div style="width: 40%; text-align: center;">
+          <div style="border-top: 1px solid #000; margin-top: 30px; width: 70%; margin-left: auto; margin-right: auto; padding-top: 6px;">Stamp</div>
+        </div>
+        <div style="width: 40%; text-align: center;">
+          <div style="border-top: 1px solid #000; margin-top: 30px; width: 80%; margin-left: auto; margin-right: auto; padding-top: 6px;">sig of head of clinic</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

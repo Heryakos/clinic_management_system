@@ -1,8 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+// src/app/components/reimbursement-document-upload/reimbursement-document-upload.component.ts
+
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MedicalService, ReimbursementDocument } from 'src/app/medical.service';
 import { environment } from 'src/environments/environment';
 import { ExpenseReimbursement } from 'src/app/models/medical.model';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import { firstValueFrom } from 'rxjs'; // Added missing import
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-reimbursement-document-upload',
@@ -23,44 +29,60 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
     { value: 'ClinicMedicalExpenseRefund', label: 'Clinic Medical Expense Refund' },
     { value: 'Other', label: 'Other' }
   ];
-  investigations: { investigation: string, doneAt: string, orderedFrom: string, amount: number }[] = [];
+  investigations: { investigation: string, invoiceNumber: string, amount: number }[] = [];
   existingInvestigations: any[] = [];
+  
+  // Added missing properties
+  pdfFile: File | null = null;
+  reimbursementId: number | null = null;
+  
+  @ViewChild('pdfTemplate') pdfTemplate!: ElementRef;
 
   constructor(
     private fb: FormBuilder,
-    public medicalService: MedicalService
+    public medicalService: MedicalService,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
     this.initializeForm();
     this.loadUserData();
+    this.addInvestigation();
   }
 
   initializeForm(): void {
     this.uploadForm = this.fb.group({
-      // reimbursementId: [''],
       formType: ['', Validators.required],
       description: ['', Validators.required],
-      files: [null, Validators.required]
-    });
-
-    this.uploadForm.get('reimbursementId')?.valueChanges.subscribe(reimbursementId => {
-      if (reimbursementId) {
-        const idNum = parseInt(reimbursementId, 10);
-        this.loadDocuments(idNum);
-        this.loadInvestigations(idNum);
-        this.checkReimbursementStatus(reimbursementId);
-      }
+      files: [null],
+      patientName: ['', Validators.required],
+      payrollNumber: ['', Validators.required],
+      department: ['', Validators.required],
+      doneAt: ['', Validators.required],
+      orderedFrom: ['', Validators.required]
     });
 
     this.uploadForm.get('formType')?.valueChanges.subscribe(formType => {
       if (formType === 'ClinicMedicalExpenseRefund') {
         this.uploadForm.get('description')?.setValue('Clinic Medical Expense Refund Form');
         this.uploadForm.get('description')?.disable();
+        this.uploadForm.get('files')?.clearValidators();
+        this.uploadForm.get('patientName')?.enable();
+        this.uploadForm.get('payrollNumber')?.enable();
+        this.uploadForm.get('department')?.enable();
+        this.uploadForm.get('doneAt')?.enable();
+        this.uploadForm.get('orderedFrom')?.enable();
       } else {
         this.uploadForm.get('description')?.enable();
         this.uploadForm.get('description')?.setValue('');
+        this.uploadForm.get('files')?.setValidators([Validators.required]);
+        this.uploadForm.get('patientName')?.disable();
+        this.uploadForm.get('payrollNumber')?.disable();
+        this.uploadForm.get('department')?.disable();
+        this.uploadForm.get('doneAt')?.disable();
+        this.uploadForm.get('orderedFrom')?.disable();
       }
+      this.uploadForm.get('files')?.updateValueAndValidity();
     });
   }
 
@@ -72,7 +94,7 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
           this.createdBy = employee.user_ID ?? null;
           this.employeeName = employee.en_name ?? 'Unknown';
           this.payrollNumber = employee.employee_Id ?? 'Unknown';
-          // this.loadReimbursements();
+          this.uploadForm.patchValue({ payrollNumber: this.payrollNumber });
         } else {
           console.warn('No employee data found');
         }
@@ -83,36 +105,8 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
     );
   }
 
-  // loadReimbursements(): void {
-  //   if (this.payrollNumber) {
-  //     this.medicalService.getExpenseReimbursementsByPayrollNumber(this.payrollNumber).subscribe(
-  //       (reimbursements: ExpenseReimbursement[]) => {
-  //         this.reimbursements = reimbursements.filter(r => r.status !== 'paid');
-  //         console.log('Loaded reimbursements:', this.reimbursements);
-  //         // Auto-select the latest reimbursement (highest ID) for convenience
-  //         if (this.reimbursements.length > 0) {
-  //           const latest = this.reimbursements.reduce((a, b) => a.reimbursementID > b.reimbursementID ? a : b);
-  //           this.uploadForm.patchValue({ reimbursementId: latest.reimbursementID.toString() });
-  //         }
-  //       },
-  //       error => {
-  //         console.error('Error loading reimbursements:', error);
-  //       }
-  //     );
-  //   }
-  // }
-
-  loadInvestigations(reimbursementId: number): void {
-    this.medicalService.getReimbursementDetails(reimbursementId).subscribe(
-      details => {
-        this.existingInvestigations = details;
-      },
-      error => console.error('Error loading investigations:', error)
-    );
-  }
-
   addInvestigation(): void {
-    this.investigations.push({ investigation: '', doneAt: '', orderedFrom: '', amount: 0 });
+    this.investigations.push({ investigation: '', invoiceNumber: '', amount: 0 });
   }
 
   removeInvestigation(index: number): void {
@@ -121,14 +115,8 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
     }
   }
 
-  checkReimbursementStatus(reimbursementId: string): void {
-    const reimbursement = this.reimbursements.find(r => r.reimbursementID.toString() === reimbursementId);
-    if (reimbursement && reimbursement.status === 'paid') {
-      this.uploadForm.get('files')?.disable();
-      alert('Cannot upload documents for a Paid reimbursement.');
-    } else {
-      this.uploadForm.get('files')?.enable();
-    }
+  get totalAmount(): number {
+    return this.investigations.reduce((sum, inv) => sum + (inv.amount || 0), 0);
   }
 
   onFileChange(event: Event): void {
@@ -141,72 +129,58 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.uploadForm.valid && (this.uploadForm.get('formType')?.value === 'ClinicMedicalExpenseRefund' || this.selectedFiles.length > 0)) {
+    if (this.uploadForm.valid) {
       this.isSubmitting = true;
       const formData = new FormData();
       let reimbursementIdStr = this.uploadForm.get('reimbursementId')?.value;
       let reimbursementId = reimbursementIdStr ? parseInt(reimbursementIdStr, 10) : NaN;
 
+      const formType = this.uploadForm.get('formType')?.value;
+
       // If no reimbursement selected, create a new one first
       if (!reimbursementIdStr || isNaN(reimbursementId)) {
         try {
-          const totalAmount = this.investigations.reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
+          const totalAmount = formType === 'ClinicMedicalExpenseRefund' ? this.totalAmount : this.investigations.reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
           const reimbursementPayload: ExpenseReimbursement = {
             reimbursementID: 0,
             reimbursementNumber: `REIMB-${Date.now()}-${Math.floor(Math.random() * 1000)}`.substring(0, 50),
-            patientName: this.employeeName || 'Unknown',
+            patientName: this.uploadForm.get('patientName')?.value || this.employeeName || 'Unknown',
             employeeID: this.payrollNumber || null,
-            payrollNumber: this.payrollNumber || null,
-            payrollNo: this.payrollNumber || null,
-            department: null,
+            payrollNumber: this.uploadForm.get('payrollNumber')?.value || this.payrollNumber || null,
+            payrollNo: this.uploadForm.get('payrollNumber')?.value || this.payrollNumber || null,
+            department: this.uploadForm.get('department')?.value || null,
             totalAmount: totalAmount,
             status: 'pending',
             submissionDate: new Date(),
             createdBy: this.createdBy || null,
             approvedBy: null,
-            investigations: []
+            investigations: [],
+            orderedFrom: this.uploadForm.get('orderedFrom')?.value,
+            doneAt: this.uploadForm.get('doneAt')?.value,
+            investigation: this.investigations.map(inv => inv.investigation).join(', '),
+            formType: formType
           };
-          const created = await (await import('rxjs')).firstValueFrom(this.medicalService.createExpenseReimbursement(reimbursementPayload));
+          const created = await firstValueFrom(this.medicalService.createExpenseReimbursement(reimbursementPayload));
           reimbursementId = created.reimbursementID;
+          this.reimbursementId = reimbursementId; // Set the component property
           reimbursementIdStr = String(reimbursementId);
-          // Persist newly created ID into form so subsequent handlers use it
           this.uploadForm.patchValue({ reimbursementId: reimbursementIdStr });
         } catch (e) {
           this.isSubmitting = false;
           console.error('Error creating reimbursement:', e);
-          alert('Error creating reimbursement before upload. Please try again.');
+          this.showErrorMessage(`Error creating reimbursement before upload. Please try again.`);
           return;
         }
       }
 
       formData.append('reimbursementId', reimbursementIdStr);
-      formData.append('formType', this.uploadForm.get('formType')?.value);
       formData.append('description', this.uploadForm.get('description')?.value);
       formData.append('uploadedBy', this.createdBy || 'Unknown');
 
-      if (this.uploadForm.get('formType')?.value === 'ClinicMedicalExpenseRefund') {
-        try {
-          const documents = await this.medicalService.getDocumentsByReimbursementId(reimbursementId).toPromise();
-          if (!documents) {
-            this.isSubmitting = false;
-            alert('No documents found for this reimbursement.');
-            return;
-          }
-          const defaultDoc = documents.find(doc => doc.description === 'Clinic Medical Expense Refund Form');
-          if (defaultDoc) {
-            this.selectedFiles = [new File([], defaultDoc.fileName, { type: defaultDoc.fileType })];
-            formData.append('file', this.selectedFiles[0], defaultDoc.fileName);
-          } else {
-            this.isSubmitting = false;
-            alert('No default Clinic Medical Expense Refund Form found for this reimbursement.');
-            return;
-          }
-        } catch (error) {
-          this.isSubmitting = false;
-          console.error('Error fetching documents:', error);
-          alert('Error fetching default document. Please try again.');
-          return;
-        }
+      if (formType === 'ClinicMedicalExpenseRefund') {
+        // Generate PDF
+        this.pdfFile = await this.generatePDF();
+        formData.append('file', this.pdfFile, this.pdfFile.name);
       } else {
         this.selectedFiles.forEach(file => {
           formData.append('file', file, file.name);
@@ -221,7 +195,7 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
         error => {
           this.isSubmitting = false;
           console.error('Error uploading document:', error);
-          alert('Error uploading document. Please try again.');
+          this.showErrorMessage(`Error uploading document. Please try again.`);
         }
       );
     }
@@ -230,12 +204,12 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
   private addNewInvestigations(reimbursementId: number): void {
     if (this.investigations.length > 0) {
       this.investigations.forEach(async (inv) => {
-        if (inv.investigation && inv.doneAt && inv.orderedFrom && inv.amount > 0) {
+        if (inv.investigation && inv.invoiceNumber && inv.amount > 0) {
           const detail = {
             InvestigationType: inv.investigation,
-            Location: inv.doneAt,
-            OrderedFrom: inv.orderedFrom,
-            InvoiceNumber: this.uploadForm.get('description')?.value || 'N/A',
+            Location: this.uploadForm.get('doneAt')?.value,
+            OrderedFrom: this.uploadForm.get('orderedFrom')?.value,
+            InvoiceNumber: inv.invoiceNumber,
             Amount: inv.amount,
             InvestigationDate: new Date()
           };
@@ -248,8 +222,8 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
     this.selectedFiles = [];
     this.investigations = [];
     this.loadDocuments(reimbursementId);
-    this.loadInvestigations(reimbursementId);
-    alert('Document uploaded and investigations added successfully!');
+    // Removed the non-existent loadInvestigations call
+    this.showErrorMessage(`Document uploaded and investigations added successfully!`);
   }
 
   loadDocuments(reimbursementId: number): void {
@@ -271,10 +245,77 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
       const reimbursementId = parseInt(reimbursementIdStr, 10);
       this.loadDocuments(reimbursementId);
       this.showDocumentsModal = true;
+    } else {
+      this.showErrorMessage(`Please create a reimbursement first or select an existing one.`);
     }
   }
 
   closeDocuments(): void {
     this.showDocumentsModal = false;
   }
+
+  async generatePDF(): Promise<File> {
+    const element = this.pdfTemplate.nativeElement;
+    
+    // Make sure the element is visible for rendering
+    element.style.display = 'block';
+    element.style.visibility = 'visible';
+    element.style.position = 'absolute';
+    element.style.left = '0';
+    element.style.top = '0';
+    
+    // Wait for styles to load
+    await new Promise(resolve => setTimeout(resolve, 500));
+  
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      logging: true,
+      allowTaint: false,
+      backgroundColor: '#ffffff',
+      onclone: (clonedDoc) => {
+        // Ensure styles are applied in the cloned document
+        const clonedElement = clonedDoc.getElementById('pdf-template');
+        if (clonedElement) {
+          clonedElement.style.display = 'block';
+          clonedElement.style.visibility = 'visible';
+        }
+      }
+    });
+  
+    // Hide the element again
+    element.style.display = 'none';
+    element.style.visibility = 'hidden';
+    element.style.position = '';
+    element.style.left = '';
+    element.style.top = '';
+  
+    const imgData = canvas.toDataURL('image/png');
+  
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = doc.internal.pageSize.getWidth();
+    const pdfHeight = doc.internal.pageSize.getHeight();
+    
+    doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    
+    const pdfBlob = doc.output('blob');
+    return new File([pdfBlob], `Clinic_Medical_Expense_Form_${this.reimbursementId || 'temp'}.pdf`, { 
+      type: 'application/pdf' 
+    });
+  }
+  private showErrorMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['error-snackbar']
+    });
+  }
+
+  private showSuccessMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['success-snackbar']
+    });
+  }  
+  
+
 }

@@ -1,3 +1,5 @@
+<!-- src/app/components/reimbursement-document-upload/reimbursement-document-upload.component.html -->
+
 <div class="reimbursement-upload-container">
   <div class="form-section">
     <h2>Reimbursement Document Upload</h2>
@@ -25,19 +27,105 @@
         </div>
       </div>
 
-      <!-- <div class="form-group">
-        <label for="reimbursementId">Select Reimbursement Request:</label>
-        <select id="reimbursementId" formControlName="reimbursementId" class="form-control">
-          <option value="">Select a reimbursement request</option>
-          <option *ngFor="let reimbursement of reimbursements" [value]="reimbursement.reimbursementID.toString()">
-            {{ reimbursement.reimbursementNumber }} - {{ reimbursement.patientName }} ({{ reimbursement.status }})
-          </option>
-          
-        </select>
-        <div class="error-message" *ngIf="uploadForm.get('reimbursementId')?.invalid && uploadForm.get('reimbursementId')?.touched">
-          Reimbursement request is required
+      <div class="form-group" *ngIf="uploadForm.get('formType')?.value === 'ClinicMedicalExpenseRefund'">
+        <label for="patientName">Patient Name:</label>
+        <input
+          type="text"
+          id="patientName"
+          formControlName="patientName"
+          class="form-control"
+          placeholder="Enter patient name">
+        <div class="error-message" *ngIf="uploadForm.get('patientName')?.invalid && uploadForm.get('patientName')?.touched">
+          Patient name is required
         </div>
-      </div> -->
+      </div>
+
+      <div class="form-group" *ngIf="uploadForm.get('formType')?.value === 'ClinicMedicalExpenseRefund'">
+        <label for="payrollNumber">Payroll Number:</label>
+        <input
+          type="text"
+          id="payrollNumber"
+          formControlName="payrollNumber"
+          class="form-control"
+          placeholder="Enter payroll number">
+        <div class="error-message" *ngIf="uploadForm.get('payrollNumber')?.invalid && uploadForm.get('payrollNumber')?.touched">
+          Payroll number is required
+        </div>
+      </div>
+
+      <div class="form-group" *ngIf="uploadForm.get('formType')?.value === 'ClinicMedicalExpenseRefund'">
+        <label for="department">Department:</label>
+        <input
+          type="text"
+          id="department"
+          formControlName="department"
+          class="form-control"
+          placeholder="Enter department">
+        <div class="error-message" *ngIf="uploadForm.get('department')?.invalid && uploadForm.get('department')?.touched">
+          Department is required
+        </div>
+      </div>
+
+      <div class="form-group" *ngIf="uploadForm.get('formType')?.value === 'ClinicMedicalExpenseRefund'">
+        <label for="doneAt">Done At:</label>
+        <input
+          type="text"
+          id="doneAt"
+          formControlName="doneAt"
+          class="form-control"
+          placeholder="Enter location">
+        <div class="error-message" *ngIf="uploadForm.get('doneAt')?.invalid && uploadForm.get('doneAt')?.touched">
+          Done At is required
+        </div>
+      </div>
+
+      <div class="form-group" *ngIf="uploadForm.get('formType')?.value === 'ClinicMedicalExpenseRefund'">
+        <label for="orderedFrom">Ordered From:</label>
+        <input
+          type="text"
+          id="orderedFrom"
+          formControlName="orderedFrom"
+          class="form-control"
+          placeholder="Enter ordered from">
+        <div class="error-message" *ngIf="uploadForm.get('orderedFrom')?.invalid && uploadForm.get('orderedFrom')?.touched">
+          Ordered From is required
+        </div>
+      </div>
+
+      <div class="investigation-section" *ngIf="uploadForm.get('formType')?.value === 'ClinicMedicalExpenseRefund'">
+        <h3>Investigations</h3>
+        <div *ngFor="let inv of investigations; let i = index" class="investigation-row">
+          <div class="form-group">
+            <label>Investigation {{ i + 1 }}:</label>
+            <input
+              type="text"
+              [(ngModel)]="inv.investigation"
+              [ngModelOptions]="{standalone: true}"
+              class="form-control"
+              placeholder="Enter investigation type">
+          </div>
+          <div class="form-group">
+            <label>Invoice Number {{ i + 1 }}:</label>
+            <input
+              type="text"
+              [(ngModel)]="inv.invoiceNumber"
+              [ngModelOptions]="{standalone: true}"
+              class="form-control"
+              placeholder="Enter invoice number">
+          </div>
+          <div class="form-group">
+            <label>Amount {{ i + 1 }}:</label>
+            <input
+              type="number"
+              [(ngModel)]="inv.amount"
+              [ngModelOptions]="{standalone: true}"
+              class="form-control"
+              placeholder="Enter amount">
+          </div>
+          <button type="button" class="remove-btn" (click)="removeInvestigation(i)" [disabled]="investigations.length === 1">Remove</button>
+        </div>
+        <button type="button" class="add-btn" (click)="addInvestigation()">Add Investigation</button>
+      </div>
 
       <div class="form-group">
         <label for="description">Document Description:</label>
@@ -51,70 +139,6 @@
         <div class="error-message" *ngIf="uploadForm.get('description')?.invalid && uploadForm.get('description')?.touched">
           Description is required
         </div>
-      </div>
-
-      <div class="investigation-section">
-        <h3>Existing Investigations</h3>
-        <div *ngFor="let inv of existingInvestigations; let i = index" class="investigation-row">
-          <div class="form-group">
-            <label>Investigation {{ i + 1 }}:</label>
-            <div class="form-control">{{ inv.InvestigationType }}</div>
-          </div>
-          <div class="form-group">
-            <label>Done At:</label>
-            <div class="form-control">{{ inv.Location }}</div>
-          </div>
-          <div class="form-group">
-            <label>Ordered From:</label>
-            <div class="form-control">{{ inv.OrderedFrom || 'N/A' }}</div>
-          </div>
-          <div class="form-group">
-            <label>Amount:</label>
-            <div class="form-control">{{ inv.Amount | currency:'ETB' }}</div>
-          </div>
-        </div>
-
-        <h3>Add New Investigations</h3>
-        <div *ngFor="let inv of investigations; let i = index" class="investigation-row">
-          <div class="form-group">
-            <label>Investigation {{ i + 1 }}:</label>
-            <input
-              type="text"
-              [(ngModel)]="inv.investigation"
-              [ngModelOptions]="{standalone: true}"
-              class="form-control"
-              placeholder="Enter investigation type">
-          </div>
-          <div class="form-group">
-            <label>Done At:</label>
-            <input
-              type="text"
-              [(ngModel)]="inv.doneAt"
-              [ngModelOptions]="{standalone: true}"
-              class="form-control"
-              placeholder="Enter location">
-          </div>
-          <div class="form-group">
-            <label>Ordered From:</label>
-            <input
-              type="text"
-              [(ngModel)]="inv.orderedFrom"
-              [ngModelOptions]="{standalone: true}"
-              class="form-control"
-              placeholder="Enter ordered from">
-          </div>
-          <div class="form-group">
-            <label>Amount:</label>
-            <input
-              type="number"
-              [(ngModel)]="inv.amount"
-              [ngModelOptions]="{standalone: true}"
-              class="form-control"
-              placeholder="Enter amount">
-          </div>
-          <button type="button" class="remove-btn" (click)="removeInvestigation(i)" [disabled]="investigations.length === 1">Remove</button>
-        </div>
-        <button type="button" class="add-btn" (click)="addInvestigation()">Add Investigation</button>
       </div>
 
       <div class="form-group" *ngIf="uploadForm.get('formType')?.value !== 'ClinicMedicalExpenseRefund'">
@@ -138,14 +162,14 @@
       </div>
 
       <div class="form-group" *ngIf="uploadForm.get('formType')?.value === 'ClinicMedicalExpenseRefund'">
-        <p>Default document: Clinic Medical Expense Refund Form will be uploaded.</p>
+        <p>Clinic Medical Expense Refund Form will be generated and uploaded.</p>
       </div>
 
       <div class="form-actions">
         <button
           type="submit"
           class="submit-btn"
-          [disabled]="uploadForm.invalid || isSubmitting || uploadForm.get('files')?.disabled">
+          [disabled]="uploadForm.invalid || isSubmitting">
           {{ isSubmitting ? 'Uploading...' : 'Upload Documents' }}
         </button>
         <button
@@ -172,6 +196,84 @@
         </div>
       </div>
       <button type="button" class="close-btn" (click)="closeDocuments()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Update your hidden PDF template in reimbursement-document-upload.component.html -->
+<div #pdfTemplate id="pdf-template" class="page" style="display: none; position: absolute; left: -9999px; background: white;">
+  <div class="header-top">
+    <div class="logo">
+      <img src="https://efhc.gov.et/xokaerp/datepicker/img/fhc_log.jpg" alt="FHC Logo" />
+    </div>
+
+    <div class="title-block">
+      <div class="company">Federal Housing Corporation</div>
+      <div class="form-title">Clinic Medical Expense Refund Form</div>
+    </div>
+
+    <div class="no-date">
+      <div><span class="label">No.</span><span class="line"></span></div>
+      <div style="margin-top:8px;"><span class="label">Date</span><span class="line" style="width:180px;"></span></div>
+    </div>
+  </div>
+
+  <div class="form-body">
+    <div class="row">
+      <div class="label">1. Name of patient</div>
+      <div class="fill">{{ uploadForm.get('patientName')?.value || '' }}</div>
+    </div>
+
+    <div class="row">
+      <div class="label">2. Payroll no</div>
+      <div class="short-fill">{{ uploadForm.get('payrollNumber')?.value || '' }}</div>
+    </div>
+
+    <div class="row">
+      <div class="label">3. Department</div>
+      <div class="short-fill">{{ uploadForm.get('department')?.value || '' }}</div>
+    </div>
+
+    <div class="row" style="margin-top:6px;">
+      <div style="width:100%;">4. <span style="font-weight:600">Investigation</span></div>
+    </div>
+
+    <div class="investigation">
+      <div class="left">
+        <span class="small-label">Done at</span>
+        <span class="short-fill" style="width:260px;">{{ uploadForm.get('doneAt')?.value || '' }}</span>
+      </div>
+      <div class="right">
+        <span class="small-label">Ordered from</span>
+        <span class="short-fill" style="width:260px;">{{ uploadForm.get('orderedFrom')?.value || '' }}</span>
+      </div>
+    </div>
+
+    <div style="font-style:italic; margin-bottom:6px;">As per invoice attached (number of invoice)</div>
+
+    <div class="items">
+      <div *ngFor="let inv of investigations; let i = index" class="line-item">
+        <div class="number">{{i+1}}.</div>
+        <div class="blank">{{ inv.investigation }} (Invoice: {{ inv.invoiceNumber }}, Amount: {{ inv.amount }})</div>
+      </div>
+      <!-- Fill remaining to 20 -->
+      <ng-container *ngFor="let dummy of [].constructor(20 - investigations.length); let j = index">
+        <div class="line-item">
+          <div class="number">{{investigations.length + j + 1}}.</div>
+          <div class="blank"></div>
+        </div>
+      </ng-container>
+    </div>
+
+    <div class="footer-note">The medical expense should be paid to the patient</div>
+
+    <div class="sign-block">
+      <div class="stamp">
+        <div class="sign-line" style="width:70%;">Stamp</div>
+      </div>
+      <div class="sig">
+        <div class="sign-line" style="width:80%;">sig of head of clinic</div>
+      </div>
     </div>
   </div>
 </div>

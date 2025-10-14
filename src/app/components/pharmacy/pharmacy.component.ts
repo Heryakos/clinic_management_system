@@ -11,6 +11,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { StockSelectionDialogComponent } from '../stock-selection-dialog/stock-selection-dialog.component';
 import { InventoryCategory, RoomCategory, ItemCategory, ItemSelection } from '../../models/inventory-enhanced.model';
 import { PrescriptionPaperComponent } from '../prescription-paper/prescription-paper.component';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-pharmacy',
@@ -81,7 +82,8 @@ export class PharmacyComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private medicalService: MedicalService,
     private cdr: ChangeDetectorRef,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
@@ -116,7 +118,7 @@ export class PharmacyComponent implements OnInit, OnDestroy {
       },
       error => {
         this.pharmacistId = null;
-        alert(`Error loading user data: ${error.error?.message || error.message}`);
+        this.showErrorMessage (`Error loading user data: ${error.error?.message || error.message}`)
       }
     );
   }
@@ -226,7 +228,7 @@ export class PharmacyComponent implements OnInit, OnDestroy {
         this.medicationTree = [];
         this.categorizedMedications = [];
         this.medications = [];
-        alert(`Error loading medications: ${error.error?.message || error.message}`);
+        this.showErrorMessage (`Error loading medications: ${error.error?.message || error.message}`)
       }
     );
   }
@@ -240,7 +242,7 @@ export class PharmacyComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error loading inventory items:', error);
-        alert('Failed to load inventory items. Please try again.');
+        this.showErrorMessage (`Failed to load inventory items. Please try again.`)
       }
     });
   }
@@ -290,7 +292,7 @@ export class PharmacyComponent implements OnInit, OnDestroy {
       error => {
         console.error('Error loading reasons:', error);
         this.reasons = [];
-        alert('Failed to load request reasons. Please try again.');
+        this.showErrorMessage (`Failed to load request reasons. Please try again.`)
         this.cdr.detectChanges();
       }
     );
@@ -419,7 +421,7 @@ loadRoomSpecificData(): void {
     },
     error => {
       console.error('Error loading room-specific items:', error);
-      alert('Error loading available items. Please try again.');
+      this.showErrorMessage (`Error loading available items. Please try again.`)
     }
   );
 }
@@ -447,7 +449,7 @@ loadRoomSpecificData(): void {
       },
       error: (error) => {
         console.error('Error adding new medication:', error);
-        alert('Failed to add new medication. Please try again.');
+        this.showErrorMessage (`Failed to add new medication. Please try again.`)
       },
     });
   }
@@ -457,12 +459,12 @@ loadRoomSpecificData(): void {
       const data = { ...this.addMedicationForm.value, isActive: 1 };
       this.medicalService.addMedication(data).subscribe(
         () => {
-          alert('Medication added successfully!');
+          this.showSuccessMessage (`Medication added successfully!`)
           this.addMedicationForm.reset();
           this.loadMedications();
         },
         error => {
-          alert(`Error adding medication: ${error.error?.message || error.message}`);
+          this.showErrorMessage (`Error adding medication: ${error.error?.message || error.message}`)
         }
       );
     }
@@ -702,7 +704,7 @@ loadRoomSpecificData(): void {
             age: '',
             sex: ''
           });
-          alert(`Error loading patient details: ${error.error?.message || error.message}`);
+          this.showErrorMessage (`Error loading patient details: ${error.error?.message || error.message}`)
         }
       );
     }
@@ -751,21 +753,21 @@ loadRoomSpecificData(): void {
                 this.isSubmitting = false;
                 this.prescriptionForm.reset();
                 this.initializePrescriptionForm();
-                alert('Prescription dispensed successfully!');
+                this.showSuccessMessage(`Prescription dispensed successfully!`)
               },
               error => {
                 this.isSubmitting = false;
-                alert(`Error dispensing prescription: ${error.error?.message || error.message}`);
+                this.showErrorMessage (`Error dispensing prescription: ${error.error?.message || error.message}`)
               }
             );
           }).catch(error => {
             this.isSubmitting = false;
-            alert(`Error adding prescription details: ${error.message}`);
+            this.showErrorMessage (`Error adding prescription details: ${error.message}`)
           });
         },
         error => {
           this.isSubmitting = false;
-          alert(`Error creating prescription: ${error.error?.message || error.message}`);
+          this.showErrorMessage (`Error creating prescription: ${error.error?.message || error.message}`)
         }
       );
     }
@@ -853,11 +855,11 @@ loadRoomSpecificData(): void {
         () => {
           request.status = status as 'pending' | 'approved' | 'issued';
           this.loadMyRequests();
-          alert(`Request ${status} successfully!`);
+          this.showSuccessMessage(`Request ${status} successfully!`);
         },
         error => {
           console.error(`Error updating request status to ${status}:`, error);
-          alert(`Error updating request status. Please try again.`);
+          this.showErrorMessage (`Error updating request status. Please try again.`)
         }
       );
     }
@@ -868,14 +870,14 @@ loadRoomSpecificData(): void {
     console.log('viewPrescriptionDetails called for prescriptionID:', prescriptionID);
     if (!prescriptionID) {
       console.error('Invalid prescriptionID:', prescriptionID);
-      alert('Invalid prescription ID. Please try again.');
+      this.showErrorMessage(`Invalid prescription ID. Please try again.`)
       return;
     }
   
     const prescription = this.prescriptions.find(p => p.prescriptionID === prescriptionID);
     if (!prescription) {
       console.error('Prescription not found for ID:', prescriptionID);
-      alert('Prescription not found.');
+      this.showErrorMessage(`Prescription not found.`)
       return;
     }
   
@@ -1075,23 +1077,27 @@ loadRoomSpecificData(): void {
     event.stopPropagation(); // Prevent the row click event from firing
     // Guard: ensure we have a valid numeric prescription ID
     if (typeof prescriptionID !== 'number' || !Number.isInteger(prescriptionID) || prescriptionID <= 0) {
-      alert('Invalid prescription ID. Please refresh and try again.');
+      this.showErrorMessage(`Invalid prescription ID. Please refresh and try again.`)
       return;
     }
 
     if (this.pharmacistId) {
       this.medicalService.dispensePrescription(prescriptionID, this.pharmacistId).subscribe(
         () => {
-          alert('Prescription dispensed successfully!');
-          this.loadPrescriptionQueue();
+          this.showErrorMessage(`Prescription dispensed successfully!`)
+          if (this.isActivePrescriptions) {
+            this.loadPrescriptionQueue();
+          } else {
+            this.onSearch();
+          }
         },
         error => {
           console.error('Dispense error:', error);
-          alert(`Error dispensing prescription: ${error.error?.message || error.message}`);
+          this.showErrorMessage (`Error dispensing prescription: ${error.error?.message || error.message}`)
         }
       );
     } else {
-      alert('Pharmacist ID not found.');
+      this.showErrorMessage(`Pharmacist ID not found.`)
     }
   }
 
@@ -1105,9 +1111,9 @@ loadRoomSpecificData(): void {
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         if (result.success) {
-          alert(result.success);
+          this.showSuccessMessage(result.success)
         } else if (result.error) {
-          alert(result.error);
+          this.showErrorMessage(result.error)
         }
       }
     });
@@ -1143,7 +1149,7 @@ loadRoomSpecificData(): void {
       // Proceed with resolver even if number is missing, using fallback
       this.resolvePrescriptionIdForRow(number || '', card || '', (resolvedId) => {
         if (!resolvedId) {
-          alert('Could not resolve prescription ID. Please refresh and try again.');
+          this.showErrorMessage(`Could not resolve prescription ID. Please refresh and try again.`)
           return;
         }
         this.dispensePrescription(resolvedId, event);
@@ -1180,6 +1186,20 @@ loadRoomSpecificData(): void {
         cb(Number.isInteger(numericId) && numericId > 0 ? numericId : null);
       },
       error: () => cb(null)
+    });
+  }
+
+  private showErrorMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['error-snackbar']
+    });
+  }
+
+  private showSuccessMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['success-snackbar']
     });
   }
 }

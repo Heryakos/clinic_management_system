@@ -6,6 +6,7 @@ import { environment } from 'src/environments/environment';
 import { testCategories } from 'src/app/models/laboratory-test-categories';
 import { NotificationDialogComponent } from '../notification-dialog/notification-dialog.component';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-laboratory',
@@ -40,7 +41,8 @@ export class LaboratoryComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private medicalService: MedicalService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar
 
   ) {}
 
@@ -389,7 +391,7 @@ export class LaboratoryComponent implements OnInit {
   // }
   viewTestDetails(testID: string | number): void {
     if (!testID) {
-      alert('Invalid test ID.');
+      this.showErrorMessage(`Invalid test ID.`);
       return;
     }
     this.medicalService.getLaboratoryTestDetails(Number(testID)).subscribe(
@@ -402,7 +404,7 @@ export class LaboratoryComponent implements OnInit {
         this.selectedTestDetails = [];
         this.selectedTestNumber = '';
         this.showTestDetailsDialog = false;
-        alert('Could not load test details.');
+        this.showErrorMessage(`Could not load test details.`);
       }
     );
   }
@@ -438,9 +440,9 @@ export class LaboratoryComponent implements OnInit {
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         if (result.success) {
-          alert(result.success);
+          this.showSuccessMessage(result.success);
         } else if (result.error) {
-          alert(result.error);
+          this.showErrorMessage(result.error);
         }
       }
     });
@@ -467,7 +469,7 @@ export class LaboratoryComponent implements OnInit {
   
       if (!testID) {
         this.isSubmitting = false;
-        alert('Invalid test ID. Cannot update test details.');
+        this.showErrorMessage(`Invalid test ID. Cannot update test details.`);
         return;
       }
   
@@ -492,16 +494,16 @@ export class LaboratoryComponent implements OnInit {
         this.medicalService.updateLaboratoryTestStatus(testID, 'Completed', this.reportedById).subscribe({
           next: () => {
             this.loadPendingQueue();
-            alert('Laboratory test details updated successfully!');
+            this.showSuccessMessage(`Laboratory test details updated successfully!`);
           },
           error: () => {
             this.loadPendingQueue();
-            alert('Laboratory test details updated, but there was an error updating the status.');
+            this.showErrorMessage(`Laboratory test details updated, but there was an error updating the status.`);
           }
         });
       }).catch(error => {
         this.isSubmitting = false;
-        alert(`Error updating test details: ${error.message || error.error?.message || 'Unknown error'}`);
+        this.showErrorMessage(`Error updating test details: ${error.message || error.error?.message || 'Unknown error'}`);
       });
     }
   }
@@ -575,6 +577,19 @@ export class LaboratoryComponent implements OnInit {
         this.filteredLaboratoryTests = [];
       }
     );
+  }
+  private showErrorMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['error-snackbar']
+    });
+  }
+
+  private showSuccessMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['success-snackbar']
+    });
   }
   
 }

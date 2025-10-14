@@ -1,4 +1,5 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MedicalService } from 'src/app/medical.service';
 import { InventoryRequestEnhanced, InventoryRequestDetail, InventoryPurchaseRequest } from 'src/app/models/inventory-enhanced.model';
 import { environment } from 'src/environments/environment';
@@ -20,7 +21,8 @@ export class SupervisorInventoryComponent implements OnInit {
 
   constructor(
     private medicalService: MedicalService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
@@ -37,12 +39,12 @@ export class SupervisorInventoryComponent implements OnInit {
           this.supervisorId = employee.user_ID ?? null;
         } else {
           console.error('No employee data found.');
-          alert('Error loading user data. Please refresh the page.');
+          this.showErrorMessage(`Error loading user data. Please refresh the page.`);
         }
       },
       error => {
         console.error('Error loading user data:', error);
-        alert('Error loading user data. Please refresh the page.');
+        this.showErrorMessage(`Error loading user data. Please refresh the page.`);
       }
     );
   }
@@ -57,7 +59,7 @@ export class SupervisorInventoryComponent implements OnInit {
       },
       error => {
         console.error('Error loading pending requests:', error);
-        alert('Failed to load pending requests. Please try again.');
+        this.showErrorMessage(`Failed to load pending requests. Please try again.`);
       }
     );
   }
@@ -70,7 +72,7 @@ export class SupervisorInventoryComponent implements OnInit {
       },
       error => {
         console.error('Error loading purchase requests:', error);
-        alert('Failed to load purchase requests. Please try again.');
+        this.showErrorMessage(`Failed to load purchase requests. Please try again.`);
       }
     );
   }
@@ -92,7 +94,7 @@ export class SupervisorInventoryComponent implements OnInit {
   viewDetails(request: InventoryRequestEnhanced): void {
     if (!request.requestID) {
       console.error('Request ID is undefined:', request);
-      alert('Invalid request ID. Please try again.');
+      this.showErrorMessage(`Invalid request ID. Please try again.`);
       return;
     }
     this.selectedRequest = request;
@@ -104,7 +106,7 @@ export class SupervisorInventoryComponent implements OnInit {
       },
       error => {
         console.error('Error fetching request details:', error);
-        alert('Failed to load request details. Please try again.');
+        this.showErrorMessage(`Failed to load request details. Please try again.`);
       }
     );
   }
@@ -112,7 +114,7 @@ export class SupervisorInventoryComponent implements OnInit {
   approveRequest(): void {
     if (!this.selectedRequest || !this.supervisorId || !this.selectedRequest.requestID) {
       console.error('Invalid request or supervisor ID:', { selectedRequest: this.selectedRequest, supervisorId: this.supervisorId });
-      alert('Cannot approve request. Missing request or user data.');
+      this.showErrorMessage(`Cannot approve request. Missing request or user data.`);
       return;
     }
     this.isProcessing = true;
@@ -124,12 +126,12 @@ export class SupervisorInventoryComponent implements OnInit {
         this.comments = '';
         this.loadPendingRequests();
         this.cdr.detectChanges();
-        alert('Request approved successfully!');
+        this.showSuccessMessage(`Request approved successfully!`);
       },
       error => {
         this.isProcessing = false;
         console.error('Error approving request:', error);
-        alert('Failed to approve request. Please try again.');
+        this.showErrorMessage(`Failed to approve request. Please try again.`);
       }
     );
   }
@@ -137,7 +139,7 @@ export class SupervisorInventoryComponent implements OnInit {
   rejectRequest(): void {
     if (!this.selectedRequest || !this.supervisorId || !this.selectedRequest.requestID) {
       console.error('Invalid request or supervisor ID:', { selectedRequest: this.selectedRequest, supervisorId: this.supervisorId });
-      alert('Cannot reject request. Missing request or user data.');
+      this.showErrorMessage(`Cannot reject request. Missing request or user data.`);
       return;
     }
     this.isProcessing = true;
@@ -149,12 +151,12 @@ export class SupervisorInventoryComponent implements OnInit {
         this.comments = '';
         this.loadPendingRequests();
         this.cdr.detectChanges();
-        alert('Request rejected successfully!');
+        this.showSuccessMessage(`Request rejected successfully!`);
       },
       error => {
         this.isProcessing = false;
         console.error('Error rejecting request:', error);
-        alert('Failed to reject request. Please try again.');
+        this.showErrorMessage(`Failed to reject request. Please try again.`);
       }
     );
   }
@@ -163,11 +165,11 @@ export class SupervisorInventoryComponent implements OnInit {
     this.medicalService.setSupervisorMonitoring(requestId, true).subscribe(
       () => {
         this.loadPendingRequests();
-        alert('Request monitoring enabled.');
+        this.showSuccessMessage(`Request monitoring enabled.`);
       },
       error => {
         console.error('Error enabling monitoring:', error);
-        alert('Failed to enable monitoring. Please try again.');
+        this.showErrorMessage(`Failed to enable monitoring. Please try again.`);
       }
     );
   }
@@ -176,11 +178,11 @@ export class SupervisorInventoryComponent implements OnInit {
     this.medicalService.getInventoryReports(type).subscribe(
       report => {
         console.log(`Report (${type}):`, report);
-        alert(`Report (${type}) generated. Check console for details.`);
+        this.showSuccessMessage(`Report (${type}) generated. Check console for details.`);
       },
       error => {
         console.error(`Error generating ${type} report:`, error);
-        alert(`Failed to generate ${type} report. Please try again.`);
+        this.showErrorMessage(`Failed to generate ${type} report. Please try again.`);
       }
     );
   }
@@ -190,5 +192,18 @@ export class SupervisorInventoryComponent implements OnInit {
     this.selectedRequestDetails = [];
     this.comments = '';
     this.cdr.detectChanges();
+  }
+  private showErrorMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['error-snackbar']
+    });
+  }
+
+  private showSuccessMessage(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['success-snackbar']
+    });
   }
 }

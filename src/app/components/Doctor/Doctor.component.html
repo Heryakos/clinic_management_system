@@ -68,7 +68,7 @@
         (click)="selectTab('laboratory-tests')">
         Laboratory
       </button>
-      <button type="button" class="tab-button" [class.active]="selectedTab === 'prescriptions'"
+      <button type="button" class="tab-button" [class.active]="selectedTab === 'prescriptions'" [class.disabled]="hasPendingLabs"
         (click)="selectTab('prescriptions')">
         Pharmacy
       </button>
@@ -670,7 +670,11 @@
             <div class="form-row">
               <div class="form-group">
                 <label for="startDate">Start Date:</label>
-                <input type="datetime-local" id="startDate" formControlName="startDate" class="form-control">
+                <app-ethiopian-date-picker formControlName="startDate" placeholder="Select start date"></app-ethiopian-date-picker>
+              </div>
+              <div class="form-group">
+                <label for="startTime">Start Time:</label>
+                <input type="time" id="startTime" formControlName="startTime" class="form-control">
               </div>
               <div class="form-group checkbox-group">
                 <label for="isRecurring" class="checkbox-label">

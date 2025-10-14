@@ -1,14 +1,16 @@
 <div class="app-container">
   <!-- Top Header -->
   <header class="top-header" *ngIf="showSidebar">
-    <div class="header-left">
+    <div class="header-center">
       <h1>FHC Clinic Management System</h1>
       <p *ngIf="employeeName" class="employee-welcome">Welcome, {{ employeeName }}</p>
     </div>
+  
     <div class="header-right">
       <app-notification-bell></app-notification-bell>
     </div>
   </header>
+  
 
   <nav class="sidebar" *ngIf="showSidebar">
     <div class="logo">
