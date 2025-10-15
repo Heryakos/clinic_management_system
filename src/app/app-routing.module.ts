@@ -41,13 +41,19 @@ export const routes: Routes = [
     path: 'supervisor-medical-requests',
     component: SupervisorMedicalRequestsComponent,
     canActivate: [RoleGuard],
-    data: { expectedRole: '96c1ab25-d15c-42cf-92ff-9f041ae6ae10' },
+    data: { expectedRoles: [
+      '96c1ab25-d15c-42cf-92ff-9f041ae6ae10', // supervisor
+      '46dc8001-85ca-4e4f-921b-91d145f607a8' // supervisorDashboard
+    ] },
   },
   {
     path: 'supervisor-dashboard',
     component: SupervisorDashboardComponent,
     canActivate: [RoleGuard],
-    data: { expectedRole: '46dc8001-85ca-4e4f-921b-91d145f607a8' },
+    data: { expectedRoles: [
+      '96c1ab25-d15c-42cf-92ff-9f041ae6ae10', // supervisor
+      '46dc8001-85ca-4e4f-921b-91d145f607a8' // supervisorDashboard
+    ] },
   },
   {
     path: 'medical-request',
@@ -101,7 +107,10 @@ export const routes: Routes = [
     path: 'expense-reimbursement',
     component: ExpenseReimbursementComponent,
     canActivate: [RoleGuard],
-    data: { expectedRole: '46dc8001-85ca-4e4f-921b-91d145f607a8' },
+    data: { expectedRoles: [
+      '96c1ab25-d15c-42cf-92ff-9f041ae6ae10', // supervisor
+      '46dc8001-85ca-4e4f-921b-91d145f607a8' // supervisorDashboard
+    ] },
   },
   {
     path: 'inventory',

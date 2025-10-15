@@ -202,6 +202,8 @@ export class AppComponent implements OnInit {
       }
       if (roleId === this.roles.supervisor) {
         this.showSupervisor = true;
+        this.showExpenses = true; // ADD THIS LINE
+        this.showSupervisorDashboard = true; // ADD THIS LINE
       }
       if (roleId === this.roles.supervisorDashboard) {
         this.showExpenses = true;
