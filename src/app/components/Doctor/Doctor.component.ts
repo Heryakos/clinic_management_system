@@ -796,8 +796,34 @@ export class DoctorComponent implements OnInit {
     loadPatientInjections(patientID: number): void {
         this.medicalService.getPatientInjections(patientID).subscribe(
           (injections: any[]) => {
-            console.log('Loaded injections:', injections); // Debug log
-            this.injections = injections || [];
+            console.log('Loaded injections:', injections); // Debug log (keep this)
+            
+            // Transform to match frontend expectations (use PascalCase from API response)
+            this.injections = (injections || []).map(injection => ({
+              InjectionID: injection.InjectionID,  // Matches API
+              InjectionNumber: injection.InjectionNumber,  // Matches API
+              InjectionDate: injection.InjectionDate,  // Matches API
+              Status: injection.Status,  // Matches API
+              OrderingPhysicianID: injection.OrderingPhysicianID,  // Matches API
+              OrderingPhysicianName: injection.OrderingPhysicianName,  // Matches API
+              MedicationID: injection.MedicationID,  // Matches API
+              MedicationName: injection.MedicationName,  // Matches API
+              Strength: injection.Strength,  // Matches API
+              DosageForm: injection.DosageForm,  // Matches API
+              Dose: injection.Dose,  // Matches API
+              Route: injection.Route,  // Matches API
+              Site: injection.Site,  // Matches API
+              Frequency: injection.Frequency,  // Matches API
+              Duration: injection.Duration,  // Matches API
+              Instructions: injection.Instructions,  // Matches API
+              Notes: injection.Notes,  // Matches API
+              // Defaults for missing fields (update backend for real values if needed)
+              IsRecurring: injection.IsRecurring || false,  // Matches API
+              TotalDoses: injection.TotalDoses || 1,  // Matches API
+              AdministeredDoses: injection.AdministeredDoses || 0  // Matches API
+            }));
+            
+            console.log('Transformed injections for table:', this.injections); // New debug log
           },
           error => {
             console.error('Error loading injections:', error);

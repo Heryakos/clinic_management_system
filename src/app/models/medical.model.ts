@@ -214,6 +214,7 @@ export interface ExpenseReimbursement {
   doneAt?: string | null;
   investigation?: string | null;
   formType?: string | null;
+  comments?: string;  // <-- add this
 }
 
 export interface InventoryItem {
@@ -418,4 +419,3 @@ export interface PatientStatisticsDto {
   totalVisitsThisMonth: number;
   genderDistribution: { gender: string; count: number }[];
 }
-

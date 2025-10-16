@@ -1361,9 +1361,13 @@ updateInjection(data: any): Observable<any> {
   //     catchError(this.handleError)
   //   );
   // }
-  updateExpenseReimbursementStatus(id: number, status: string): Observable<any> {
-    // Backend currently exposes status update at CHMS_ReimbursementDocuments/{id}/status
-    return this.http.put(`${this.chmsReimbursementDocumentsBase}${id}/status`, { status }).pipe(
+  updateExpenseReimbursementStatus(id: number, status: string, comment?: string): Observable<any> {
+    const payload = {
+      status: status,
+      comment: comment || '' // Include the comment in the request
+    };
+    
+    return this.http.put(`${this.chmsReimbursementDocumentsBase}${id}/status`, payload).pipe(
       catchError(this.handleError)
     );
   }
@@ -1559,6 +1563,14 @@ updateInjection(data: any): Observable<any> {
 //     catchError(this.handleError)
 //   );
 // }
+downloadReimbursementDocument(documentId: number): Observable<Blob> {
+  return this.http.get(`${this.chmsReimbursementDocumentsBase}download/${documentId}`, {
+    responseType: 'blob'
+  }).pipe(
+    catchError(this.handleError)
+  );
+}
+
 
 getDocumentsByReimbursementId(reimbursementId: number): Observable<ReimbursementDocument[]> {
   return this.http.get<any[]>(`${this.chmsReimbursementDocumentsBase}by-reimbursement/${reimbursementId}`).pipe(

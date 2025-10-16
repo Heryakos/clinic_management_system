@@ -107,7 +107,7 @@ import { MatTableModule } from '@angular/material/table';
     InventoryManagementComponent,
     ItemReceivingComponent,
     InjectionDetailsDialogComponent,
-    ReimbursementDocumentUploadComponent,
+    // ReimbursementDocumentUploadComponent,
     InjectionPaperComponent,
     ClinicMedicalExpenseFormComponent,
     InjectionManagementComponent

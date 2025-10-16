@@ -1,19 +1,25 @@
-// src/app/components/reimbursement-document-upload/reimbursement-document-upload.component.ts
-
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MedicalService, ReimbursementDocument } from 'src/app/medical.service';
 import { environment } from 'src/environments/environment';
 import { ExpenseReimbursement } from 'src/app/models/medical.model';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { firstValueFrom } from 'rxjs'; // Added missing import
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { firstValueFrom } from 'rxjs';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-reimbursement-document-upload',
   templateUrl: './reimbursement-document-upload.component.html',
-  styleUrls: ['./reimbursement-document-upload.component.css']
+  styleUrls: ['./reimbursement-document-upload.component.css'],
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatSnackBarModule
+  ]
 })
 export class ReimbursementDocumentUploadComponent implements OnInit {
   uploadForm!: FormGroup;

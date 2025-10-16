@@ -17,6 +17,11 @@ export class ExpenseReimbursementComponent implements OnInit {
   selectedReimbursement: ExpenseReimbursement | null = null;
   investigations: any[] = [];
   documents: any[] = [];
+  
+  // New properties for comment functionality
+  showCommentDialog: boolean = false;
+  pendingStatusUpdate: { id: number, status: string } | null = null;
+  statusComment: string = '';
 
   constructor(public medicalService: MedicalService, private sanitizer: DomSanitizer, private snackBar: MatSnackBar) {}
 
@@ -47,41 +52,45 @@ export class ExpenseReimbursementComponent implements OnInit {
 
   viewDetails(reimbursement: ExpenseReimbursement): void {
     this.selectedReimbursement = reimbursement;
+  
     this.medicalService.getReimbursementDetails(reimbursement.reimbursementID).subscribe(
-      details => this.investigations = (Array.isArray(details) ? details : [details]).map((d: any) => ({
-        InvestigationType: d.InvestigationType || d.investigationType,
-        Location: d.Location || d.location,
-        OrderedFrom: d.OrderedFrom || d.orderedFrom,
-        Amount: d.Amount ?? d.amount,
-        InvestigationDate: this.parseDate(d.InvestigationDate ?? d.investigationDate)
-      })),
-      error => console.error('Error loading investigations:', error)
-    );
-    this.medicalService.getDocumentsByReimbursementId(reimbursement.reimbursementID).subscribe(
-      docs => this.documents = docs.map(doc => {
-        const documentId = (doc as any).documentID ?? (doc as any).DocumentID ?? (doc as any).documentId;
-        const downloadUrl = typeof documentId === 'number' && !isNaN(documentId)
-          ? this.medicalService.getReimbursementDocumentDownloadUrl(documentId)
-          : '';
-        const previewType = this.getPreviewType(doc.fileType, doc.fileName);
-        let previewUrl: SafeResourceUrl | null = null;
-        if (downloadUrl && (previewType === 'pdf' || previewType === 'image')) {
-          previewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(downloadUrl);
-        } else if (downloadUrl && previewType === 'office') {
-          const officeViewer = 'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(downloadUrl);
-          previewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(officeViewer);
-        }
-        return {
-          ...doc,
-          downloadUrl,
-          previewType,
-          previewUrl,
-          uploadDate: this.parseDate(doc.uploadDate)
+      (details: any[]) => {
+        if (!details || details.length === 0) return;
+  
+        // ✅ Merge the first item into selectedReimbursement (so we get all new fields)
+        this.selectedReimbursement = {
+          ...this.selectedReimbursement,
+          ...details[0]
         };
-      }),
-      error => console.error('Error loading documents:', error)
+  
+        // ✅ Extract investigation rows
+        this.investigations = details.map(d => ({
+          InvestigationType: d.InvestigationType,
+          Location: d.Location,
+          OrderedFrom: d.OrderedFrom,
+          Amount: d.DetailAmount,
+          InvestigationDate: this.parseDate(d.InvestigationDate)
+        }));
+  
+        // ✅ Extract documents (if multiple per reimbursement)
+        this.documents = details
+          .filter(d => d.DocumentID)
+          .map(d => ({
+            DocumentID: d.DocumentID,
+            DocumentDescription: d.DocumentDescription,
+            FileName: d.FileName,
+            FileType: d.FileType,
+            uploadDate: this.parseDate(d.UploadDate),
+            previewType: this.getPreviewType(d.FileType, d.FileName),
+            previewUrl: this.sanitizer.bypassSecurityTrustResourceUrl(
+              this.medicalService.getReimbursementDocumentDownloadUrl(d.DocumentID)
+            )
+          }));
+  
+        this.showDetailsModal = true;
+      },
+      error => console.error('Error loading details:', error)
     );
-    this.showDetailsModal = true;
   }
 
   getPreviewType(fileType?: string, fileName?: string): 'pdf' | 'image' | 'office' | 'none' {
@@ -106,16 +115,43 @@ export class ExpenseReimbursementComponent implements OnInit {
     this.selectedReimbursement = null;
     this.investigations = [];
     this.documents = [];
+    this.closeCommentDialog();
   }
 
-  updateReimbursementStatus(id: number, status: string): void {
+  // NEW: Open comment dialog for status updates
+  openStatusUpdateDialog(id: number, status: string): void {
+    this.pendingStatusUpdate = { id, status };
+    this.statusComment = '';
+    this.showCommentDialog = true;
+  }
+
+  // NEW: Close comment dialog
+  closeCommentDialog(): void {
+    this.showCommentDialog = false;
+    this.pendingStatusUpdate = null;
+    this.statusComment = '';
+  }
+
+  // UPDATED: Update reimbursement status with comment
+  updateReimbursementStatus(): void {
+    if (!this.pendingStatusUpdate || !this.statusComment.trim()) {
+      this.showErrorMessage('Please provide a comment for the status update.');
+      return;
+    }
+
+    const { id, status } = this.pendingStatusUpdate;
     const reimbursement = this.expenseReimbursements.find(r => r.reimbursementID === id);
+    
     if (reimbursement) {
       reimbursement.status = status as 'pending' | 'approved' | 'rejected' | 'paid';
-      this.medicalService.updateExpenseReimbursementStatus(id, status).subscribe(
+      
+      // FIXED: Now calling with correct number of parameters
+      this.medicalService.updateExpenseReimbursementStatus(id, status, this.statusComment).subscribe(
         () => {
           this.loadExpenseReimbursements();
-          this.showSuccessMessage(`Reimbursement ${id} status updated to ${status}.`)
+          this.showSuccessMessage(`Reimbursement ${id} status updated to ${status}.`);
+          this.closeCommentDialog();
+          
           try {
             const notification = {
               title: 'Reimbursement Status Updated',
@@ -126,17 +162,78 @@ export class ExpenseReimbursementComponent implements OnInit {
               employeeId: reimbursement.employeeID || reimbursement.payrollNo || '',
               createdAt: new Date().toISOString()
             };
-            this.medicalService.createNotification(notification).subscribe({ next: () => {}, error: () => {} });
+            this.medicalService.createNotification(notification).subscribe({ 
+              next: () => {}, 
+              error: () => {} 
+            });
           } catch {}
         },
         error => {
           console.error('Error updating reimbursement status:', error);
-          this.showErrorMessage('Error updating reimbursement status. Please try again.')
+          this.showErrorMessage('Error updating reimbursement status. Please try again.');
+          // Revert the status change on error
+          reimbursement.status = this.getPreviousStatus(status);
         }
       );
     }
   }
 
+  // Helper to get previous status (for error handling)
+  private getPreviousStatus(newStatus: string): string {
+    const statusMap: { [key: string]: string } = {
+      'approved': 'pending',
+      'rejected': 'pending', 
+      'paid': 'approved'
+    };
+    return statusMap[newStatus] || 'pending';
+  }
+
+// FIXED: Download function - Move removeChild inside setTimeout to allow browser processing
+downloadDocument(doc: any): void {
+  const documentId = doc?.DocumentID;
+  const fileName = doc?.FileName || `Document_${documentId}`;
+
+  if (!documentId) {
+    console.error('No document ID found for document:', doc);
+    this.showErrorMessage('No document found.');
+    return;
+  }
+
+  console.log('Downloading document:', documentId, fileName);
+
+  this.medicalService.downloadReimbursementDocument(documentId).subscribe(
+    (blob: Blob) => {
+      console.log('Blob received:', { size: blob.size, type: blob.type });
+      
+      if (blob.size === 0) {
+        this.showErrorMessage('Downloaded file is empty. Please try again.');
+        return;
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      
+      // Use setTimeout and move cleanup inside to give browser time to process
+      setTimeout(() => {
+        a.click(); // Use simple click() instead of dispatchEvent for better compatibility
+        console.log('Download link clicked');
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }, 0);
+      
+      this.showSuccessMessage(`Document downloaded: ${fileName}`);
+    },
+    error => {
+      console.error('Error downloading document:', error);
+      this.showErrorMessage('Error downloading document. Please try again.');
+    }
+  );
+}
+  
   // Handle form submission from ClinicMedicalExpenseFormComponent
   onReimbursementSubmitted(reimbursement: ExpenseReimbursement): void {
     this.medicalService.createExpenseReimbursement(reimbursement).subscribe(
@@ -147,7 +244,6 @@ export class ExpenseReimbursementComponent implements OnInit {
       error => {
         console.error('Error submitting reimbursement:', error);
         this.showErrorMessage('Error submitting reimbursement. Please try again.')
-
       }
     );
   }

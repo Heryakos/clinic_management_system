@@ -1,8 +1,5 @@
 <div class="expense-container">
   <h2>Medical Expense Reimbursement</h2>
-  
-  <!-- Include ClinicMedicalExpenseFormComponent for form submission -->
-  <!-- <app-clinic-medical-expense-form (reimbursementSubmitted)="onReimbursementSubmitted($event)"></app-clinic-medical-expense-form> -->
 
   <div class="search-container">
     <input type="text" [(ngModel)]="searchTerm" (input)="filterReimbursements()" placeholder="Search by Payroll No or Patient Name">
@@ -42,22 +39,19 @@
               <button class="action-btn details" (click)="viewDetails(reimbursement)">View Details</button>
             </td>
             <td>
-              <button 
-                *ngIf="(reimbursement.status || '').toLowerCase() === 'pending'" 
-                class="action-btn approve"
-                (click)="updateReimbursementStatus(reimbursement.reimbursementID, 'approved')">
+              <button *ngIf="(reimbursement.status || '').toLowerCase() === 'pending'" 
+                      class="action-btn approve" 
+                      (click)="openStatusUpdateDialog(reimbursement.reimbursementID, 'approved')">
                 Approve
               </button>
-              <button 
-                *ngIf="(reimbursement.status || '').toLowerCase() === 'pending'" 
-                class="action-btn reject"
-                (click)="updateReimbursementStatus(reimbursement.reimbursementID, 'rejected')">
+              <button *ngIf="(reimbursement.status || '').toLowerCase() === 'pending'" 
+                      class="action-btn reject" 
+                      (click)="openStatusUpdateDialog(reimbursement.reimbursementID, 'rejected')">
                 Reject
               </button>
-              <button 
-                *ngIf="(reimbursement.status || '').toLowerCase() === 'approved'" 
-                class="action-btn pay"
-                (click)="updateReimbursementStatus(reimbursement.reimbursementID, 'paid')">
+              <button *ngIf="(reimbursement.status || '').toLowerCase() === 'approved'" 
+                      class="action-btn pay" 
+                      (click)="openStatusUpdateDialog(reimbursement.reimbursementID, 'paid')">
                 Mark as Paid
               </button>
             </td>
@@ -70,79 +64,186 @@
   <!-- Details Modal -->
   <div class="modal" *ngIf="showDetailsModal">
     <div class="modal-content">
-      <h3>Reimbursement Details for ID: {{ selectedReimbursement?.reimbursementID }}</h3>
-      
-      <h4>Investigations</h4>
-      <table>
-        <thead>
-          <tr>
-            <th>Investigation Type</th>
-            <th>Done At</th>
-            <th>Ordered From</th>
-            <th>Amount</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let inv of investigations">
-            <td>{{ inv.InvestigationType }}</td>
-            <td>{{ inv.Location }}</td>
-            <td>{{ inv.OrderedFrom || 'N/A' }}</td>
-            <td>{{ inv.Amount | currency:'ETB' }}</td>
-            <td>{{ inv.InvestigationDate ? (inv.InvestigationDate | date:'short') : 'N/A' }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="modal-header">
+        <h3>Reimbursement Details</h3>
+        <button class="close-btn" (click)="closeDetailsModal()">&times;</button>
+      </div>
 
-      <h4>Documents</h4>
-      <div class="documents-list">
+      <div class="modal-body">
+        <div class="section">
+          <h4>Basic Information</h4>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Reimbursement Number:</label>
+              <span>{{ selectedReimbursement?.reimbursementNumber || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Patient Name:</label>
+              <span>{{ selectedReimbursement?.patientName }}</span>
+            </div>
+            <div class="info-item">
+              <label>Payroll Number:</label>
+              <span>{{ selectedReimbursement?.payrollNo }}</span>
+            </div>
+            <div class="info-item">
+              <label>Department:</label>
+              <span>{{ selectedReimbursement?.department }}</span>
+            </div>
+            <div class="info-item">
+              <label>Total Amount:</label>
+              <span class="amount">{{ selectedReimbursement?.totalAmount | currency:'ETB':'symbol':'1.2-2' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Status:</label>
+              <span class="status-badge" [ngClass]="selectedReimbursement?.status">
+                {{ selectedReimbursement?.status | titlecase }}
+              </span>
+            </div>
+            <div class="info-item">
+              <label>Submission Date:</label>
+              <span>{{ selectedReimbursement?.submissionDate ? (selectedReimbursement?.submissionDate | date:'short') : 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Form Type:</label>
+              <span>{{ selectedReimbursement?.formType || 'N/A' }}</span>
+            </div>
+            <div class="info-item full-width">
+              <label>Comments:</label>
+              <span class="comments">{{ selectedReimbursement?.comments || 'None' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section" *ngIf="investigations.length > 0">
+          <h4>Investigations</h4>
+          <div class="table-wrapper">
+            <table class="details-table">
+              <thead>
+                <tr>
+                  <th>Investigation Type</th>
+                  <th>Done At</th>
+                  <th>Ordered From</th>
+                  <th>Amount</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let inv of investigations">
+                  <td>{{ inv.InvestigationType }}</td>
+                  <td>{{ inv.Location }}</td>
+                  <td>{{ inv.OrderedFrom || 'N/A' }}</td>
+                  <td class="amount">{{ inv.Amount | currency:'ETB' }}</td>
+                  <td>{{ inv.InvestigationDate ? (inv.InvestigationDate | date:'short') : 'N/A' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <div *ngFor="let doc of documents" class="document-item">
-          <p><strong>Description:</strong> {{ doc.description }}</p>
-          <p><strong>File Name:</strong> {{ doc.fileName }}</p>
-          <p><strong>Upload Date:</strong> {{ doc.uploadDate ? (doc.uploadDate | date:'short') : 'N/A' }}</p>
+          <div class="document-info">
+            <div class="doc-header">
+              <h5>{{ doc.DocumentDescription || 'Document' }}</h5>
+              <button class="download-btn" (click)="downloadDocument(doc)">
+                <span class="download-icon">↓</span> Download
+              </button>
+            </div>
+            <p><strong>File Name:</strong> {{ doc.FileName || doc.fileName }}</p>
+            <p><strong>Upload Date:</strong> {{ doc.uploadDate ? (doc.uploadDate | date:'short') : 'N/A' }}</p>
+          </div>
+          
           <div *ngIf="doc.previewType !== 'none'" class="preview-container">
+            <div class="preview-header">
+              <span>Preview</span>
+              <button class="download-btn" (click)="downloadDocument(doc)">
+                <span class="download-icon">↓</span> Download
+              </button>
+            </div>
             <ng-container *ngIf="doc.previewType === 'pdf'">
               <embed [src]="doc.previewUrl" type="application/pdf" width="100%" height="400px" />
             </ng-container>
             <ng-container *ngIf="doc.previewType === 'image'">
-              <img [src]="doc.previewUrl" alt="{{doc.description}}" style="max-width: 100%; height: auto;">
+              <img [src]="doc.previewUrl" alt="{{doc.DocumentDescription}}" class="preview-image">
             </ng-container>
             <ng-container *ngIf="doc.previewType === 'office'">
+              <!-- Note: Office preview may require a public URL; using direct embed if supported -->
               <iframe [src]="doc.previewUrl" width="100%" height="480" frameborder="0"></iframe>
             </ng-container>
           </div>
-          <a [attr.href]="doc.downloadUrl" download="{{doc.fileName}}" target="_blank">Download</a>
         </div>
-        <div *ngIf="documents.length === 0">No documents uploaded.</div>
+
+        <div *ngIf="documents.length === 0" class="section">
+          <h4>Documents</h4>
+          <p class="no-data">No documents uploaded.</p>
+        </div>
       </div>
-      
+
       <div class="modal-actions" *ngIf="selectedReimbursement as sr">
-        <div style="margin: 10px 0;">
-          <span class="status-badge" [ngClass]="(sr.status || '').toLowerCase()">Current Status: {{ (sr.status || 'Unknown') | titlecase }}</span>
+        <div class="current-status">
+          <span class="status-badge large" [ngClass]="(sr.status || '').toLowerCase()">
+            Current Status: {{ (sr.status || 'Unknown') | titlecase }}
+          </span>
         </div>
-        <div>
-          <button 
-            *ngIf="(sr.status || '').toLowerCase() === 'pending'"
-            class="action-btn approve"
-            (click)="updateReimbursementStatus(sr.reimbursementID, 'approved')">
+        <div class="action-buttons">
+          <button type="button" *ngIf="(sr.status || '').toLowerCase() === 'pending'" 
+                  class="action-btn approve" 
+                  (click)="openStatusUpdateDialog(sr.reimbursementID, 'approved')">
             Approve
           </button>
-          <button 
-            *ngIf="(sr.status || '').toLowerCase() === 'pending'"
-            class="action-btn reject"
-            (click)="updateReimbursementStatus(sr.reimbursementID, 'rejected')">
+          <button type="button" *ngIf="(sr.status || '').toLowerCase() === 'pending'" 
+                  class="action-btn reject" 
+                  (click)="openStatusUpdateDialog(sr.reimbursementID, 'rejected')">
             Reject
           </button>
-          <button 
-            *ngIf="(sr.status || '').toLowerCase() === 'approved'"
-            class="action-btn pay"
-            (click)="updateReimbursementStatus(sr.reimbursementID, 'paid')">
+          <button type="button" *ngIf="(sr.status || '').toLowerCase() === 'approved'" 
+                  class="action-btn pay" 
+                  (click)="openStatusUpdateDialog(sr.reimbursementID, 'paid')">
             Mark as Paid
           </button>
         </div>
       </div>
+    </div>
+  </div>
 
-      <button type="button" class="close-btn" (click)="closeDetailsModal()">Close</button>
+  <!-- Comment Dialog for Status Updates -->
+  <div class="modal" *ngIf="showCommentDialog">
+    <div class="modal-content comment-dialog">
+      <div class="modal-header">
+        <h3>Update Reimbursement Status</h3>
+        <button type="button" class="close-btn" (click)="closeCommentDialog()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="status-info">
+          <p><strong>Updating status to:</strong> 
+            <span class="status-badge" [ngClass]="pendingStatusUpdate?.status">
+              {{ pendingStatusUpdate?.status | titlecase }}
+            </span>
+          </p>
+          <p><strong>Reimbursement ID:</strong> {{ pendingStatusUpdate?.id }}</p>
+        </div>
+        
+        <div class="comment-input">
+          <label for="statusComment">Comment (Required):</label>
+          <textarea 
+            id="statusComment"
+            [(ngModel)]="statusComment" 
+            placeholder="Please provide a comment for this status update..."
+            rows="4"
+            class="comment-textarea">
+          </textarea>
+          <small class="comment-required">* Comment is required for status updates</small>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="action-btn cancel" (click)="closeCommentDialog()">Cancel</button>
+        <button type="button" class="action-btn confirm" 
+                (click)="updateReimbursementStatus()"
+                [disabled]="!statusComment.trim()">
+          Confirm Update
+        </button>
+      </div>
     </div>
   </div>
 </div>
