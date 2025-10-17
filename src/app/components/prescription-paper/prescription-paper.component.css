@@ -131,17 +131,34 @@
 }
 
 .medication-table {
-    width: 100%;
-    border-collapse: collapse;
-    border: 1px solid #000;
-    font-size: 0.625rem;
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #000;
+  font-size: 0.625rem;
+  table-layout: fixed; /* Ensures columns respect widths */
 }
 
 .medication-table th,
 .medication-table td {
-    border: 1px solid #000;
-    padding: 0.2rem;
+  border: 1px solid #000;
+  padding: 0.2rem;
+  text-align: left;
+  vertical-align: top;
+  word-wrap: break-word;
 }
+/* Column widths - adjust percentages as needed */
+.rx-header, .rx-cell { width: 5%; }
+.med-name-header, .med-name-cell { width: 15%; }
+.strength-header, .strength-cell { width: 8%; }
+.dosage-form-header, .dosage-form-cell { width: 10%; }
+.dose-header, .dose-cell { width: 8%; }
+.frequency-header, .frequency-cell { width: 8%; }
+.duration-header, .duration-cell { width: 8%; }
+.quantity-header, .quantity-cell { width: 8%; }
+.instructions-header, .instructions-cell { width: 20%; }
+.price-header, .price-cell { width: 10%; text-align: center; }
+
+
 
 .medication-header {
     width: 80%;
@@ -173,9 +190,18 @@
     color: #495057;
 }
 
+.total-row {
+  font-weight: bold;
+}
+
+.total-price {
+text-align: center;
+font-weight: bold;
+}
+
 .total-label {
-    font-weight: 600;
-    text-align: center;
+  text-align: right !important;
+  padding-right: 0.5rem;
 }
 
 .info-section {
@@ -514,13 +540,22 @@
     }
 
     .medication-table {
-        font-size: 0.6rem;
-    }
+      font-size: 0.5rem;
+  }
+  
+  .medication-table th,
+  .medication-table td {
+      padding: 0.1rem;
+  }
 
     .medication-header,
     .price-header {
         font-size: 0.6rem;
     }
+
+    .instructions-cell {
+      font-size: 0.45rem;
+  }
 }
 
 @media print {
@@ -538,13 +573,15 @@
     }
 
     .medication-table {
-        border: 1px solid #000;
-    }
-
-    .medication-table th,
-    .medication-table td {
-        border: 1px solid #000;
-    }
+      font-size: 8pt;
+  }
+  
+  .medication-table th,
+  .medication-table td {
+      border: 1px solid #000 !important;
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+  }
 
     .input-container {
         border-bottom: 1px solid #000;

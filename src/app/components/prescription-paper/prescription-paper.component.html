@@ -6,7 +6,8 @@
 
   <div *ngIf="isLoading" class="loading">Loading prescription data...</div>
 
-  <div *ngIf="errorMessage" class="error-message" [ngClass]="{'success-message': !isLoading && errorMessage.includes('successfully')}">
+  <div *ngIf="errorMessage" class="error-message"
+    [ngClass]="{'success-message': !isLoading && errorMessage.includes('successfully')}">
     {{ errorMessage }}
   </div>
 
@@ -44,19 +45,22 @@
           <div class="form-group">
             <label>Town/Region:</label>
             <div class="input-container small">
-              <input type="text" class="underline-input form-control" formControlName="woreda" [readonly]="!isEditing" />
+              <input type="text" class="underline-input form-control" formControlName="woreda"
+                [readonly]="!isEditing" />
             </div>
           </div>
           <div class="form-group">
             <label>Woreda:</label>
             <div class="input-container small">
-              <input type="text" class="underline-input form-control" formControlName="woreda" [readonly]="!isEditing" />
+              <input type="text" class="underline-input form-control" formControlName="woreda"
+                [readonly]="!isEditing" />
             </div>
           </div>
           <div class="form-group">
             <label>Kebele/House No:</label>
             <div class="input-container small">
-              <input type="text" class="underline-input form-control" formControlName="houseNo" [readonly]="!isEditing" />
+              <input type="text" class="underline-input form-control" formControlName="houseNo"
+                [readonly]="!isEditing" />
             </div>
           </div>
           <div class="form-group">
@@ -82,7 +86,8 @@
           <div class="form-group">
             <label>Weight:</label>
             <div class="input-container small">
-              <input type="number" class="underline-input form-control" formControlName="Weight" [readonly]="!isEditing" />
+              <input type="number" class="underline-input form-control" formControlName="Weight"
+                [readonly]="!isEditing" />
             </div>
           </div>
           <div class="form-group">
@@ -101,36 +106,52 @@
       </div>
     </div>
 
+    <!-- Updated medication-section in the HTML - Remove parsing and bind directly -->
     <div class="medication-section">
       <table class="medication-table">
         <thead>
           <tr>
-            <th class="medication-header">
-              Medicine name, Strength, Dosage form, Dose, Frequency, Duration, Quality, How to use and other information
-            </th>
+            <th class="rx-header">Rx</th>
+            <th class="med-name-header">Medicine name</th>
+            <th class="strength-header">Strength</th>
+            <th class="dosage-form-header">Dosage form</th>
+            <th class="dose-header">Dose</th>
+            <th class="frequency-header">Frequency</th>
+            <th class="duration-header">Duration</th>
+            <th class="quantity-header">Quantity</th>
+            <th class="instructions-header">How to use and other information</th>
             <th class="price-header">Price (dispensers use only)</th>
-          </tr>
-          <tr>
-            <td class="rx-cell">Rx</td>
-            <td class="empty-cell"></td>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let med of medications" class="medication-row">
-            <td class="medication-cell">
-              {{ (med.MedicationName ? med.MedicationName + ', ' : '') + (med.MedicationDetails || '') }}
-            </td>
-            <td class="price-cell">
-            </td>
+            <td class="rx-cell">Rx</td>
+            <td class="med-name-cell">{{ med.MedicationName || '' }}</td>
+            <td class="strength-cell">{{ med.Strength || '' }}</td>
+            <td class="dosage-form-cell">{{ med.DosageForm || '' }}</td>
+            <td class="dose-cell">{{ med.Dose || '' }}</td>
+            <td class="frequency-cell">{{ med.Frequency || '' }}</td>
+            <td class="duration-cell">{{ med.Duration || '' }}</td>
+            <td class="quantity-cell">{{ med.Quantity || '' }}</td>
+            <td class="instructions-cell">{{ med.Instructions || '' }}</td>
+            <td class="price-cell">{{ med.UnitPrice != null ? (med.UnitPrice * (med.Quantity || 1)) : '' }}</td>
           </tr>
           <tr *ngFor="let i of [].constructor(3 - medications.length)" class="medication-row">
-            <td class="medication-cell"></td>
+            <td class="rx-cell"></td>
+            <td class="med-name-cell"></td>
+            <td class="strength-cell"></td>
+            <td class="dosage-form-cell"></td>
+            <td class="dose-cell"></td>
+            <td class="frequency-cell"></td>
+            <td class="duration-cell"></td>
+            <td class="quantity-cell"></td>
+            <td class="instructions-cell"></td>
             <td class="price-cell"></td>
           </tr>
-          <tr>
-            <td class="total-label">Total price</td>
+          <tr class="total-row">
+            <td colspan="9" class="total-label">Total price</td>
             <td class="total-price">
-              {{ prescriptionForm.get('TotalAmount')?.value }}
+              {{ prescriptionForm.get('TotalAmount')?.value || calculateTotal() }}
             </td>
           </tr>
         </tbody>

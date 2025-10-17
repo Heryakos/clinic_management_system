@@ -1,3 +1,4 @@
+// Updated TypeScript component - Remove extract methods and old bindings
 import { Component, Inject, OnInit, ChangeDetectorRef, Input } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MedicalService } from 'src/app/medical.service';
@@ -5,7 +6,6 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { ASSETS } from '../../assets.config';
-// import { AMIRI_FONT_BASE64 } from '../../..assets/fonts/amiri-font-base64';
 
 @Component({
   selector: 'app-prescription-paper',
@@ -66,7 +66,6 @@ export class PrescriptionPaperComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = null;
 
-    // Try getPrescriptionsByCardNumber first
     this.medicalService.getPrescriptionsByCardNumber(cardNumber).subscribe(
       (response: any) => {
         console.log('Prescriptions response from getPrescriptionsByCardNumber:', response);
@@ -74,7 +73,6 @@ export class PrescriptionPaperComponent implements OnInit {
       },
       error => {
         console.error('Error from getPrescriptionsByCardNumber:', error);
-        // Fallback to getPrescriptionspayrollID
         this.medicalService.getPrescriptionspayrollID(cardNumber).subscribe(
           (payrollResponse: any) => {
             console.log('Prescriptions response from getPrescriptionspayrollID:', payrollResponse);
@@ -94,20 +92,17 @@ export class PrescriptionPaperComponent implements OnInit {
   private processPrescriptionResponse(response: any): void {
     let prescriptions = Array.isArray(response) ? response : [response];
     
-    // If prescriptionID is provided, filter by it only when the response includes IDs
     if (this.data.prescription?.prescriptionID) {
       const responseHasIds = prescriptions.some(p => 'prescriptionID' in p || 'PrescriptionID' in p);
       if (responseHasIds) {
         const targetId = this.data.prescription.prescriptionID;
         const filteredById = prescriptions.filter(p => p.prescriptionID === targetId || p.PrescriptionID === targetId);
-        // Only replace if we actually matched something; otherwise keep original
         if (filteredById.length > 0) {
           prescriptions = filteredById;
         }
       }
     }
-
-    // If specific medication selection is provided (from Pharmacy flow), filter to only those medications
+    
     if (this.data.medicationDetails && typeof this.data.medicationDetails === 'string') {
       const selectedNames = new Set(
         this.data.medicationDetails
@@ -121,14 +116,12 @@ export class PrescriptionPaperComponent implements OnInit {
           const medName = (p.MedicationName || p.medicationName || '').toString().trim();
           return medName && selectedNames.has(medName);
         });
-        // Fallback if nothing matched due to formatting differences
         if (filteredByMed.length > 0) {
           prescriptions = filteredByMed;
         }
       }
     }
 
-    // Final fallback: if we somehow filtered everything out, show the original response
     if ((!prescriptions || prescriptions.length === 0) && response) {
       prescriptions = Array.isArray(response) ? response : [response];
     }
@@ -138,7 +131,6 @@ export class PrescriptionPaperComponent implements OnInit {
     if (this.medications.length > 0) {
       const common = this.medications[0];
       
-      // Normalize field names
       const formData = {
         FullName: common.FullName || common.fullName || '',
         gender: common.gender || common.Gender || '',
@@ -163,8 +155,12 @@ export class PrescriptionPaperComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  private calculateTotal(): number {
-    return this.medications.reduce((sum, med) => sum + (med.unitPrice * med.quantity || 0), 0);
+  calculateTotal(): number {
+    return this.medications.reduce((sum, med) => {
+      const price = (med.UnitPrice || med.unitPrice || 0);
+      const qty = (med.Quantity || med.quantity || 1);
+      return sum + (price * qty);
+    }, 0);
   }
 
   toggleEditMode(): void {
@@ -224,11 +220,6 @@ export class PrescriptionPaperComponent implements OnInit {
     const doc = new jsPDF();
     const formValue = this.prescriptionForm.getRawValue();
 
-       // Add Amiri font to VFS
-      //  doc.addFileToVFS('Amiri-Regular.ttf', AMIRI_FONT_BASE64);
-      //  doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
-      //  doc.setFont('Amiri', 'normal');
-
     doc.setFont('Amiri', 'normal');
     doc.setFontSize(14);
     doc.text('FEDERAL HOUSING CORPORATION MEDIUM CLINIC', 105, 20, { align: 'center' });
@@ -252,27 +243,56 @@ export class PrescriptionPaperComponent implements OnInit {
 
     y += 50;
 
-    let tableBody: string[][] = this.medications.map(med => [
-      '',
-      `${med.MedicationName ? med.MedicationName + ', ' : ''}${med.MedicationDetails || ''}`,
-      ''  // price if available
+    let tableBody: any[][] = this.medications.map(med => [
+      'Rx',
+      med.MedicationName || '',
+      med.Strength || '',
+      med.DosageForm || '',
+      med.Dose || '',
+      med.Frequency || '',
+      med.Duration || '',
+      med.Quantity || '',
+      med.Instructions || '',
+      med.UnitPrice != null ? (med.UnitPrice * (med.Quantity || 1)) : ''
     ]);
 
-    // Add empty rows to make at least 3
     while (tableBody.length < 3) {
-      tableBody.push(['', '', '']);
+      tableBody.push(['', '', '', '', '', '', '', '', '', '']);
     }
 
-    tableBody.push(['Total price', '', formValue.TotalAmount?.toString() || '']);
+    const total = formValue.TotalAmount || this.calculateTotal();
+    tableBody.push(['Total price', '', '', '', '', '', '', '', '', total.toString()]);
 
     autoTable(doc, {
       startY: y,
-      head: [['Rx', 'Medicine name, Strength, Dosage form, Dose, Frequency, Duration, Quality, How to use and other information', 'Price']],
+      head: [[
+        'Rx',
+        'Medicine name',
+        'Strength',
+        'Dosage form',
+        'Dose',
+        'Frequency',
+        'Duration',
+        'Quantity',
+        'How to use and other information',
+        'Price'
+      ]],
       body: tableBody,
       theme: 'grid',
       styles: { fontSize: 8, font: 'Amiri' },
       headStyles: { fillColor: [200, 200, 200] },
-      columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 120 }, 2: { cellWidth: 30 } }
+      columnStyles: {
+        0: { cellWidth: 10 },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 15 },
+        3: { cellWidth: 20 },
+        4: { cellWidth: 15 },
+        5: { cellWidth: 15 },
+        6: { cellWidth: 15 },
+        7: { cellWidth: 15 },
+        8: { cellWidth: 40 },
+        9: { cellWidth: 20, halign: 'center' }
+      }
     });
 
     y = (doc as any).lastAutoTable.finalY + 10;

@@ -667,6 +667,13 @@ updateInjection(data: any): Observable<any> {
     );
   }
 
+  // Add this method to your medical.service.ts
+getPatientCardByPatientId(patientId: number): Observable<any> {
+  return this.http.get<any>(`${this.chmsPatientsBase}cards/patient/${patientId}`).pipe(
+    catchError(this.handleError)
+  );
+}
+
   getPatientCardsByPatient(patientId: number): Observable<any> {
     return this.http.get<any[]>(`${this.chmsPatientsBase}cards/patient/${patientId}`).pipe(
       catchError(this.handleError)
