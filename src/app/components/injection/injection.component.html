@@ -75,20 +75,20 @@
               <div class="card-body">
                   <div class="patient-info">
                       <h4>🩹 Wound Care #{{ procedure.procedureID || 'N/A' }}</h4>
-                      <p>Patient: {{ procedure.patientName || 'Unknown' }}</p>
+                      <p>Patient: {{ procedure.fullName || 'Unknown' }}</p>
                       <p>Wound Type: {{ procedure.woundType || 'N/A' }}</p>
                       <p>Location: {{ procedure.woundLocation || 'N/A' }}</p>
                       <p>Treatment: {{ procedure.treatmentPlan || 'N/A' }}</p>
                   </div>
 
                   <div class="procedure-actions">
-                      <button type="button" class="action-btn view-btn" 
-                          (click)="viewInjectionDetails(procedure.procedureID, procedure.patientID)">
-                          View Details
-                      </button>
+                    <button type="button" class="action-btn view-btn" 
+                    (click)="viewProcedureDetails(procedure.procedureID, procedure.patientID, 'WoundCare')">
+                    View Details
+                </button>
                       <button type="button" *ngIf="procedure.status === 'Pending'" 
                           class="action-btn administer-btn" 
-                          (click)="administerProcedure(procedure.procedureID, 'WoundCare')">
+                          (click)="administerProcedure(procedure)">
                           Administer
                       </button>
                   </div>
@@ -126,20 +126,20 @@
               <div class="card-body">
                   <div class="patient-info">
                       <h4>🪡 Suturing #{{ procedure.procedureID || 'N/A' }}</h4>
-                      <p>Patient: {{ procedure.patientName || 'Unknown' }}</p>
+                      <p>Patient: {{ procedure.fullName || 'Unknown' }}</p>
                       <p>Wound Type: {{ procedure.woundType || 'N/A' }}</p>
                       <p>Location: {{ procedure.woundLocation || 'N/A' }}</p>
                       <p>Suture Type: {{ procedure.sutureType || 'N/A' }}</p>
                   </div>
 
                   <div class="procedure-actions">
-                      <button type="button" class="action-btn view-btn" 
-                          (click)="viewInjectionDetails(procedure.procedureID, procedure.patientID)">
-                          View Details
-                      </button>
+                    <button type="button" class="action-btn view-btn" 
+                    (click)="viewProcedureDetails(procedure.procedureID, procedure.patientID, 'Suturing')">
+                    View Details
+                </button>
                       <button type="button" *ngIf="procedure.status === 'Pending'" 
                           class="action-btn administer-btn" 
-                          (click)="administerProcedure(procedure.procedureID, 'Suturing')">
+                          (click)="administerProcedure(procedure)">
                           Administer
                       </button>
                   </div>
@@ -177,20 +177,20 @@
               <div class="card-body">
                   <div class="patient-info">
                       <h4>👂 Ear Irrigation #{{ procedure.procedureID || 'N/A' }}</h4>
-                      <p>Patient: {{ procedure.patientName || 'Unknown' }}</p>
+                      <p>Patient: {{ procedure.fullName || 'Unknown' }}</p>
                       <p>Ear Side: {{ procedure.earSide || 'N/A' }}</p>
                       <p>Solution: {{ procedure.irrigationSolution || 'N/A' }}</p>
                       <p>Temperature: {{ procedure.solutionTemperature || 'N/A' }}</p>
                   </div>
 
                   <div class="procedure-actions">
-                      <button type="button" class="action-btn view-btn" 
-                          (click)="viewInjectionDetails(procedure.procedureID, procedure.patientID)">
-                          View Details
-                      </button>
+                    <button type="button" class="action-btn view-btn" 
+                    (click)="viewProcedureDetails(procedure.procedureID, procedure.patientID, 'EarIrrigation')">
+                    View Details
+                </button>
                       <button type="button" *ngIf="procedure.status === 'Pending'" 
                           class="action-btn administer-btn" 
-                          (click)="administerProcedure(procedure.procedureID, 'EarIrrigation')">
+                          (click)="administerProcedure(procedure)">
                           Administer
                       </button>
                   </div>
@@ -232,10 +232,10 @@
                   </div>
 
                   <div class="schedule-actions">
-                      <button type="button" class="action-btn view-btn" 
-                          (click)="viewInjectionDetails(schedule.injectionID, schedule.patientID)">
-                          View Details
-                      </button>
+                    <button type="button" class="action-btn view-btn" 
+                    (click)="viewProcedureDetails(schedule.injectionID, schedule.patientID, 'Injection')">
+                    View Details
+                </button>
                       <button type="button" *ngIf="schedule.status === 'Pending'" 
                           class="action-btn administer-btn" 
                           (click)="administerScheduledInjection(schedule)">
@@ -313,7 +313,7 @@
                       </td>
                       <td>
                           <button type="button" class="action-btn view-btn-small" 
-                              (click)="viewInjectionDetails(injection.injectionID, injection.patientID)">
+                              (click)=" viewProcedureDetails(injection.injectionID, injection.patientID, 'Injection')">
                               View Details
                           </button>
                           <!-- <button type="button" class="action-btn administer" 
@@ -392,7 +392,7 @@
                           <td>{{ injection.administeredByName || 'N/A' }}</td>
                           <td>
                               <button type="button" class="action-btn view" 
-                                  (click)="viewInjectionDetails(injection.injectionID, patient.patientID)">
+                                  (click)="viewProcedureDetails(injection.injectionID, patient.patientID, 'Injection')">
                                   View Details
                               </button>
                               <!-- <button type="button" class="action-btn administer" 
@@ -448,12 +448,12 @@
                       </td>
                       <td>
                           <button type="button" class="action-btn view-btn" 
-                              (click)="viewInjectionDetails(procedure.woundCareID || procedure.procedureID, procedure.patientID)">
+                              (click)="viewProcedureDetails(procedure.woundCareID || procedure.procedureID, procedure.patientID, 'WoundCare')">
                               View Details
                           </button>
                           <button type="button" *ngIf="procedure.status === 'Active'" 
                               class="action-btn administer-btn" 
-                              (click)="administerProcedure(procedure.woundCareID || procedure.procedureID, 'WoundCare')">
+                              (click)="administerProcedure(procedure)">
                               Administer
                           </button>
                       </td>
@@ -503,12 +503,12 @@
                       </td>
                       <td>
                           <button type="button" class="action-btn view-btn" 
-                              (click)="viewInjectionDetails(procedure.suturingID || procedure.procedureID, procedure.patientID)">
+                              (click)="viewProcedureDetails(procedure.suturingID || procedure.procedureID, procedure.patientID, 'Suturing')">
                               View Details
                           </button>
                           <button type="button" *ngIf="procedure.status === 'Active'" 
                               class="action-btn administer-btn" 
-                              (click)="administerProcedure(procedure.suturingID || procedure.procedureID, 'Suturing')">
+                              (click)="administerProcedure(procedure)">
                               Administer
                           </button>
                       </td>
@@ -558,12 +558,12 @@
                       </td>
                       <td>
                           <button type="button" class="action-btn view-btn" 
-                              (click)="viewInjectionDetails(procedure.earIrrigationID || procedure.procedureID, procedure.patientID)">
+                              (click)="viewProcedureDetails(procedure.earIrrigationID || procedure.procedureID, procedure.patientID, 'EarIrrigation')">
                               View Details
                           </button>
                           <button type="button" *ngIf="procedure.status === 'Active'" 
                               class="action-btn administer-btn" 
-                              (click)="administerProcedure(procedure.earIrrigationID || procedure.procedureID, 'EarIrrigation')">
+                              (click)="administerProcedure(procedure)">
                               Administer
                           </button>
                       </td>

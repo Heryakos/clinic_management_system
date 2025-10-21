@@ -65,6 +65,9 @@ import { EthiopianDateAdapter } from './directive/ethiopian-date-adapter';
 import { ClinicMedicalExpenseFormComponent } from './components/clinic-medical-expense-form/clinic-medical-expense-form.component';
 import { InjectionManagementComponent } from './components/injection-management/injection-management.component';
 import { MatTableModule } from '@angular/material/table';
+import { WoundCarePaperComponent } from './components/wound-care-paper/wound-care-paper.component';
+import { SuturingPaperComponent } from './components/suturing-paper/suturing-paper.component';
+import { EarIrrigationPaperComponent } from './components/ear-irrigation-paper/ear-irrigation-paper.component';
 
 
 @NgModule({
@@ -110,7 +113,10 @@ import { MatTableModule } from '@angular/material/table';
     // ReimbursementDocumentUploadComponent,
     InjectionPaperComponent,
     ClinicMedicalExpenseFormComponent,
-    InjectionManagementComponent
+    InjectionManagementComponent,
+    WoundCarePaperComponent,
+    SuturingPaperComponent,
+    EarIrrigationPaperComponent
     // EthiopianDatePickerComponent,
     // StockRequestFormComponent
     // PatientMedicalHistoryComponent

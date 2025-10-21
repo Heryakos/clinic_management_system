@@ -1,0 +1,222 @@
+<div class="procedure-card">
+    <div class="dialog-title">
+      <h2>{{ data.dialogTitle }}</h2>
+      <button type="button" class="close-btn" (click)="dialogRef.close()">Close</button>
+    </div>
+  
+    <div *ngIf="isLoading" class="loading">Loading suturing data...</div>
+  
+    <div *ngIf="errorMessage" class="error-message" [ngClass]="{'success-message': errorMessage.includes('successfully')}">
+      {{ errorMessage }}
+    </div>
+  
+    <form [formGroup]="suturingForm" (ngSubmit)="onSubmit()" *ngIf="!isLoading && !errorMessage">
+      <!-- SAME PATIENT SECTION AS WOUND CARE -->
+      <div class="header">
+        <div class="header-content">
+          <div class="logo">
+            <img [src]="logoPath" alt="Clinic Logo" class="logo-img" />
+          </div>
+          <div class="clinic-info">
+            <h1>FEDERAL HOUSING CORPORATION MEDIUM CLINIC</h1>
+            <div class="clinic-phone">TEL. 0118 553615</div>
+          </div>
+        </div>
+      </div>
+  
+      <div class="title-section">
+        <h2>Suturing Paper</h2>
+      </div>
+  
+      <div class="form-actions">
+        <button type="button" class="action-btn print-btn" (click)="printSuturing()">Print</button>
+        <button type="button" class="action-btn pdf-btn" (click)="exportToPDF()">Export to PDF</button>
+        <button type="button" class="action-btn edit-btn" (click)="toggleEditMode()">
+          {{ isEditing ? 'Cancel Edit' : 'Edit' }}
+        </button>
+        <button type="submit" class="action-btn save-btn" *ngIf="isEditing">Save Changes</button>
+      </div>
+  
+      <!-- SAME PATIENT SECTION -->
+      <div class="patient-section">
+        <div class="form-grid">
+          <div class="form-row two-line-row">
+            <div class="form-group">
+              <label>Patient's Full Name:</label>
+              <div class="input-container">
+                <input type="text" class="underline-input form-control" formControlName="FullName" readonly />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Town/Region:</label>
+              <div class="input-container small">
+                <input type="text" class="underline-input form-control" formControlName="woreda" [readonly]="!isEditing" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Kebele/House No:</label>
+              <div class="input-container small">
+                <input type="text" class="underline-input form-control" formControlName="houseNo" [readonly]="!isEditing" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Tel No:</label>
+              <div class="input-container small">
+                <input type="text" class="underline-input form-control" formControlName="phone" [readonly]="!isEditing" />
+              </div>
+            </div>
+          </div>
+          <div class="form-row two-line-row">
+            <div class="form-group">
+              <label>Sex:</label>
+              <div class="input-container small">
+                <input type="text" class="underline-input form-control" formControlName="gender" readonly />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Age:</label>
+              <div class="input-container small">
+                <input type="number" class="underline-input form-control" formControlName="age" readonly />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Weight:</label>
+              <div class="input-container small">
+                <input type="number" class="underline-input form-control" formControlName="Weight" [readonly]="!isEditing" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Card No:</label>
+              <div class="input-container small">
+                <input type="text" class="underline-input form-control" formControlName="CardNumber" readonly />
+              </div>
+            </div>
+          </div>
+          <div class="form-group full-width">
+            <label>Diagnosis:</label>
+            <div class="input-container">
+              <input type="text" class="underline-input form-control" formControlName="MedicalHistory" readonly />
+            </div>
+          </div>
+        </div>
+      </div>
+  
+      <div class="procedure-section">
+        <table class="procedure-table">
+          <thead>
+            <tr>
+              <th class="procedure-header" colspan="2">Suturing Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="label-cell">Suturing Number:</td>
+              <td class="value-cell">{{ suturingForm.get('suturingNumber')?.value || 'N/A' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Date:</td>
+              <td class="value-cell">{{ suturingForm.get('procedureDate')?.value || 'N/A' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Status:</td>
+              <td class="value-cell">{{ suturingForm.get('status')?.value || 'N/A' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Physician:</td>
+              <td class="value-cell">{{ suturingForm.get('orderingPhysicianName')?.value || 'N/A' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Wound Type:</td>
+              <td class="value-cell">{{ suturingForm.get('woundType')?.value || 'N/A' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Location:</td>
+              <td class="value-cell">{{ suturingForm.get('woundLocation')?.value || 'N/A' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Size:</td>
+              <td class="value-cell">{{ suturingForm.get('woundSize')?.value || 'N/A' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Depth:</td>
+              <td class="value-cell">{{ suturingForm.get('woundDepth')?.value || 'N/A' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Suture Type:</td>
+              <td class="value-cell">{{ suturingForm.get('sutureType')?.value || 'N/A' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Material:</td>
+              <td class="value-cell">{{ suturingForm.get('sutureMaterial')?.value || 'N/A' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Size:</td>
+              <td class="value-cell">{{ suturingForm.get('sutureSize')?.value || 'N/A' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Stitches:</td>
+              <td class="value-cell">{{ suturingForm.get('numStitches')?.value || 'N/A' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Anesthesia:</td>
+              <td class="value-cell">{{ suturingForm.get('anesthesiaUsed')?.value || 'N/A' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Instructions:</td>
+              <td class="value-cell">{{ suturingForm.get('instructions')?.value || 'N/A' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Notes:</td>
+              <td class="value-cell">{{ suturingForm.get('notes')?.value || 'N/A' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Performed By:</td>
+              <td class="value-cell">{{ suturingForm.get('performedByName')?.value || 'N/A' }}</td>
+            </tr>
+            <tr>
+              <td class="label-cell">Performed Date:</td>
+              <td class="value-cell">{{ suturingForm.get('performedDate')?.value || 'N/A' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+  
+      <!-- SAME INFO SECTION AS WOUND CARE -->
+      <div class="info-section">
+        <div class="info-column">
+          <h3>Physician's</h3>
+          <div class="info-fields">
+            <div class="form-group">
+              <label>Full Name:</label>
+              <div class="input-container">
+                <input type="text" class="underline-input form-control" formControlName="orderingPhysicianName" readonly />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Date:</label>
+              <div class="input-container">
+                <input type="date" class="underline-input form-control" formControlName="procedureDate" readonly />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="info-column">
+          <h3>Performed By</h3>
+          <div class="info-fields">
+            <div class="form-group">
+              <label>Full Name:</label>
+              <div class="input-container">
+                <input type="text" class="underline-input form-control" formControlName="performedByName" readonly />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Date:</label>
+              <div class="input-container">
+                <input type="date" class="underline-input form-control" formControlName="performedDate" readonly />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>

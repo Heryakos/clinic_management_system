@@ -12,6 +12,9 @@ import { PrescriptionPaperComponent } from '../prescription-paper/prescription-p
 import { InjectionPaperComponent } from '../injection-paper/injection-paper.component'; // Adjust path
 import { EthiopianDatePickerComponent } from '../ethiopian-date-picker/ethiopian-date-picker.component'; // Adjust path as needed
 import { EthiopianDate } from '../../models/ethiopian-date'; // Adjust path as needed
+import { WoundCarePaperComponent } from '../wound-care-paper/wound-care-paper.component';
+import { SuturingPaperComponent } from '../suturing-paper/suturing-paper.component';
+import { EarIrrigationPaperComponent } from '../ear-irrigation-paper/ear-irrigation-paper.component';
 
 @Component({
     selector: 'app-doctor',
@@ -999,13 +1002,12 @@ export class DoctorComponent implements OnInit {
             return;
         }
     
-        const dialogRef = this.dialog.open(InjectionPaperComponent, {
+        const dialogRef = this.dialog.open(WoundCarePaperComponent, {
             width: '800px',
             height: 'auto',
             maxHeight: '90vh',
             data: { 
-                procedureID: procedureID,
-                procedureType: 'WoundCare',
+                woundCareID: procedureID,
                 patientID: this.patient.PatientID,
                 dialogTitle: 'Wound Care Details' 
             }
@@ -1022,13 +1024,12 @@ export class DoctorComponent implements OnInit {
             return;
         }
     
-        const dialogRef = this.dialog.open(InjectionPaperComponent, {
+        const dialogRef = this.dialog.open(SuturingPaperComponent, {
             width: '800px',
             height: 'auto',
             maxHeight: '90vh',
             data: { 
-                procedureID: procedureID,
-                procedureType: 'Suturing',
+                suturingID: procedureID,
                 patientID: this.patient.PatientID,
                 dialogTitle: 'Suturing Details' 
             }
@@ -1045,13 +1046,12 @@ export class DoctorComponent implements OnInit {
             return;
         }
     
-        const dialogRef = this.dialog.open(InjectionPaperComponent, {
+        const dialogRef = this.dialog.open(EarIrrigationPaperComponent, {
             width: '800px',
             height: 'auto',
             maxHeight: '90vh',
             data: { 
-                procedureID: procedureID,
-                procedureType: 'EarIrrigation',
+                earIrrigationID: procedureID,
                 patientID: this.patient.PatientID,
                 dialogTitle: 'Ear Irrigation Details' 
             }
