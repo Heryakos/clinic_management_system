@@ -199,7 +199,7 @@ export interface ExpenseReimbursement {
   department: string | null;
   totalAmount: number;
   status: string;
-  submissionDate: Date;
+  submissionDate?: Date;  // <-- make optional
   createdBy: string | null;
   approvedBy: string | null;
   investigations: {
@@ -214,7 +214,24 @@ export interface ExpenseReimbursement {
   doneAt?: string | null;
   investigation?: string | null;
   formType?: string | null;
-  comments?: string;  // <-- add this
+  comments?: string;
+  approvedAmount?: number;
+}
+
+
+export interface ExpenseReimbursementDetail {
+  DetailID: number;
+  ReimbursementID?: number;
+  InvestigationType: string;
+  Location: string;
+  OrderedFrom?: string;
+  Amount: number;
+  InvestigationDate?: Date;
+  status?: string;
+  comments?: string;
+  approvedBy?: string;
+  approvedDate?: Date;
+  InvoiceNumber: string;
 }
 
 export interface InventoryItem {

@@ -1,8 +1,30 @@
 <div class="injection-container">
-  <h2>Injection Management</h2>
+  <h2>Procedure Room Management</h2>
 
-  <!-- Tabs -->
-  <div class="tabs-container">
+  <!-- Procedure Type Tabs -->
+  <div class="procedure-tabs-container">
+      <div class="procedure-tabs">
+          <button type="button" class="procedure-tab-button" [class.active]="selectedProcedureTab === 'injections'" 
+              (click)="selectProcedureTab('injections')">
+              💉 Injections
+          </button>
+          <button type="button" class="procedure-tab-button" [class.active]="selectedProcedureTab === 'wound-care'" 
+              (click)="selectProcedureTab('wound-care')">
+              🩹 Wound Care
+          </button>
+          <button type="button" class="procedure-tab-button" [class.active]="selectedProcedureTab === 'suturing'" 
+              (click)="selectProcedureTab('suturing')">
+              🪡 Suturing
+          </button>
+          <button type="button" class="procedure-tab-button" [class.active]="selectedProcedureTab === 'ear-irrigation'" 
+              (click)="selectProcedureTab('ear-irrigation')">
+              👂 Ear Irrigation
+          </button>
+      </div>
+  </div>
+
+  <!-- Main Content Tabs -->
+  <div class="tabs-container" *ngIf="selectedProcedureTab === 'injections'">
       <div class="tabs">
           <button type="button" class="tab-button" [class.active]="selectedTab === 'today'" 
               (click)="selectTab('today')">
@@ -25,8 +47,161 @@
       <p>Loading...</p>
   </div>
 
+  <!-- Wound Care Tab -->
+  <div *ngIf="selectedProcedureTab === 'wound-care' && !isLoading" class="procedure-section">
+      <div class="section-header">
+          <h3>🩹 Wound Care Procedures</h3>
+          <button type="button" class="refresh-btn" (click)="refreshData()">
+              <span>↻</span> Refresh
+          </button>
+      </div>
+
+      <div *ngIf="todayProcedures.length === 0" class="no-data">
+          <p>No wound care procedures scheduled for today</p>
+      </div>
+
+      <div *ngIf="todayProcedures.length > 0" class="procedures-grid">
+          <ng-container *ngFor="let procedure of todayProcedures">
+              <div *ngIf="procedure.procedureType === 'WoundCare'" class="procedure-card">
+              <div class="card-header">
+                  <div class="status-badge" [ngClass]="getScheduleStatusClass(procedure.status)">
+                      {{ procedure.status || 'Unknown' }}
+                  </div>
+                  <div class="procedure-time">
+                      {{ procedure.procedureDate | date:'shortTime' }}
+                  </div>
+              </div>
+
+              <div class="card-body">
+                  <div class="patient-info">
+                      <h4>🩹 Wound Care #{{ procedure.procedureID || 'N/A' }}</h4>
+                      <p>Patient: {{ procedure.patientName || 'Unknown' }}</p>
+                      <p>Wound Type: {{ procedure.woundType || 'N/A' }}</p>
+                      <p>Location: {{ procedure.woundLocation || 'N/A' }}</p>
+                      <p>Treatment: {{ procedure.treatmentPlan || 'N/A' }}</p>
+                  </div>
+
+                  <div class="procedure-actions">
+                      <button type="button" class="action-btn view-btn" 
+                          (click)="viewInjectionDetails(procedure.procedureID, procedure.patientID)">
+                          View Details
+                      </button>
+                      <button type="button" *ngIf="procedure.status === 'Pending'" 
+                          class="action-btn administer-btn" 
+                          (click)="administerProcedure(procedure.procedureID, 'WoundCare')">
+                          Administer
+                      </button>
+                  </div>
+              </div>
+              </div>
+          </ng-container>
+      </div>
+  </div>
+
+  <!-- Suturing Tab -->
+  <div *ngIf="selectedProcedureTab === 'suturing' && !isLoading" class="procedure-section">
+      <div class="section-header">
+          <h3>🪡 Suturing Procedures</h3>
+          <button type="button" class="refresh-btn" (click)="refreshData()">
+              <span>↻</span> Refresh
+          </button>
+      </div>
+
+      <div *ngIf="todayProcedures.length === 0" class="no-data">
+          <p>No suturing procedures scheduled for today</p>
+      </div>
+
+      <div *ngIf="todayProcedures.length > 0" class="procedures-grid">
+          <ng-container *ngFor="let procedure of todayProcedures">
+              <div *ngIf="procedure.procedureType === 'Suturing'" class="procedure-card">
+              <div class="card-header">
+                  <div class="status-badge" [ngClass]="getScheduleStatusClass(procedure.status)">
+                      {{ procedure.status || 'Unknown' }}
+                  </div>
+                  <div class="procedure-time">
+                      {{ procedure.procedureDate | date:'shortTime' }}
+                  </div>
+              </div>
+
+              <div class="card-body">
+                  <div class="patient-info">
+                      <h4>🪡 Suturing #{{ procedure.procedureID || 'N/A' }}</h4>
+                      <p>Patient: {{ procedure.patientName || 'Unknown' }}</p>
+                      <p>Wound Type: {{ procedure.woundType || 'N/A' }}</p>
+                      <p>Location: {{ procedure.woundLocation || 'N/A' }}</p>
+                      <p>Suture Type: {{ procedure.sutureType || 'N/A' }}</p>
+                  </div>
+
+                  <div class="procedure-actions">
+                      <button type="button" class="action-btn view-btn" 
+                          (click)="viewInjectionDetails(procedure.procedureID, procedure.patientID)">
+                          View Details
+                      </button>
+                      <button type="button" *ngIf="procedure.status === 'Pending'" 
+                          class="action-btn administer-btn" 
+                          (click)="administerProcedure(procedure.procedureID, 'Suturing')">
+                          Administer
+                      </button>
+                  </div>
+              </div>
+              </div>
+          </ng-container>
+      </div>
+  </div>
+
+  <!-- Ear Irrigation Tab -->
+  <div *ngIf="selectedProcedureTab === 'ear-irrigation' && !isLoading" class="procedure-section">
+      <div class="section-header">
+          <h3>👂 Ear Irrigation Procedures</h3>
+          <button type="button" class="refresh-btn" (click)="refreshData()">
+              <span>↻</span> Refresh
+          </button>
+      </div>
+
+      <div *ngIf="todayProcedures.length === 0" class="no-data">
+          <p>No ear irrigation procedures scheduled for today</p>
+      </div>
+
+      <div *ngIf="todayProcedures.length > 0" class="procedures-grid">
+          <ng-container *ngFor="let procedure of todayProcedures">
+              <div *ngIf="procedure.procedureType === 'EarIrrigation'" class="procedure-card">
+              <div class="card-header">
+                  <div class="status-badge" [ngClass]="getScheduleStatusClass(procedure.status)">
+                      {{ procedure.status || 'Unknown' }}
+                  </div>
+                  <div class="procedure-time">
+                      {{ procedure.procedureDate | date:'shortTime' }}
+                  </div>
+              </div>
+
+              <div class="card-body">
+                  <div class="patient-info">
+                      <h4>👂 Ear Irrigation #{{ procedure.procedureID || 'N/A' }}</h4>
+                      <p>Patient: {{ procedure.patientName || 'Unknown' }}</p>
+                      <p>Ear Side: {{ procedure.earSide || 'N/A' }}</p>
+                      <p>Solution: {{ procedure.irrigationSolution || 'N/A' }}</p>
+                      <p>Temperature: {{ procedure.solutionTemperature || 'N/A' }}</p>
+                  </div>
+
+                  <div class="procedure-actions">
+                      <button type="button" class="action-btn view-btn" 
+                          (click)="viewInjectionDetails(procedure.procedureID, procedure.patientID)">
+                          View Details
+                      </button>
+                      <button type="button" *ngIf="procedure.status === 'Pending'" 
+                          class="action-btn administer-btn" 
+                          (click)="administerProcedure(procedure.procedureID, 'EarIrrigation')">
+                          Administer
+                      </button>
+                  </div>
+              </div>
+              </div>
+          </ng-container>
+      </div>
+  </div>
+
   <!-- Today's Schedule Tab -->
-  <div *ngIf="selectedTab === 'today' && !isLoading" class="schedule-section">
+  <div *ngIf="selectedTab === 'today' && selectedProcedureTab === 'injections' && !isLoading" class="schedule-section">
       <div class="section-header">
           <h3>Today's Injection Schedule</h3>
           <button type="button" class="refresh-btn" (click)="refreshData()">
@@ -73,7 +248,7 @@
   </div>
 
   <!-- All Active Injections Tab -->
-  <div *ngIf="selectedTab === 'all' && !isLoading" class="injections-section">
+  <div *ngIf="selectedTab === 'all' && selectedProcedureTab === 'injections' && !isLoading" class="injections-section">
       <div class="section-header">
           <h3>Active Injections</h3>
           <button type="button" class="refresh-btn" (click)="refreshData()">
@@ -154,7 +329,7 @@
   </div>
 
   <!-- Patient Search Tab -->
-  <div *ngIf="selectedTab === 'patient' && !isLoading" class="patient-search-section">
+  <div *ngIf="selectedTab === 'patient' && selectedProcedureTab === 'injections' && !isLoading" class="patient-search-section">
       <div class="search-container">
           <form [formGroup]="searchForm" (ngSubmit)="onSearchPatient()" class="search-form">
               <div class="form-group">
@@ -230,6 +405,171 @@
                   </tbody>
               </table>
           </div>
+      </div>
+  </div>
+
+  <!-- All Active Wound Care Tab -->
+  <div *ngIf="selectedTab === 'all' && selectedProcedureTab === 'wound-care' && !isLoading" class="procedure-section">
+      <div class="section-header">
+          <h3>All Active Wound Care Procedures</h3>
+          <button type="button" class="refresh-btn" (click)="refreshData()">
+              <span>↻</span> Refresh
+          </button>
+      </div>
+
+      <div *ngIf="woundCareProcedures.length === 0" class="no-data">
+          <p>No active wound care procedures found</p>
+      </div>
+
+      <div *ngIf="woundCareProcedures.length > 0" class="table-container">
+          <table class="procedures-table">
+              <thead>
+                  <tr>
+                      <th>Wound Care Number</th>
+                      <th>Patient</th>
+                      <th>Wound Type</th>
+                      <th>Location</th>
+                      <th>Treatment Plan</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  <tr *ngFor="let procedure of woundCareProcedures">
+                      <td>{{ procedure.woundCareNumber || procedure.procedureNumber }}</td>
+                      <td>{{ procedure.patientName || 'Unknown' }}</td>
+                      <td>{{ procedure.woundType || 'N/A' }}</td>
+                      <td>{{ procedure.woundLocation || 'N/A' }}</td>
+                      <td>{{ procedure.treatmentPlan || 'N/A' }}</td>
+                      <td>
+                          <span class="status-badge" [ngClass]="getScheduleStatusClass(procedure.status)">
+                              {{ procedure.status }}
+                          </span>
+                      </td>
+                      <td>
+                          <button type="button" class="action-btn view-btn" 
+                              (click)="viewInjectionDetails(procedure.woundCareID || procedure.procedureID, procedure.patientID)">
+                              View Details
+                          </button>
+                          <button type="button" *ngIf="procedure.status === 'Active'" 
+                              class="action-btn administer-btn" 
+                              (click)="administerProcedure(procedure.woundCareID || procedure.procedureID, 'WoundCare')">
+                              Administer
+                          </button>
+                      </td>
+                  </tr>
+              </tbody>
+          </table>
+      </div>
+  </div>
+
+  <!-- All Active Suturing Tab -->
+  <div *ngIf="selectedTab === 'all' && selectedProcedureTab === 'suturing' && !isLoading" class="procedure-section">
+      <div class="section-header">
+          <h3>All Active Suturing Procedures</h3>
+          <button type="button" class="refresh-btn" (click)="refreshData()">
+              <span>↻</span> Refresh
+          </button>
+      </div>
+
+      <div *ngIf="suturingProcedures.length === 0" class="no-data">
+          <p>No active suturing procedures found</p>
+      </div>
+
+      <div *ngIf="suturingProcedures.length > 0" class="table-container">
+          <table class="procedures-table">
+              <thead>
+                  <tr>
+                      <th>Suturing Number</th>
+                      <th>Patient</th>
+                      <th>Wound Type</th>
+                      <th>Location</th>
+                      <th>Suture Type</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  <tr *ngFor="let procedure of suturingProcedures">
+                      <td>{{ procedure.suturingNumber || procedure.procedureNumber }}</td>
+                      <td>{{ procedure.patientName || 'Unknown' }}</td>
+                      <td>{{ procedure.woundType || 'N/A' }}</td>
+                      <td>{{ procedure.woundLocation || 'N/A' }}</td>
+                      <td>{{ procedure.sutureType || 'N/A' }}</td>
+                      <td>
+                          <span class="status-badge" [ngClass]="getScheduleStatusClass(procedure.status)">
+                              {{ procedure.status }}
+                          </span>
+                      </td>
+                      <td>
+                          <button type="button" class="action-btn view-btn" 
+                              (click)="viewInjectionDetails(procedure.suturingID || procedure.procedureID, procedure.patientID)">
+                              View Details
+                          </button>
+                          <button type="button" *ngIf="procedure.status === 'Active'" 
+                              class="action-btn administer-btn" 
+                              (click)="administerProcedure(procedure.suturingID || procedure.procedureID, 'Suturing')">
+                              Administer
+                          </button>
+                      </td>
+                  </tr>
+              </tbody>
+          </table>
+      </div>
+  </div>
+
+  <!-- All Active Ear Irrigation Tab -->
+  <div *ngIf="selectedTab === 'all' && selectedProcedureTab === 'ear-irrigation' && !isLoading" class="procedure-section">
+      <div class="section-header">
+          <h3>All Active Ear Irrigation Procedures</h3>
+          <button type="button" class="refresh-btn" (click)="refreshData()">
+              <span>↻</span> Refresh
+          </button>
+      </div>
+
+      <div *ngIf="earIrrigationProcedures.length === 0" class="no-data">
+          <p>No active ear irrigation procedures found</p>
+      </div>
+
+      <div *ngIf="earIrrigationProcedures.length > 0" class="table-container">
+          <table class="procedures-table">
+              <thead>
+                  <tr>
+                      <th>Ear Irrigation Number</th>
+                      <th>Patient</th>
+                      <th>Ear Side</th>
+                      <th>Solution</th>
+                      <th>Temperature</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  <tr *ngFor="let procedure of earIrrigationProcedures">
+                      <td>{{ procedure.earIrrigationNumber || procedure.procedureNumber }}</td>
+                      <td>{{ procedure.patientName || 'Unknown' }}</td>
+                      <td>{{ procedure.earSide || 'N/A' }}</td>
+                      <td>{{ procedure.irrigationSolution || 'N/A' }}</td>
+                      <td>{{ procedure.solutionTemperature || 'N/A' }}</td>
+                      <td>
+                          <span class="status-badge" [ngClass]="getScheduleStatusClass(procedure.status)">
+                              {{ procedure.status }}
+                          </span>
+                      </td>
+                      <td>
+                          <button type="button" class="action-btn view-btn" 
+                              (click)="viewInjectionDetails(procedure.earIrrigationID || procedure.procedureID, procedure.patientID)">
+                              View Details
+                          </button>
+                          <button type="button" *ngIf="procedure.status === 'Active'" 
+                              class="action-btn administer-btn" 
+                              (click)="administerProcedure(procedure.earIrrigationID || procedure.procedureID, 'EarIrrigation')">
+                              Administer
+                          </button>
+                      </td>
+                  </tr>
+              </tbody>
+          </table>
       </div>
   </div>
 </div>

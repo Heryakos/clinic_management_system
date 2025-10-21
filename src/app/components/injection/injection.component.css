@@ -17,6 +17,54 @@
   background-clip: text;
 }
 
+/* Procedure Tabs */
+.procedure-tabs-container {
+  margin-bottom: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+}
+
+.procedure-tabs {
+  display: flex;
+  gap: 5px;
+  border-bottom: none;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 5px;
+}
+
+.procedure-tab-button {
+  flex: 1;
+  padding: 15px 20px;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.procedure-tab-button:hover {
+  color: #2c5aa0;
+  background: rgba(44, 90, 160, 0.08);
+  transform: translateY(-1px);
+}
+
+.procedure-tab-button.active {
+  color: white;
+  background: linear-gradient(135deg, #2c5aa0 0%, #3498db 100%);
+  box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+}
+
 /* Tabs */
 .tabs-container {
   margin-bottom: 30px;
@@ -546,6 +594,43 @@
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   padding: 30px;
+}
+
+/* Procedure Sections */
+.procedure-section {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  margin-top: 20px;
+}
+
+/* Procedure Cards Grid */
+.procedures-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 25px;
+  margin-top: 20px;
+}
+
+.procedure-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid #e9ecef;
+}
+
+.procedure-card:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-5px);
+}
+
+.procedure-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
 }
 
 /* Responsive Design */

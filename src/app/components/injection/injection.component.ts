@@ -24,8 +24,15 @@ export class InjectionComponent implements OnInit {
     // New properties from InjectionManagementComponent
     todaySchedules: any[] = [];
     selectedTab: 'today' | 'all' | 'patient' = 'today';
+    selectedProcedureTab: 'injections' | 'wound-care' | 'suturing' | 'ear-irrigation' = 'injections';
     isLoading = false;
     currentUserID: string | null = null;
+    
+    // Procedure data properties
+    woundCareProcedures: any[] = [];
+    suturingProcedures: any[] = [];
+    earIrrigationProcedures: any[] = [];
+    todayProcedures: any[] = [];
 
     constructor(
         private fb: FormBuilder,
@@ -72,6 +79,124 @@ export class InjectionComponent implements OnInit {
             this.loadActiveInjectionsQueue();
         }
         // 'patient' tab uses the existing search functionality
+    }
+
+    // Procedure tab management
+    selectProcedureTab(tab: 'injections' | 'wound-care' | 'suturing' | 'ear-irrigation'): void {
+        this.selectedProcedureTab = tab;
+        // Reset to default injection tab when switching procedures
+        if (tab === 'injections') {
+            this.selectedTab = 'today';
+            this.loadTodaySchedules();
+        } else {
+            this.loadTodayProcedures();
+        }
+    }
+
+    // Load today's procedures for all procedure types
+    loadTodayProcedures(): void {
+        this.isLoading = true;
+        this.medicalService.getTodayPendingProcedures().subscribe({
+            next: (procedures) => {
+                this.todayProcedures = (procedures || []).map((procedure: any) => {
+                    const converted = this.convertToCamelCase(procedure);
+                    // Map procedure-specific fields based on type
+                    if (procedure.ProcedureType === 'WoundCare') {
+                        converted.woundType = procedure.WoundType || 'Unknown';
+                        converted.woundLocation = procedure.WoundLocation || 'Unknown';
+                        converted.treatmentPlan = procedure.TreatmentPlan || 'Unknown';
+                    } else if (procedure.ProcedureType === 'Suturing') {
+                        converted.woundType = procedure.WoundType || 'Unknown';
+                        converted.woundLocation = procedure.WoundLocation || 'Unknown';
+                        converted.treatmentPlan = procedure.TreatmentPlan || 'Unknown';
+                    } else if (procedure.ProcedureType === 'EarIrrigation') {
+                        converted.earSide = procedure.EarSide || 'Unknown';
+                        converted.irrigationSolution = procedure.IrrigationSolution || 'Unknown';
+                        converted.solutionTemperature = procedure.SolutionTemperature || 'Unknown';
+                    }
+                    return converted;
+                });
+                this.isLoading = false;
+                this.cdr.detectChanges();
+            },
+            error: (error) => {
+                console.error('Error loading today procedures:', error);
+                this.showSnackBar('Error loading today\'s procedures', 'error-snackbar');
+                this.isLoading = false;
+                this.cdr.detectChanges();
+            }
+        });
+    }
+
+    // Load wound care procedures for patient
+    loadPatientWoundCare(patientID: number): void {
+        this.medicalService.getPatientWoundCare(patientID).subscribe(
+            procedures => {
+                this.woundCareProcedures = (procedures || []).map((procedure: any) => this.convertToCamelCase(procedure));
+            },
+            error => {
+                this.woundCareProcedures = [];
+                this.showSnackBar(`Error loading wound care procedures: ${error.message}`, 'error-snackbar');
+            }
+        );
+    }
+
+    // Load suturing procedures for patient
+    loadPatientSuturing(patientID: number): void {
+        this.medicalService.getPatientSuturing(patientID).subscribe(
+            procedures => {
+                this.suturingProcedures = (procedures || []).map((procedure: any) => this.convertToCamelCase(procedure));
+            },
+            error => {
+                this.suturingProcedures = [];
+                this.showSnackBar(`Error loading suturing procedures: ${error.message}`, 'error-snackbar');
+            }
+        );
+    }
+
+    // Load ear irrigation procedures for patient
+    loadPatientEarIrrigation(patientID: number): void {
+        this.medicalService.getPatientEarIrrigation(patientID).subscribe(
+            procedures => {
+                this.earIrrigationProcedures = (procedures || []).map((procedure: any) => this.convertToCamelCase(procedure));
+            },
+            error => {
+                this.earIrrigationProcedures = [];
+                this.showSnackBar(`Error loading ear irrigation procedures: ${error.message}`, 'error-snackbar');
+            }
+        );
+    }
+
+    // Administer procedure
+    administerProcedure(procedureID: number, procedureType: 'Injection' | 'WoundCare' | 'Suturing' | 'EarIrrigation'): void {
+        if (!this.nurseId) {
+            this.showSnackBar('User not authenticated', 'error-snackbar');
+            return;
+        }
+
+        if (confirm(`Confirm administering ${procedureType} procedure #${procedureID}?`)) {
+            const request = {
+                procedureID: procedureID,
+                procedureType: procedureType,
+                performedBy: this.nurseId,
+                performedDate: new Date(),
+                notes: ''
+            };
+
+            this.isLoading = true;
+            this.medicalService.administerProcedure(request).subscribe({
+                next: () => {
+                    this.showSnackBar(`${procedureType} procedure administered successfully`, 'success-snackbar');
+                    this.refreshData();
+                    this.isLoading = false;
+                },
+                error: (error) => {
+                    console.error('Error administering procedure:', error);
+                    this.showSnackBar('Error administering procedure', 'error-snackbar');
+                    this.isLoading = false;
+                }
+            });
+        }
     }
 
     // Methods from InjectionManagementComponent
@@ -263,12 +388,16 @@ export class InjectionComponent implements OnInit {
     }
 
     refreshData(): void {
-        if (this.selectedTab === 'today') {
-            this.loadTodaySchedules();
-        } else if (this.selectedTab === 'all') {
-            this.loadActiveInjectionsQueue();
-        } else if (this.selectedTab === 'patient' && this.patient?.patientID) {
-            this.loadPatientInjections(this.patient.patientID);
+        if (this.selectedProcedureTab === 'injections') {
+            if (this.selectedTab === 'today') {
+                this.loadTodaySchedules();
+            } else if (this.selectedTab === 'all') {
+                this.loadActiveInjectionsQueue();
+            } else if (this.selectedTab === 'patient' && this.patient?.patientID) {
+                this.loadPatientInjections(this.patient.patientID);
+            }
+        } else {
+            this.loadTodayProcedures();
         }
     }
 

@@ -14,8 +14,14 @@
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
             "allowedCommonJsDependencies": [
+              "canvg",
+              "dompurify",
+              "html2canvas",
               "jspdf",
-              "jspdf-autotable"
+              "pdfmake/build/pdfmake",
+              "pdfmake/build/vfs_fonts",
+              "raf",
+              "rgbcolor"
             ],
             "outputPath": "dist/fhc-chms",
             "index": "src/index.html",
@@ -49,8 +55,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "6kb",
-                  "maximumError": "10kb"
+                  "maximumWarning": "20kb",
+                  "maximumError": "40kb"
                 }
               ],
               "outputHashing": "all"

@@ -31,11 +31,17 @@ export class DoctorComponent implements OnInit {
     labRequestForm!: FormGroup;
     prescriptionForm!: FormGroup;
     injectionForm!: FormGroup;
+    woundCareForm!: FormGroup;
+    suturingForm!: FormGroup;
+    earIrrigationForm!: FormGroup;
     assignmentForm!: FormGroup;
     patient: any | null = null;
     laboratoryTests: any[] = [];
     prescriptions: any[] = [];
     injections: any[] = [];
+    woundCareProcedures: any[] = [];
+    suturingProcedures: any[] = [];
+    earIrrigationProcedures: any[] = [];
     medications: any[] = [];
     injectableMedications: any[] = [];
     rooms: any[] = [];
@@ -45,7 +51,11 @@ export class DoctorComponent implements OnInit {
     isRequestingLab = false;
     isRequestingPrescription = false;
     isRequestingInjection = false;
+    isRequestingWoundCare = false;
+    isRequestingSuturing = false;
+    isRequestingEarIrrigation = false;
     isAssigning = false;
+    selectedProcedureType: 'injection' | 'wound-care' | 'suturing' | 'ear-irrigation' = 'injection';
     showHistoryIndex: number | null = null; // Track which history item is expanded
     createdBy: string | null = null;
     availableTests: { name: string; normalRange: string; unit: string }[] = [];
@@ -83,6 +93,9 @@ export class DoctorComponent implements OnInit {
         this.initializeLabRequestForm();
         this.initializePrescriptionForm();
         this.initializeInjectionForm();
+        this.initializeWoundCareForm();
+        this.initializeSuturingForm();
+        this.initializeEarIrrigationForm();
         this.initializeAssignmentForm();
         this.loadMedications();
         this.loadInjectableMedications();
@@ -512,6 +525,64 @@ export class DoctorComponent implements OnInit {
         });
       }
 
+    initializeWoundCareForm(): void {
+        const generatedWoundCareNumber = 'WC' + Date.now().toString();
+        this.woundCareForm = this.fb.group({
+          woundCareNumber: [generatedWoundCareNumber, Validators.required],
+          woundType: ['', Validators.required],
+          woundLocation: ['', Validators.required],
+          woundSize: ['', Validators.required],
+          woundDepth: ['', Validators.required],
+          woundCondition: ['', Validators.required],
+          treatmentPlan: ['', Validators.required],
+          dressingType: ['', Validators.required],
+          cleaningSolution: ['', Validators.required],
+          instructions: [''],
+          notes: [''],
+          isRecurring: [false],
+          frequency: [''],
+          totalSessions: [1, [Validators.required, Validators.min(1)]]
+        });
+    }
+
+    initializeSuturingForm(): void {
+        const generatedSuturingNumber = 'SUT' + Date.now().toString();
+        this.suturingForm = this.fb.group({
+          suturingNumber: [generatedSuturingNumber, Validators.required],
+          woundType: ['', Validators.required],
+          woundLocation: ['', Validators.required],
+          woundSize: ['', Validators.required],
+          woundDepth: ['', Validators.required],
+          sutureType: ['', Validators.required],
+          sutureMaterial: ['', Validators.required],
+          sutureSize: ['', Validators.required],
+          numStitches: [1, [Validators.required, Validators.min(1)]],
+          anesthesiaUsed: [''],
+          instructions: [''],
+          notes: [''],
+          followUpRequired: [false],
+          followUpDate: [null]
+        });
+    }
+
+    initializeEarIrrigationForm(): void {
+        const generatedEarIrrigationNumber = 'EI' + Date.now().toString();
+        this.earIrrigationForm = this.fb.group({
+          earIrrigationNumber: [generatedEarIrrigationNumber, Validators.required],
+          earSide: ['', Validators.required],
+          irrigationSolution: ['', Validators.required],
+          solutionTemperature: ['', Validators.required],
+          irrigationPressure: ['', Validators.required],
+          procedureDuration: [30, [Validators.required, Validators.min(1)]],
+          findings: [''],
+          complications: [''],
+          instructions: [''],
+          notes: [''],
+          followUpRequired: [false],
+          followUpDate: [null]
+        });
+    }
+
     initializeAssignmentForm(): void {
         this.assignmentForm = this.fb.group({
             assignedRoom: ['', Validators.required],
@@ -912,13 +983,82 @@ export class DoctorComponent implements OnInit {
             maxHeight: '90vh',
             data: { 
                 injectionID: injectionID, 
-                patientID: this.patient.PatientID, // ✅ This is now required
+                patientID: this.patient.PatientID,
                 dialogTitle: 'Injection Details' 
             }
         });
     
         dialogRef.afterClosed().subscribe(result => {
             console.log('Injection dialog closed', result);
+        });
+    }
+
+    viewWoundCareDetails(procedureID: number): void {
+        if (!this.patient?.PatientID) {
+            this.showSnackBar('No patient selected.', 'Close', 5000, 'error-snackbar');
+            return;
+        }
+    
+        const dialogRef = this.dialog.open(InjectionPaperComponent, {
+            width: '800px',
+            height: 'auto',
+            maxHeight: '90vh',
+            data: { 
+                procedureID: procedureID,
+                procedureType: 'WoundCare',
+                patientID: this.patient.PatientID,
+                dialogTitle: 'Wound Care Details' 
+            }
+        });
+    
+        dialogRef.afterClosed().subscribe(result => {
+            console.log('Wound Care dialog closed', result);
+        });
+    }
+
+    viewSuturingDetails(procedureID: number): void {
+        if (!this.patient?.PatientID) {
+            this.showSnackBar('No patient selected.', 'Close', 5000, 'error-snackbar');
+            return;
+        }
+    
+        const dialogRef = this.dialog.open(InjectionPaperComponent, {
+            width: '800px',
+            height: 'auto',
+            maxHeight: '90vh',
+            data: { 
+                procedureID: procedureID,
+                procedureType: 'Suturing',
+                patientID: this.patient.PatientID,
+                dialogTitle: 'Suturing Details' 
+            }
+        });
+    
+        dialogRef.afterClosed().subscribe(result => {
+            console.log('Suturing dialog closed', result);
+        });
+    }
+
+    viewEarIrrigationDetails(procedureID: number): void {
+        if (!this.patient?.PatientID) {
+            this.showSnackBar('No patient selected.', 'Close', 5000, 'error-snackbar');
+            return;
+        }
+    
+        const dialogRef = this.dialog.open(InjectionPaperComponent, {
+            width: '800px',
+            height: 'auto',
+            maxHeight: '90vh',
+            data: { 
+                procedureID: procedureID,
+                procedureType: 'EarIrrigation',
+                patientID: this.patient.PatientID,
+                dialogTitle: 'Ear Irrigation Details' 
+            }
+        });
+    
+        dialogRef.afterClosed().subscribe(result => {
+            console.log('Ear Irrigation dialog closed', result);
         });
     }
 
@@ -1118,6 +1258,72 @@ export class DoctorComponent implements OnInit {
         }
     }
     
+    // Procedure type selection
+    selectProcedureType(type: 'injection' | 'wound-care' | 'suturing' | 'ear-irrigation'): void {
+        this.selectedProcedureType = type;
+        // Load data for the selected procedure type
+        if (this.patient && this.patient.PatientID) {
+            const patientID = parseInt(this.patient.PatientID, 10);
+            switch (type) {
+                case 'wound-care':
+                    this.loadPatientWoundCare(patientID);
+                    break;
+                case 'suturing':
+                    this.loadPatientSuturing(patientID);
+                    break;
+                case 'ear-irrigation':
+                    this.loadPatientEarIrrigation(patientID);
+                    break;
+                case 'injection':
+                default:
+                    this.loadPatientInjections(patientID);
+                    break;
+            }
+        }
+    }
+
+    // Load wound care procedures for patient
+    loadPatientWoundCare(patientID: number): void {
+        this.medicalService.getPatientWoundCare(patientID).subscribe(
+            (procedures: any[]) => {
+                this.woundCareProcedures = procedures || [];
+                console.log('Loaded wound care procedures:', this.woundCareProcedures);
+            },
+            (error) => {
+                this.woundCareProcedures = [];
+                console.error('Error loading wound care procedures:', error);
+            }
+        );
+    }
+
+    // Load suturing procedures for patient
+    loadPatientSuturing(patientID: number): void {
+        this.medicalService.getPatientSuturing(patientID).subscribe(
+            (procedures: any[]) => {
+                this.suturingProcedures = procedures || [];
+                console.log('Loaded suturing procedures:', this.suturingProcedures);
+            },
+            (error) => {
+                this.suturingProcedures = [];
+                console.error('Error loading suturing procedures:', error);
+            }
+        );
+    }
+
+    // Load ear irrigation procedures for patient
+    loadPatientEarIrrigation(patientID: number): void {
+        this.medicalService.getPatientEarIrrigation(patientID).subscribe(
+            (procedures: any[]) => {
+                this.earIrrigationProcedures = procedures || [];
+                console.log('Loaded ear irrigation procedures:', this.earIrrigationProcedures);
+            },
+            (error) => {
+                this.earIrrigationProcedures = [];
+                console.error('Error loading ear irrigation procedures:', error);
+            }
+        );
+    }
+
     onInjectionSubmit(): void {
         if (this.injectionForm.valid && this.patient && this.createdBy) {
           this.isRequestingInjection = true;
@@ -1190,6 +1396,142 @@ export class DoctorComponent implements OnInit {
           }
         }
       }
+
+    onWoundCareSubmit(): void {
+        if (this.woundCareForm.valid && this.patient && this.createdBy) {
+            this.isRequestingWoundCare = true;
+            const patientID = parseInt(this.patient.PatientID, 10);
+            const cardNumber = this.patient.CardNumber;
+            const form = this.woundCareForm.getRawValue();
+
+            const woundCare = {
+                woundCareNumber: form.woundCareNumber,
+                patientID: patientID,
+                cardNumber: cardNumber,
+                orderingPhysicianID: this.createdBy,
+                woundType: form.woundType,
+                woundLocation: form.woundLocation,
+                woundSize: form.woundSize,
+                woundDepth: form.woundDepth,
+                woundCondition: form.woundCondition,
+                treatmentPlan: form.treatmentPlan,
+                dressingType: form.dressingType,
+                cleaningSolution: form.cleaningSolution,
+                instructions: form.instructions || null,
+                notes: form.notes || null,
+                createdBy: this.createdBy,
+                isRecurring: form.isRecurring || false,
+                frequency: form.frequency || null,
+                totalSessions: form.totalSessions || 1
+            };
+
+            this.medicalService.createWoundCare(woundCare).subscribe(
+                (response) => {
+                    this.isRequestingWoundCare = false;
+                    this.showSnackBar('Wound care procedure requested successfully!', 'Close', 3000, 'success-snackbar');
+                    this.woundCareForm.reset();
+                    this.initializeWoundCareForm();
+                },
+                (error) => {
+                    this.isRequestingWoundCare = false;
+                    this.showSnackBar(`Error requesting wound care: ${error.message}`, 'Close', 5000, 'error-snackbar');
+                }
+            );
+        } else {
+            this.isRequestingWoundCare = false;
+            this.showSnackBar('Please fill all required fields correctly.', 'Close', 5000, 'error-snackbar');
+        }
+    }
+
+    onSuturingSubmit(): void {
+        if (this.suturingForm.valid && this.patient && this.createdBy) {
+            this.isRequestingSuturing = true;
+            const patientID = parseInt(this.patient.PatientID, 10);
+            const cardNumber = this.patient.CardNumber;
+            const form = this.suturingForm.getRawValue();
+
+            const suturing = {
+                suturingNumber: form.suturingNumber,
+                patientID: patientID,
+                cardNumber: cardNumber,
+                orderingPhysicianID: this.createdBy,
+                woundType: form.woundType,
+                woundLocation: form.woundLocation,
+                woundSize: form.woundSize,
+                woundDepth: form.woundDepth,
+                sutureType: form.sutureType,
+                sutureMaterial: form.sutureMaterial,
+                sutureSize: form.sutureSize,
+                numStitches: form.numStitches,
+                anesthesiaUsed: form.anesthesiaUsed || null,
+                instructions: form.instructions || null,
+                notes: form.notes || null,
+                createdBy: this.createdBy,
+                followUpRequired: form.followUpRequired || false,
+                followUpDate: form.followUpDate || null
+            };
+
+            this.medicalService.createSuturing(suturing).subscribe(
+                (response) => {
+                    this.isRequestingSuturing = false;
+                    this.showSnackBar('Suturing procedure requested successfully!', 'Close', 3000, 'success-snackbar');
+                    this.suturingForm.reset();
+                    this.initializeSuturingForm();
+                },
+                (error) => {
+                    this.isRequestingSuturing = false;
+                    this.showSnackBar(`Error requesting suturing: ${error.message}`, 'Close', 5000, 'error-snackbar');
+                }
+            );
+        } else {
+            this.isRequestingSuturing = false;
+            this.showSnackBar('Please fill all required fields correctly.', 'Close', 5000, 'error-snackbar');
+        }
+    }
+
+    onEarIrrigationSubmit(): void {
+        if (this.earIrrigationForm.valid && this.patient && this.createdBy) {
+            this.isRequestingEarIrrigation = true;
+            const patientID = parseInt(this.patient.PatientID, 10);
+            const cardNumber = this.patient.CardNumber;
+            const form = this.earIrrigationForm.getRawValue();
+
+            const earIrrigation = {
+                earIrrigationNumber: form.earIrrigationNumber,
+                patientID: patientID,
+                cardNumber: cardNumber,
+                orderingPhysicianID: this.createdBy,
+                earSide: form.earSide,
+                irrigationSolution: form.irrigationSolution,
+                solutionTemperature: form.solutionTemperature,
+                irrigationPressure: form.irrigationPressure,
+                procedureDuration: form.procedureDuration,
+                findings: form.findings || null,
+                complications: form.complications || null,
+                instructions: form.instructions || null,
+                notes: form.notes || null,
+                createdBy: this.createdBy,
+                followUpRequired: form.followUpRequired || false,
+                followUpDate: form.followUpDate || null
+            };
+
+            this.medicalService.createEarIrrigation(earIrrigation).subscribe(
+                (response) => {
+                    this.isRequestingEarIrrigation = false;
+                    this.showSnackBar('Ear irrigation procedure requested successfully!', 'Close', 3000, 'success-snackbar');
+                    this.earIrrigationForm.reset();
+                    this.initializeEarIrrigationForm();
+                },
+                (error) => {
+                    this.isRequestingEarIrrigation = false;
+                    this.showSnackBar(`Error requesting ear irrigation: ${error.message}`, 'Close', 5000, 'error-snackbar');
+                }
+            );
+        } else {
+            this.isRequestingEarIrrigation = false;
+            this.showSnackBar('Please fill all required fields correctly.', 'Close', 5000, 'error-snackbar');
+        }
+    }
 
     convertEthToGreg(eth: EthiopianDate): Date {
       const jd = 1723856 + 365 * (eth.year - 1) + Math.floor(eth.year / 4) + 30 * eth.month + eth.day - 31.5;

@@ -3,6 +3,7 @@
   margin: 0 auto;
   padding: 20px;
 }
+
 .notification-btn-container {
   display: flex;
   justify-content: flex-end;
@@ -25,6 +26,7 @@
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
+
 .laboratory-container h2 {
   color: #2c3e50;
   margin-bottom: 30px;
@@ -228,11 +230,13 @@
   top: 0; left: 0; right: 0; bottom: 0;
   z-index: 1000;
 }
+
 .dialog-backdrop {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0,0,0,0.4);
 }
+
 .dialog-content {
   position: absolute;
   top: 50%; left: 50%;
@@ -244,6 +248,7 @@
   max-width: 90vw;
   box-shadow: 0 8px 32px rgba(0,0,0,0.2);
 }
+
 .test-detail-card {
   background: #f8f9fa;
   border-radius: 8px;
@@ -251,6 +256,7 @@
   margin-bottom: 16px;
   box-shadow: 0 2px 8px rgba(102,126,234,0.08);
 }
+
 .close-btn {
   margin-top: 16px;
   background: #667eea;
@@ -261,6 +267,7 @@
   font-size: 16px;
   cursor: pointer;
 }
+
 .close-btn:hover {
   background: #4b5bdc;
 }
@@ -292,6 +299,7 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
 /* Custom checkbox wrapper */
 .custom-checkbox {
   position: relative;
@@ -351,6 +359,7 @@
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
+
 .test-details-container {
   margin: 20px 0;
   padding: 15px;
@@ -395,6 +404,7 @@
   margin-bottom: 10px;
   font-style: italic;
 }
+
 @media (max-width: 768px) {
   .laboratory-container {
     padding: 10px;

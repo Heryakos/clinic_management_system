@@ -4,6 +4,446 @@
   padding: 20px;
 }
 
+/* Procedure Type Selection Styles */
+.procedure-type-selection {
+  margin-bottom: 30px;
+  padding: 25px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.procedure-type-selection h3 {
+  margin-bottom: 25px;
+  color: #2c3e50;
+  font-size: 1.5em;
+  font-weight: 700;
+  text-align: center;
+  position: relative;
+}
+
+.procedure-type-selection h3::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, #007bff, #28a745);
+  border-radius: 2px;
+}
+
+.procedure-type-tabs {
+  display: flex;
+  gap: 20px; /* Increased gap for better spacing */
+  max-width: 800px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.procedure-type-btn {
+  padding: 18px 24px;
+  border: 2px solid transparent;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  color: #495057;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  min-height: 60px;
+  min-width: 150px; /* Added min-width for better sizing */
+}
+
+.procedure-type-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.5s;
+}
+
+.procedure-type-btn:hover::before {
+  left: 100%;
+}
+
+.procedure-type-btn:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-color: #007bff;
+}
+
+/* Individual procedure type styling */
+.procedure-type-btn:nth-child(1):hover {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  color: #1976d2;
+  border-color: #1976d2;
+}
+
+.procedure-type-btn:nth-child(2):hover {
+  background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+  color: #7b1fa2;
+  border-color: #7b1fa2;
+}
+
+.procedure-type-btn:nth-child(3):hover {
+  background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+  color: #388e3c;
+  border-color: #388e3c;
+}
+
+.procedure-type-btn:nth-child(4):hover {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffcc80 100%);
+  color: #f57c00;
+  border-color: #f57c00;
+}
+
+.procedure-type-btn.active {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Active states for each procedure type */
+.procedure-type-btn:nth-child(1).active {
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  border-color: #1976d2;
+  color: white;
+}
+
+.procedure-type-btn:nth-child(2).active {
+  background: linear-gradient(135deg, #7b1fa2 0%, #6a1b9a 100%);
+  border-color: #7b1fa2;
+  color: white;
+}
+
+.procedure-type-btn:nth-child(3).active {
+  background: linear-gradient(135deg, #388e3c 0%, #2e7d32 100%);
+  border-color: #388e3c;
+  color: white;
+}
+
+.procedure-type-btn:nth-child(4).active {
+  background: linear-gradient(135deg, #f57c00 0%, #ef6c00 100%);
+  border-color: #f57c00;
+  color: white;
+}
+
+/* Icon styling */
+.procedure-type-btn .emoji {
+  font-size: 20px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+.procedure-type-btn.active .emoji {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Form Styles for New Procedure Types */
+.wound-care-request-form,
+.suturing-request-form,
+.ear-irrigation-request-form {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  padding: 30px;
+  border-radius: 15px;
+  border: 1px solid #e9ecef;
+  margin-bottom: 25px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.wound-care-request-form::before,
+.suturing-request-form::before,
+.ear-irrigation-request-form::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #007bff, #28a745, #ffc107, #dc3545);
+}
+
+.wound-care-request-form h3,
+.suturing-request-form h3,
+.ear-irrigation-request-form h3 {
+  color: #2c3e50;
+  margin-bottom: 25px;
+  font-size: 1.4em;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  padding-bottom: 10px;
+}
+
+.wound-care-request-form h3::after,
+.suturing-request-form h3::after,
+.ear-irrigation-request-form h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 50px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.wound-care-request-form h3::after {
+  background: linear-gradient(90deg, #7b1fa2, #e1bee7);
+}
+
+.suturing-request-form h3::after {
+  background: linear-gradient(90deg, #388e3c, #c8e6c9);
+}
+
+.ear-irrigation-request-form h3::after {
+  background: linear-gradient(90deg, #f57c00, #ffcc80);
+}
+
+.frequency-label,
+.followup-label {
+  display: block;
+  margin-top: 15px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-checkbox {
+  margin-right: 10px;
+  transform: scale(1.2);
+  accent-color: #007bff;
+}
+
+/* Enhanced form styling */
+.wound-care-request-form .form-control,
+.suturing-request-form .form-control,
+.ear-irrigation-request-form .form-control {
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: #ffffff;
+}
+
+.form-control:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  background: #ffffff;
+}
+
+.wound-care-request-form .submit-btn,
+.suturing-request-form .submit-btn,
+.ear-irrigation-request-form .submit-btn {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  border: none;
+  color: white;
+  padding: 14px 30px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.wound-care-request-form .submit-btn:hover,
+.suturing-request-form .submit-btn:hover,
+.ear-irrigation-request-form .submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+  background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+}
+
+.wound-care-request-form .submit-btn:disabled,
+.suturing-request-form .submit-btn:disabled,
+.ear-irrigation-request-form .submit-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Form row styling */
+.wound-care-request-form .form-row,
+.suturing-request-form .form-row,
+.ear-irrigation-request-form .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.wound-care-request-form .form-group,
+.suturing-request-form .form-group,
+.ear-irrigation-request-form .form-group {
+  margin-bottom: 0;
+}
+
+.wound-care-request-form .form-group label,
+.suturing-request-form .form-group label,
+.ear-irrigation-request-form .form-group label {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 8px;
+  display: block;
+  font-size: 14px;
+}
+
+/* Responsive Design for Procedure Type Tabs */
+@media (max-width: 768px) {
+  .procedure-type-tabs {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .procedure-type-btn {
+    justify-content: center;
+    text-align: center;
+    padding: 15px 20px;
+    font-size: 14px;
+  }
+
+  .wound-care-request-form .form-row,
+  .suturing-request-form .form-row,
+  .ear-irrigation-request-form .form-row {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .procedure-type-selection {
+    padding: 20px 15px;
+  }
+
+  .wound-care-request-form,
+  .suturing-request-form,
+  .ear-irrigation-request-form {
+    padding: 20px 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .procedure-type-btn {
+    padding: 12px 16px;
+    font-size: 13px;
+    min-height: 50px;
+  }
+
+  .procedure-type-btn .emoji {
+    font-size: 18px;
+  }
+}
+
+/* Enhanced injection form styling to match new design */
+.injection-request-form {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  padding: 30px;
+  border-radius: 15px;
+  border: 1px solid #e9ecef;
+  margin-bottom: 25px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.injection-request-form::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #1976d2, #42a5f5);
+}
+
+.injection-request-form h3 {
+  color: #2c3e50;
+  margin-bottom: 25px;
+  font-size: 1.4em;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  padding-bottom: 10px;
+}
+
+.injection-request-form h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 50px;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #1976d2, #42a5f5);
+}
+
+/* Enhanced form controls for injection form */
+.injection-request-form .form-control {
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: #ffffff;
+}
+
+.injection-request-form .form-control:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 0.2rem rgba(25, 118, 210, 0.25);
+  background: #ffffff;
+}
+
+.injection-request-form .submit-btn {
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  border: none;
+  color: white;
+  padding: 14px 30px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(25, 118, 210, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.injection-request-form .submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(25, 118, 210, 0.4);
+  background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
+}
+
+.injection-request-form .submit-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 .notification-btn-container {
   display: flex;
   justify-content: flex-end;
@@ -229,12 +669,17 @@ textarea.form-control {
 
 .table-container {
   overflow-x: auto;
+  margin-top: 20px; /* Added margin for spacing from header */
+  border: 1px solid #e9ecef; /* Added border for definition */
+  border-radius: 8px; /* Rounded corners */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Subtle shadow */
 }
 
-.tests-table, .prescriptions-table, .injections-table {
+.tests-table, .prescriptions-table, .injections-table, .procedures-table {
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
+  border-collapse: separate; /* Changed to separate for border-spacing */
+  border-spacing: 0; /* No spacing between cells */
+  margin-top: 0; /* Removed extra margin */
 }
 
 .tests-table th,
@@ -242,23 +687,39 @@ textarea.form-control {
 .prescriptions-table th,
 .prescriptions-table td,
 .injections-table th,
-.injections-table td {
-  padding: 12px;
+.injections-table td,
+.procedures-table th,
+.procedures-table td {
+  padding: 12px 16px; /* Increased horizontal padding */
   text-align: left;
   border-bottom: 1px solid #e9ecef;
+  vertical-align: middle; /* Center content vertically */
 }
 
 .tests-table th,
 .prescriptions-table th,
-.injections-table th {
+.injections-table th,
+.procedures-table th {
   background-color: #f8f9fa;
   font-weight: 600;
   color: #495057;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  letter-spacing: 0.5px;
+  border-top: 1px solid #e9ecef; /* Added top border */
+}
+
+.tests-table tr:last-child td,
+.prescriptions-table tr:last-child td,
+.injections-table tr:last-child td,
+.procedures-table tr:last-child td {
+  border-bottom: none; /* Remove bottom border on last row */
 }
 
 .tests-table tr:hover,
 .prescriptions-table tr:hover,
-.injections-table tr:hover {
+.injections-table tr:hover,
+.procedures-table tr:hover {
   background-color: #f8f9fa;
 }
 
@@ -820,4 +1281,21 @@ textarea.form-control {
   .tab-button.active {
     border-bottom: 2px solid #667eea;
   }
+}
+
+/* Procedures List Styles */
+.procedures-list {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-top: 40px; /* Added margin to separate from tabs */
+}
+
+.procedures-list h3 {
+  color: #2c3e50;
+  margin-bottom: 25px;
+  font-size: 1.5em;
+  font-weight: 500;
+  text-align: center; /* Centered header */
 }

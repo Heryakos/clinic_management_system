@@ -1,10 +1,5 @@
 <div class="patient-card-container">
   <h2>Patient Card Management</h2>
-
-  <!-- <div class="notification-btn-container">
-    <button type="button" class="notification-btn" (click)="openNotificationDialog()">Send Notification</button>
-  </div> -->
-
   <!-- Search Form -->
   <div class="search-container">
     <form [formGroup]="searchForm" (ngSubmit)="onSearch()" class="search-form">
@@ -78,7 +73,7 @@
       </button>
       <button type="button" class="tab-button" [class.active]="selectedTab === 'injections'"
         (click)="selectTab('injections')">
-        Injection
+        💉 Procedure Room
       </button>
       <!-- <button 
         class="tab-button" 
@@ -339,37 +334,6 @@
           [testData]="selectedTestData" [testDetails]="selectedTestDetails" (close)="closeTestDetailsDialog()">
         </app-laboratory-report-dialog>
       </div>
-      <!-- <td>
-                    <button type="button" class="action-btn view" (click)="viewTestDetails(test.testID)">View
-                      Details</button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div> -->
-      <!-- Laboratory Test Details Dialog -->
-      <!-- <div class="test-details-dialog" *ngIf="showTestDetailsDialog">
-          <div class="dialog-backdrop" (click)="closeTestDetailsDialog()"></div>
-          <div class="dialog-content">
-            <h3>Test Results for Test #{{ selectedTestNumber }}</h3>
-            <div *ngIf="selectedTestDetails.length > 0; else noDetails">
-              <div class="test-detail-card" *ngFor="let detail of selectedTestDetails">
-                <div><strong>Test Name:</strong> {{ detail.testName }}</div>
-                <div><strong>Result:</strong> {{ detail.result || 'N/A' }}</div>
-                <div><strong>Normal Range:</strong> {{ detail.normalRange || 'N/A' }}</div>
-                <div><strong>Unit:</strong> {{ detail.unit || 'N/A' }}</div>
-                <div><strong>Is Abnormal:</strong> {{ detail.isAbnormal ? 'Yes' : 'No' }}</div>
-                <div><strong>Comments:</strong> {{ detail.comments || 'N/A' }}</div>
-              </div>
-            </div>
-            <ng-template #noDetails>
-              <div>No test details found.</div>
-            </ng-template>
-            <button type="button" class="close-btn" (click)="closeTestDetailsDialog()">Close</button>
-          </div>
-        </div> -->
-      <!-- </div> -->
 
       <!-- Prescriptions Tab -->
       <div *ngIf="selectedTab === 'prescriptions'">
@@ -523,37 +487,7 @@
             (close)="closePrescriptionDetailsDialog()">
           </app-prescription-paper>
         </div>
-        <!-- <td>
-                    <button type="button" class="action-btn view"
-                      (click)="viewPrescriptionDetails(prescription.prescriptionID)">View Details</button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div> -->
-        <!-- Prescription Details Dialog -->
-        <!-- <div class="prescription-details-dialog" *ngIf="showPrescriptionDetailsDialog">
-    <div class="dialog-backdrop" (click)="closePrescriptionDetailsDialog()"></div>
-    <div class="dialog-content">
-      <h3>Prescription Details for #{{ selectedPrescriptionNumber }}</h3>
-      <div *ngIf="selectedPrescriptionDetails.length > 0; else noPrescriptionDetails">
-        <div class="prescription-detail-card" *ngFor="let detail of selectedPrescriptionDetails">
-          <div><strong>Medication:</strong> {{ detail.medicationName }}</div>
-          <div><strong>Dose:</strong> {{ detail.dose }}</div>
-          <div><strong>Frequency:</strong> {{ detail.frequency }}</div>
-          <div><strong>Duration:</strong> {{ detail.duration }}</div>
-          <div><strong>Quantity:</strong> {{ detail.quantity }}</div>
-          <div><strong>Unit Price:</strong> {{ detail.unitPrice | currency:'ETB':'symbol':'1.2-2' }}</div>
-          <div><strong>Instructions:</strong> {{ detail.instructions || 'N/A' }}</div>
-        </div>
-      </div>
-      <ng-template #noPrescriptionDetails>
-        <div>No prescription details found.</div>
-      </ng-template>
-      <button class="close-btn" (click)="closePrescriptionDetailsDialog()">Close</button>
-    </div>
-  </div>  -->
+       
         <div class="prescription-details-dialog" *ngIf="showPrescriptionDetailsDialog">
           <div class="dialog-backdrop" (click)="closePrescriptionDetailsDialog()"></div>
           <div class="dialog-content">
@@ -568,9 +502,36 @@
 
       <!-- Injections Tab -->
       <div *ngIf="selectedTab === 'injections'">
-        <!-- Injection Request Form -->
-        <div class="injection-request-form">
-          <h3>Request Injection</h3>
+        <!-- Procedure Type Selection -->
+        <div class="procedure-type-selection">
+          <h3>💉 Procedure Room Request</h3>
+          <div class="procedure-type-tabs">
+            <button type="button" class="procedure-type-btn" 
+                [class.active]="selectedProcedureType === 'injection'"
+                (click)="selectProcedureType('injection')">
+                💉 Injection
+            </button>
+            <button type="button" class="procedure-type-btn" 
+                [class.active]="selectedProcedureType === 'wound-care'"
+                (click)="selectProcedureType('wound-care')">
+                🩹 Wound Care
+            </button>
+            <button type="button" class="procedure-type-btn" 
+                [class.active]="selectedProcedureType === 'suturing'"
+                (click)="selectProcedureType('suturing')">
+                🪡 Suturing
+            </button>
+            <button type="button" class="procedure-type-btn" 
+                [class.active]="selectedProcedureType === 'ear-irrigation'"
+                (click)="selectProcedureType('ear-irrigation')">
+                👂 Ear Irrigation
+            </button>
+          </div>
+        </div>
+
+        <!-- Injection Form -->
+        <div *ngIf="selectedProcedureType === 'injection'" class="injection-request-form">
+          <h3>💉 Request Injection</h3>
           <form [formGroup]="injectionForm" (ngSubmit)="onInjectionSubmit()" class="injection-form">
             <div class="form-row">
               <div class="form-group">
@@ -701,11 +662,349 @@
           </form>
         </div>
 
-        <!-- Injections List -->
-        <div class="injections-list">
-          <h3>Patient Injections</h3>
-          <div class="table-container">
-            <table class="injections-table">
+        <!-- Wound Care Form -->
+        <div *ngIf="selectedProcedureType === 'wound-care'" class="wound-care-request-form">
+          <h3>🩹 Request Wound Care</h3>
+          <form [formGroup]="woundCareForm" (ngSubmit)="onWoundCareSubmit()" class="wound-care-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="woundCareNumber">Wound Care Number:</label>
+                <input type="text" id="woundCareNumber" formControlName="woundCareNumber" class="form-control"
+                  [readonly]="true" placeholder="Auto-generated wound care number">
+              </div>
+              <div class="form-group">
+                <label for="woundType">Wound Type:</label>
+                <select id="woundType" formControlName="woundType" class="form-control">
+                  <option value="">Select wound type</option>
+                  <option value="Laceration">Laceration</option>
+                  <option value="Abrasion">Abrasion</option>
+                  <option value="Puncture">Puncture</option>
+                  <option value="Burn">Burn</option>
+                  <option value="Ulcer">Ulcer</option>
+                  <option value="Surgical">Surgical</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="woundLocation">Wound Location:</label>
+                <input type="text" id="woundLocation" formControlName="woundLocation" class="form-control" 
+                  placeholder="e.g., Left arm, Right leg">
+              </div>
+              <div class="form-group">
+                <label for="woundSize">Wound Size:</label>
+                <input type="text" id="woundSize" formControlName="woundSize" class="form-control" 
+                  placeholder="e.g., 2cm x 3cm">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="woundDepth">Wound Depth:</label>
+                <select id="woundDepth" formControlName="woundDepth" class="form-control">
+                  <option value="">Select depth</option>
+                  <option value="Superficial">Superficial</option>
+                  <option value="Partial thickness">Partial thickness</option>
+                  <option value="Full thickness">Full thickness</option>
+                  <option value="Deep">Deep</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="woundCondition">Wound Condition:</label>
+                <select id="woundCondition" formControlName="woundCondition" class="form-control">
+                  <option value="">Select condition</option>
+                  <option value="Clean">Clean</option>
+                  <option value="Contaminated">Contaminated</option>
+                  <option value="Infected">Infected</option>
+                  <option value="Healing">Healing</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="treatmentPlan">Treatment Plan:</label>
+                <textarea id="treatmentPlan" formControlName="treatmentPlan" class="form-control" rows="3"
+                  placeholder="Describe the treatment plan"></textarea>
+              </div>
+              <div class="form-group">
+                <label for="dressingType">Dressing Type:</label>
+                <select id="dressingType" formControlName="dressingType" class="form-control">
+                  <option value="">Select dressing</option>
+                  <option value="Gauze">Gauze</option>
+                  <option value="Hydrocolloid">Hydrocolloid</option>
+                  <option value="Foam">Foam</option>
+                  <option value="Film">Film</option>
+                  <option value="Alginate">Alginate</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cleaningSolution">Cleaning Solution:</label>
+                <select id="cleaningSolution" formControlName="cleaningSolution" class="form-control">
+                  <option value="">Select solution</option>
+                  <option value="Normal saline">Normal saline</option>
+                  <option value="Povidone iodine">Povidone iodine</option>
+                  <option value="Hydrogen peroxide">Hydrogen peroxide</option>
+                  <option value="Chlorhexidine">Chlorhexidine</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="isRecurring">Recurring Treatment:</label>
+                <input type="checkbox" id="isRecurring" formControlName="isRecurring" class="form-checkbox">
+                <label for="frequency" class="frequency-label" *ngIf="woundCareForm.get('isRecurring')?.value">Frequency:</label>
+                <select id="frequency" formControlName="frequency" class="form-control" 
+                  *ngIf="woundCareForm.get('isRecurring')?.value">
+                  <option value="">Select frequency</option>
+                  <option value="Daily">Daily</option>
+                  <option value="Every 2 days">Every 2 days</option>
+                  <option value="Weekly">Weekly</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="instructions">Special Instructions:</label>
+              <textarea id="instructions" formControlName="instructions" class="form-control" rows="3"
+                placeholder="Any special instructions for the procedure"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="notes">Notes:</label>
+              <textarea id="notes" formControlName="notes" class="form-control" rows="4"></textarea>
+            </div>
+
+            <button type="submit" class="submit-btn" [disabled]="woundCareForm.invalid || isRequestingWoundCare">
+              {{ isRequestingWoundCare ? 'Requesting...' : 'Request Wound Care' }}
+            </button>
+          </form>
+        </div>
+
+        <!-- Suturing Form -->
+        <div *ngIf="selectedProcedureType === 'suturing'" class="suturing-request-form">
+          <h3>🪡 Request Suturing</h3>
+          <form [formGroup]="suturingForm" (ngSubmit)="onSuturingSubmit()" class="suturing-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="suturingNumber">Suturing Number:</label>
+                <input type="text" id="suturingNumber" formControlName="suturingNumber" class="form-control"
+                  [readonly]="true" placeholder="Auto-generated suturing number">
+              </div>
+              <div class="form-group">
+                <label for="woundType">Wound Type:</label>
+                <select id="woundType" formControlName="woundType" class="form-control">
+                  <option value="">Select wound type</option>
+                  <option value="Laceration">Laceration</option>
+                  <option value="Surgical incision">Surgical incision</option>
+                  <option value="Trauma">Trauma</option>
+                  <option value="Clean cut">Clean cut</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="woundLocation">Wound Location:</label>
+                <input type="text" id="woundLocation" formControlName="woundLocation" class="form-control" 
+                  placeholder="e.g., Left arm, Right leg">
+              </div>
+              <div class="form-group">
+                <label for="woundSize">Wound Size:</label>
+                <input type="text" id="woundSize" formControlName="woundSize" class="form-control" 
+                  placeholder="e.g., 3cm x 1cm">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="sutureType">Suture Type:</label>
+                <select id="sutureType" formControlName="sutureType" class="form-control">
+                  <option value="">Select suture type</option>
+                  <option value="Simple interrupted">Simple interrupted</option>
+                  <option value="Continuous">Continuous</option>
+                  <option value="Mattress">Mattress</option>
+                  <option value="Subcuticular">Subcuticular</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="sutureMaterial">Suture Material:</label>
+                <select id="sutureMaterial" formControlName="sutureMaterial" class="form-control">
+                  <option value="">Select material</option>
+                  <option value="Nylon">Nylon</option>
+                  <option value="Polypropylene">Polypropylene</option>
+                  <option value="Silk">Silk</option>
+                  <option value="Vicryl">Vicryl</option>
+                  <option value="Chromic">Chromic</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="sutureSize">Suture Size:</label>
+                <select id="sutureSize" formControlName="sutureSize" class="form-control">
+                  <option value="">Select size</option>
+                  <option value="2-0">2-0</option>
+                  <option value="3-0">3-0</option>
+                  <option value="4-0">4-0</option>
+                  <option value="5-0">5-0</option>
+                  <option value="6-0">6-0</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="numStitches">Number of Stitches:</label>
+                <input type="number" id="numStitches" formControlName="numStitches" class="form-control" 
+                  min="1" placeholder="1">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="anesthesiaUsed">Anesthesia Used:</label>
+                <select id="anesthesiaUsed" formControlName="anesthesiaUsed" class="form-control">
+                  <option value="">Select anesthesia</option>
+                  <option value="Lidocaine">Lidocaine</option>
+                  <option value="Bupivacaine">Bupivacaine</option>
+                  <option value="Procaine">Procaine</option>
+                  <option value="None">None</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="followUpRequired">Follow-up Required:</label>
+                <input type="checkbox" id="followUpRequired" formControlName="followUpRequired" class="form-checkbox">
+                <label for="followUpDate" class="followup-label" *ngIf="suturingForm.get('followUpRequired')?.value">Follow-up Date:</label>
+                <input type="date" id="followUpDate" formControlName="followUpDate" class="form-control" 
+                  *ngIf="suturingForm.get('followUpRequired')?.value">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="instructions">Special Instructions:</label>
+              <textarea id="instructions" formControlName="instructions" class="form-control" rows="3"
+                placeholder="Any special instructions for the procedure"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="notes">Notes:</label>
+              <textarea id="notes" formControlName="notes" class="form-control" rows="4"></textarea>
+            </div>
+
+            <button type="submit" class="submit-btn" [disabled]="suturingForm.invalid || isRequestingSuturing">
+              {{ isRequestingSuturing ? 'Requesting...' : 'Request Suturing' }}
+            </button>
+          </form>
+        </div>
+
+        <!-- Ear Irrigation Form -->
+        <div *ngIf="selectedProcedureType === 'ear-irrigation'" class="ear-irrigation-request-form">
+          <h3>👂 Request Ear Irrigation</h3>
+          <form [formGroup]="earIrrigationForm" (ngSubmit)="onEarIrrigationSubmit()" class="ear-irrigation-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="earIrrigationNumber">Ear Irrigation Number:</label>
+                <input type="text" id="earIrrigationNumber" formControlName="earIrrigationNumber" class="form-control"
+                  [readonly]="true" placeholder="Auto-generated ear irrigation number">
+              </div>
+              <div class="form-group">
+                <label for="earSide">Ear Side:</label>
+                <select id="earSide" formControlName="earSide" class="form-control">
+                  <option value="">Select ear</option>
+                  <option value="Left">Left</option>
+                  <option value="Right">Right</option>
+                  <option value="Both">Both</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="irrigationSolution">Irrigation Solution:</label>
+                <select id="irrigationSolution" formControlName="irrigationSolution" class="form-control">
+                  <option value="">Select solution</option>
+                  <option value="Warm water">Warm water</option>
+                  <option value="Normal saline">Normal saline</option>
+                  <option value="Hydrogen peroxide">Hydrogen peroxide</option>
+                  <option value="Mineral oil">Mineral oil</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="solutionTemperature">Solution Temperature:</label>
+                <select id="solutionTemperature" formControlName="solutionTemperature" class="form-control">
+                  <option value="">Select temperature</option>
+                  <option value="Body temperature">Body temperature</option>
+                  <option value="Slightly warm">Slightly warm</option>
+                  <option value="Room temperature">Room temperature</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="irrigationPressure">Irrigation Pressure:</label>
+                <select id="irrigationPressure" formControlName="irrigationPressure" class="form-control">
+                  <option value="">Select pressure</option>
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="procedureDuration">Procedure Duration (minutes):</label>
+                <input type="number" id="procedureDuration" formControlName="procedureDuration" class="form-control" 
+                  min="1" placeholder="30">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="findings">Findings:</label>
+                <textarea id="findings" formControlName="findings" class="form-control" rows="3"
+                  placeholder="Describe what was found during the procedure"></textarea>
+              </div>
+              <div class="form-group">
+                <label for="complications">Complications:</label>
+                <textarea id="complications" formControlName="complications" class="form-control" rows="3"
+                  placeholder="Any complications observed"></textarea>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="followUpRequired">Follow-up Required:</label>
+                <input type="checkbox" id="followUpRequired" formControlName="followUpRequired" class="form-checkbox">
+                <label for="followUpDate" class="followup-label" *ngIf="earIrrigationForm.get('followUpRequired')?.value">Follow-up Date:</label>
+                <input type="date" id="followUpDate" formControlName="followUpDate" class="form-control" 
+                  *ngIf="earIrrigationForm.get('followUpRequired')?.value">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="instructions">Special Instructions:</label>
+              <textarea id="instructions" formControlName="instructions" class="form-control" rows="3"
+                placeholder="Any special instructions for the procedure"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="notes">Notes:</label>
+              <textarea id="notes" formControlName="notes" class="form-control" rows="4"></textarea>
+            </div>
+
+            <button type="submit" class="submit-btn" [disabled]="earIrrigationForm.invalid || isRequestingEarIrrigation">
+              {{ isRequestingEarIrrigation ? 'Requesting...' : 'Request Ear Irrigation' }}
+            </button>
+          </form>
+        </div>
+
+        <!-- Procedures List -->
+        <div class="procedures-list">
+          <h3>Patient Procedures</h3>
+          
+          <!-- Injection Procedures Table -->
+          <div *ngIf="selectedProcedureType === 'injection'" class="table-container">
+            <table class="procedures-table">
               <thead>
                 <tr>
                   <th>Injection Number</th>
@@ -755,103 +1054,141 @@
                 </tr>
               </tbody>
             </table>
-          </div>
-
-          <!-- No Injections Message -->
           <div class="no-results" *ngIf="injections.length === 0">
-            No injections found for this patient.
-          </div>
+              No injection procedures found for this patient.
         </div>
       </div>
 
-      <!-- Patient Assignment Tab -->
-      <!-- <div *ngIf="selectedTab === 'patient-assignment'">
-        <div class="assignment-form">
-          <h3>Assign Patient to Room</h3>
-          <form [formGroup]="assignmentForm" (ngSubmit)="onAssignmentSubmit()" class="assignment-form">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="assignedRoom">Room:</label>
-                <select id="assignedRoom" formControlName="assignedRoom" class="form-control">
-                  <option value="">Select a room</option>
-                  <option *ngFor="let room of rooms" [value]="room.roomID">
-                    {{ room.roomNumber }} - {{ room.roomName }} ({{ room.roomType }})
-                  </option>
-                </select>
-                <div class="error-message" *ngIf="assignmentForm.get('assignedRoom')?.invalid && assignmentForm.get('assignedRoom')?.touched">
-                  Room selection is required
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label for="doctorID">Doctor ID:</label>
-                <input 
-                  type="text" 
-                  id="doctorID" 
-                  formControlName="doctorID"
-                  class="form-control"
-                  placeholder="Enter doctor ID">
-                <div class="error-message" *ngIf="assignmentForm.get('doctorID')?.invalid && assignmentForm.get('doctorID')?.touched">
-                  Doctor ID is required
-                </div>
-              </div>
-            </div>
-
-            <button 
-              type="submit" 
-              class="submit-btn"
-              [disabled]="assignmentForm.invalid || isAssigning">
-              {{ isAssigning ? 'Assigning...' : 'Assign Patient' }}
-            </button>
-          </form>
-        </div>  -->
-
-      <!-- Current Assignments -->
-      <!-- <div class="assignments-list">
-          <h3>Current Patient Assignments</h3>
-          <div class="table-container">
-            <table class="assignments-table">
+          <!-- Wound Care Procedures Table -->
+          <div *ngIf="selectedProcedureType === 'wound-care'" class="table-container">
+            <table class="procedures-table">
               <thead>
                 <tr>
-                  <th>Assignment ID</th>
-                  <th>Room</th>
-                  <th>Doctor ID</th>
-                  <th>Assignment Date</th>
+                  <th>Wound Care Number</th>
+                  <th>Procedure Date</th>
+                  <th>Wound Type</th>
+                  <th>Wound Location</th>
+                  <th>Wound Size</th>
+                  <th>Treatment Plan</th>
                   <th>Status</th>
+                  <th>Physician</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let assignment of patientAssignments">
-                  <td>{{ assignment.assignmentID }}</td>
-                  <td>{{ getRoomName(assignment.assignedRoom) }}</td>
-                  <td>{{ assignment.doctorID }}</td>
-                  <td>{{ assignment.assignmentDate | date:'medium' }}</td>
+                <tr *ngFor="let procedure of woundCareProcedures">
+                  <td>{{ procedure.WoundCareNumber || procedure.ProcedureNumber }}</td>
+                  <td>{{ procedure.ProcedureDate | date:'short' }}</td>
+                  <td>{{ procedure.WoundType }}</td>
+                  <td>{{ procedure.WoundLocation }}</td>
+                  <td>{{ procedure.WoundSize }}</td>
+                  <td>{{ procedure.TreatmentPlan }}</td>
                   <td>
-                    <span class="status-badge" [class]="assignment.status.toLowerCase()">
-                      {{ assignment.status }}
+                    <span class="status-badge" [class]="procedure.Status?.toLowerCase()">
+                      {{ procedure.Status }}
                     </span>
                   </td>
+                  <td>{{ procedure.OrderingPhysicianName }}</td>
                   <td>
-                    <button 
-                      class="action-btn"
-                      (click)="updateAssignmentStatus(assignment.assignmentID, 'Completed')"
-                      *ngIf="assignment.status === 'Active'">
-                      Complete
-                    </button>
-                    <button 
-                      class="action-btn"
-                      (click)="updateAssignmentStatus(assignment.assignmentID, 'Cancelled')"
-                      *ngIf="assignment.status === 'Active'">
-                      Cancel
+                    <button type="button" class="action-btn view" (click)="viewWoundCareDetails(procedure.WoundCareID || procedure.ProcedureID)">
+                      View Details
                     </button>
                   </td>
                 </tr>
               </tbody>
             </table>
+            <div class="no-results" *ngIf="woundCareProcedures.length === 0">
+              No wound care procedures found for this patient.
+                </div>
+              </div>
+
+          <!-- Suturing Procedures Table -->
+          <div *ngIf="selectedProcedureType === 'suturing'" class="table-container">
+            <table class="procedures-table">
+              <thead>
+                <tr>
+                  <th>Suturing Number</th>
+                  <th>Procedure Date</th>
+                  <th>Wound Type</th>
+                  <th>Wound Location</th>
+                  <th>Suture Type</th>
+                  <th>Number of Stitches</th>
+                  <th>Status</th>
+                  <th>Physician</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let procedure of suturingProcedures">
+                  <td>{{ procedure.SuturingNumber || procedure.ProcedureNumber }}</td>
+                  <td>{{ procedure.ProcedureDate | date:'short' }}</td>
+                  <td>{{ procedure.WoundType }}</td>
+                  <td>{{ procedure.WoundLocation }}</td>
+                  <td>{{ procedure.SutureType }}</td>
+                  <td>{{ procedure.NumberOfStitches }}</td>
+                  <td>
+                    <span class="status-badge" [class]="procedure.Status?.toLowerCase()">
+                      {{ procedure.Status }}
+                    </span>
+                  </td>
+                  <td>{{ procedure.OrderingPhysicianName }}</td>
+                  <td>
+                    <button type="button" class="action-btn view" (click)="viewSuturingDetails(procedure.SuturingID || procedure.ProcedureID)">
+                      View Details
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="no-results" *ngIf="suturingProcedures.length === 0">
+              No suturing procedures found for this patient.
+              </div>
+            </div>
+
+          <!-- Ear Irrigation Procedures Table -->
+          <div *ngIf="selectedProcedureType === 'ear-irrigation'" class="table-container">
+            <table class="procedures-table">
+              <thead>
+                <tr>
+                  <th>Ear Irrigation Number</th>
+                  <th>Procedure Date</th>
+                  <th>Ear Side</th>
+                  <th>Irrigation Solution</th>
+                  <th>Solution Temperature</th>
+                  <th>Duration (min)</th>
+                  <th>Status</th>
+                  <th>Physician</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let procedure of earIrrigationProcedures">
+                  <td>{{ procedure.EarIrrigationNumber || procedure.ProcedureNumber }}</td>
+                  <td>{{ procedure.ProcedureDate | date:'short' }}</td>
+                  <td>{{ procedure.EarSide }}</td>
+                  <td>{{ procedure.IrrigationSolution }}</td>
+                  <td>{{ procedure.SolutionTemperature }}</td>
+                  <td>{{ procedure.ProcedureDuration }}</td>
+                  <td>
+                    <span class="status-badge" [class]="procedure.Status?.toLowerCase()">
+                      {{ procedure.Status }}
+                    </span>
+                  </td>
+                  <td>{{ procedure.OrderingPhysicianName }}</td>
+                  <td>
+                    <button type="button" class="action-btn view" (click)="viewEarIrrigationDetails(procedure.EarIrrigationID || procedure.ProcedureID)">
+                      View Details
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="no-results" *ngIf="earIrrigationProcedures.length === 0">
+              No ear irrigation procedures found for this patient.
           </div>
         </div>
-      </div>  -->
+        </div>
+      </div>
 
       <!-- Sick Leave Tab -->
       <div *ngIf="selectedTab === 'sick-leave'">
