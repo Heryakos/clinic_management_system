@@ -68,8 +68,8 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
       patientName: ['', Validators.required],
       payrollNumber: ['', Validators.required],
       department: ['', Validators.required],
-      doneAt: ['', Validators.required],
-      orderedFrom: ['', Validators.required]
+      doneAt: [''],
+      orderedFrom: ['']
     });
 
     this.uploadForm.get('formType')?.valueChanges.subscribe(formType => {
