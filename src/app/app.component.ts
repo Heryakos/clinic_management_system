@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { MedicalService } from 'src/app/medical.service';
 import { environment } from 'src/environments/environment';
 import { ASSETS } from './assets.config';
+import { ActivatedRoute, Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -13,6 +15,9 @@ export class AppComponent implements OnInit {
   title = 'FHC_CHMS';
   employeeName: string | null = null;
   showSidebar = true;
+  
+  // Current page for dynamic component loading
+  currentPage: string = 'medical-request';
 
   // Role IDs from aspnet_Roles table
   roles = {
@@ -22,7 +27,6 @@ export class AppComponent implements OnInit {
     laboratory: '2c27c2f5-f0af-4e88-8e93-d09bcbc77731',
     pharmacy: 'd14cdfed-4011-4086-b9c6-3ac6da444ff8',
     injection: '095e17ff-4497-4fa0-8be9-74dc4979de58',
-    // patient: 'cc1afad4-4cd7-435a-b100-fc6b62f264d1',
     supervisor: '96c1ab25-d15c-42cf-92ff-9f041ae6ae10',
     supervisorDashboard: '46dc8001-85ca-4e4f-921b-91d145f607a8',
     patient_card: 'cc1afad4-4cd7-435a-b100-fc6b62f264d1',
@@ -55,11 +59,29 @@ export class AppComponent implements OnInit {
   showSickLeave = false;
   showNotifications = false;
 
-  constructor(private medicalService: MedicalService) {}
+  constructor(
+    private medicalService: MedicalService,
+    private route: ActivatedRoute,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.fetchEmployeeName();
     this.fetchUserRoles();
+    
+    // Listen for query parameter changes
+    this.route.queryParams.subscribe(params => {
+      this.currentPage = params['page'] || 'medical-request';
+      console.log('Current page:', this.currentPage);
+    });
+  }
+
+  // Navigate to different pages using query parameters
+  navigateTo(page: string) {
+    this.router.navigate([], {
+      queryParams: { page: page },
+      queryParamsHandling: 'merge'
+    });
   }
 
   fetchEmployeeName() {
@@ -202,8 +224,8 @@ export class AppComponent implements OnInit {
       }
       if (roleId === this.roles.supervisor) {
         this.showSupervisor = true;
-        this.showExpenses = true; // ADD THIS LINE
-        this.showSupervisorDashboard = true; // ADD THIS LINE
+        this.showExpenses = true;
+        this.showSupervisorDashboard = true;
       }
       if (roleId === this.roles.supervisorDashboard) {
         this.showExpenses = true;
@@ -215,7 +237,6 @@ export class AppComponent implements OnInit {
       if (roleId === this.roles.doctorOPD1 || roleId === this.roles.doctorOPD2 || roleId === this.roles.doctorOPD3) {
         this.showDoctorRegistration = true;
         this.showInventoryRequest = true;
-         // Enable Expenses for doctor role
       }
       if (roleId === this.roles.laboratory) {
         this.showLaboratory = true;
@@ -240,9 +261,6 @@ export class AppComponent implements OnInit {
       if (roleId === this.roles.injection) {
         this.showInjection = true;
       }
-      // if (roleId === this.roles.patient) {
-      //   this.showPatientAssignment = true;
-      // }
       if (roleId === this.roles.notifications) {
         this.showNotifications = true;
       }

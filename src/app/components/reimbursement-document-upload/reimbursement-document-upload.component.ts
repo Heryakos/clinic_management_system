@@ -368,8 +368,8 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
           createdBy: this.createdBy || null,
           approvedBy: null,
           investigations: [],
-          orderedFrom: this.uploadForm.get('orderedFrom')?.value,
-          doneAt: this.uploadForm.get('doneAt')?.value,
+          orderedFrom: this.uploadForm.get('orderedFrom')?.value || 'Not specified',
+          doneAt: this.uploadForm.get('doneAt')?.value || 'Not specified',
           investigation: this.investigations.map(inv => inv.investigation).join(', '),
           formType: formType,
           approvedAmount: 0
@@ -387,8 +387,8 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
             if (inv.investigation && inv.invoiceNumber && inv.amount > 0) {
               const detail = {
                 InvestigationType: inv.investigation,
-                Location: this.uploadForm.get('doneAt')?.value,
-                OrderedFrom: this.uploadForm.get('orderedFrom')?.value,
+                Location: this.uploadForm.get('doneAt')?.value || 'Not specified',
+                OrderedFrom: this.uploadForm.get('orderedFrom')?.value || 'Not specified',
                 InvoiceNumber: inv.invoiceNumber,
                 Amount: inv.amount,
                 InvestigationDate: new Date()

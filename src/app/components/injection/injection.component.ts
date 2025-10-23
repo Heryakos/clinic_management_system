@@ -260,19 +260,19 @@ export class InjectionComponent implements OnInit {
         // For "All" tab, you might need a new API endpoint
         // For now, load for a dummy patient or create getAllWoundCare() method
         this.woundCareProcedures = [];
-        this.showSnackBar('All procedures view coming soon!', 'info-snackbar');
+        // this.showSnackBar('All procedures view coming soon!', 'info-snackbar');
     }
 
     // Load ALL active suturing procedures
     loadAllSuturingProcedures(): void {
         this.suturingProcedures = [];
-        this.showSnackBar('All procedures view coming soon!', 'info-snackbar');
+        // this.showSnackBar('All procedures view coming soon!', 'info-snackbar');
     }
 
     // Load ALL active ear irrigation procedures
     loadAllEarIrrigationProcedures(): void {
         this.earIrrigationProcedures = [];
-        this.showSnackBar('All procedures view coming soon!', 'info-snackbar');
+        // this.showSnackBar('All procedures view coming soon!', 'info-snackbar');
     }
 
     // Methods from InjectionManagementComponent
@@ -552,7 +552,45 @@ export class InjectionComponent implements OnInit {
             status: obj.Status,
             patientID: obj.PatientID,
             cardNumber: obj.CardNumber,
-            fullName: obj.PatientName  // ← PatientName from SP
+            fullName: obj.PatientName,  // ← PatientName from SP
+            InjectionNumber: obj.InjectionNumber,
+            InjectionDate: obj.InjectionDate,
+            Status: obj.Status,
+            AdministeredBy: obj.AdministeredBy,
+            AdministeredByName: obj.AdministeredByName,
+            AdministeredDate: obj.AdministeredDate,
+            Notes: obj.Notes,
+            FullName:obj.FullName,
+            Gender: obj.Gender,
+            Age: obj.Age,
+            Weight: obj.Weight,
+            Woreda: obj.Woreda,
+            HouseNo: obj.HouseNo,
+            Phone: obj.Phone,
+            MedicalHistory: obj.MedicalHistory,
+            MedicationName: obj.MedicationName,
+            Strength: obj.Strength,
+            DosageForm: obj.DosageForm,
+            Dose: obj.Dose,
+            Route: obj.Route,
+            Site: obj.Site,
+            Frequency: obj.Frequency,
+            Duration: obj.Duration,
+            Instructions: obj.Instructions,
+            AdministeredDoses: obj.AdministeredDoses,
+            TotalDoses: obj.TotalDoses,
+            Schedules: obj.Schedules,
+            PatientID: obj.PatientID,
+            CardNumber: obj.CardNumber,
+            OrderingPhysicianID: obj.OrderingPhysicianID,
+            OrderingPhysicianName: obj.OrderingPhysicianName,
+            MedicationID: obj.MedicationID,
+            CreatedBy: obj.CreatedBy,
+            CreatedDate: obj.CreatedDate,
+            IsRecurring: obj.IsRecurring,
+            StartDate: obj.StartDate,
+            EndDate: obj.EndDate
+
         };
     
         return result;
