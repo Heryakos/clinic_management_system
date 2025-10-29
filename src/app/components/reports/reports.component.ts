@@ -315,58 +315,168 @@ export class ReportsComponent implements OnInit {
     // Configure table per metric
     switch (stat.key) {
       case 'totalPatients':
+        // ---------- COLUMNS ----------
         this.detailColumns = [
-          { field: 'CardNumber', header: 'Card No' },
-          { field: 'FullName', header: 'Full Name' },
-          { field: 'Gender', header: 'Gender' },
+          { field: 'CardNumber',       header: 'Card #' },
+          { field: 'FullName',         header: 'Full Name' },
+          { field: 'FatherName',       header: 'Father Name' },
+          { field: 'Gender',           header: 'Gender' },
+          { field: 'Age',              header: 'Age' },
+          { field: 'Phone',            header: 'Phone' },
+          { field: 'Address',          header: 'Address' },
+          { field: 'BloodType',        header: 'Blood Type' },
+          { field: 'Department',       header: 'Department' },
+          { field: 'TotalVisits',      header: 'Total Visits' },
+          { field: 'LastVisitDate',    header: 'Last Visit' },
+          { field: 'LastDiagnosis',    header: 'Last Diagnosis' },
           { field: 'RegistrationDate', header: 'Registered' }
         ];
+      
+        // ---------- DATA ----------
         this.medicalService.getPatients().subscribe(list => {
-          this.detailRows = (list || []).map((p: any) => ({
-            CardNumber: p.cardNumber || p.CardNumber,
-            FullName: p.fullName || p.FullName,
-            // LastName: p.lastName || p.LastName,
-            Gender: p.gender || p.Gender,
-            RegistrationDate: (p.registrationDate || p.RegistrationDate) ? new Date(p.registrationDate || p.RegistrationDate).toLocaleDateString() : ''
-          }));
+          this.detailRows = (list || []).map((p: any) => {
+            const regDate = p.RegistrationDate || p.registrationDate
+              ? new Date(p.RegistrationDate || p.registrationDate).toLocaleDateString()
+              : '—';
+      
+            const lastVisit = p.LastVisitDate || p.lastVisitDate
+              ? new Date(p.LastVisitDate || p.lastVisitDate).toLocaleDateString()
+              : '—';
+      
+            const age = p.Age ?? p.age ?? '—';
+            const blood = p.BloodType || p.bloodType || '—';
+            const phone = p.phone || p.Phone || '—';
+            const diagnosis = p.LastDiagnosis || p.lastDiagnosis || '—';
+            const dept = p.department_name || p.Department || '—';
+      
+            return {
+              CardNumber:       p.CardNumber       || p.cardNumber       || '—',
+              FullName:         p.FullName         || p.fullName         || '—',
+              FatherName:       p.FatherName       || p.fatherName       || '—',
+              Gender:           p.gender           || p.Gender           || '—',
+              Age:              age,
+              Phone:            phone,
+              Address:          p.Address          || p.address          || '—',
+              BloodType:        blood === '' ? '—' : blood,
+              Department:       dept,
+              TotalVisits:      p.TotalVisits      || p.totalVisits      || 0,
+              LastVisitDate:    lastVisit,
+              LastDiagnosis:    diagnosis,
+              RegistrationDate: regDate
+            };
+          });
         });
+      
+        // ---------- CHART: Monthly Patient Registrations ----------
+        this.detailChartOptions = {
+          tooltip: { trigger: 'axis' },
+          xAxis: { type: 'category', data: this.reportData.monthlyStats.map(m => m.month) },
+          yAxis: { type: 'value' },
+          series: [
+            {
+              name: 'New Patients',
+              type: 'bar',
+              data: this.reportData.monthlyStats.map(m => m.patients),
+              itemStyle: { color: '#667eea' },
+              emphasis: { itemStyle: { color: '#5a6fd8' } }
+            }
+          ]
+        };
         break;
-      case 'totalMedicalRequests':
-        this.detailColumns = [
-          { field: 'RequestNumber', header: 'Request #' },
-          { field: 'EmployeeCode', header: 'Employee' },
-          { field: 'RequestType', header: 'Type' },
-          { field: 'Status', header: 'Status' },
-          { field: 'RequestDate', header: 'Date' }
-        ];
-        this.medicalService.getAllMedicalRequests().subscribe(list => {
-          this.detailRows = (list || []).map((r: any) => ({
-            RequestNumber: r.requestNumber || r.RequestNumber,
-            EmployeeCode: r.employeeCode || r.EmployeeCode,
-            RequestType: r.requestType || r.RequestType,
-            Status: r.status || r.Status,
-            RequestDate: r.requestDate ? new Date(r.requestDate).toLocaleDateString() : ''
-          }));
-        });
-        break;
-      case 'totalPrescriptions':
-        this.detailColumns = [
-          { field: 'PrescriptionNumber', header: 'Prescription #' },
-          { field: 'PatientName', header: 'Patient' },
-          { field: 'Status', header: 'Status' },
-          { field: 'PrescriptionDate', header: 'Date' },
-          { field: 'TotalAmount', header: 'Total' }
-        ];
-        this.medicalService.getPrescriptions().subscribe(list => {
-          this.detailRows = (list || []).map((p: any) => ({
-            PrescriptionNumber: p.prescriptionNumber || p.PrescriptionNumber,
-            PatientName: p.patientName || p.PatientName,
-            Status: p.status || p.Status,
-            PrescriptionDate: p.prescriptionDate ? new Date(p.prescriptionDate).toLocaleDateString() : '',
-            TotalAmount: p.totalAmount || p.TotalAmount
-          }));
-        });
-        break;
+        case 'totalMedicalRequests':
+          this.detailColumns = [
+            { field: 'RequestNumber', header: 'Request #' },
+            { field: 'EmployeeName', header: 'Employee Name' },
+            { field: 'EmployeeCode', header: 'Emp Code' },
+            { field: 'Department', header: 'Department' },
+            { field: 'RequestType', header: 'Type' },
+            { field: 'Reason', header: 'Reason' },
+            { field: 'PreferredDateTime', header: 'Preferred Date & Time' },
+            { field: 'SupervisorApproval', header: 'Sup. Approved' },
+            { field: 'ApprovedByName', header: 'Approved By' },
+            { field: 'Status', header: 'Status' },
+            { field: 'RequestDate', header: 'Requested On' }
+          ];
+        
+          this.medicalService.getAllMedicalRequests().subscribe(list => {
+            this.detailRows = (list || []).map((r: any) => {
+              const requestDate = r.requestDate ? new Date(r.requestDate) : null;
+              const preferredDate = r.preferredDate ? new Date(r.preferredDate) : null;
+              const preferredTime = r.preferredTime
+                ? new Date(`1970-01-01T${r.preferredTime}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : '';
+        
+              const preferredDateTime = preferredDate
+                ? `${preferredDate.toLocaleDateString()} ${preferredTime}`
+                : 'N/A';
+        
+              return {
+                RequestNumber: r.requestNumber || r.RequestNumber,
+                EmployeeName: r.employeeName || r.EmployeeName || 'N/A',
+                EmployeeCode: r.employeeCode || r.EmployeeCode,
+                Department: r.department || r.Department || 'N/A',
+                RequestType: r.requestType || r.RequestType,
+                Reason: r.reason || r.Reason || '—',
+                PreferredDateTime: preferredDateTime,
+                SupervisorApproval: r.supervisorApproval === true ? 'Yes' : r.supervisorApproval === false ? 'No' : 'Pending',
+                ApprovedByName: r.approvedByName || r.ApprovedByName || '—',
+                Status: r.status || r.Status,
+                RequestDate: requestDate ? requestDate.toLocaleDateString() : ''
+              };
+            });
+          });
+          break;
+          case 'totalPrescriptions':
+            // ---------- COLUMNS ----------
+            this.detailColumns = [
+              { field: 'PrescriptionNumber', header: 'Prescription #' },
+              { field: 'PatientName',       header: 'Patient' },
+              { field: 'CardNumber',        header: 'Card #' },
+              { field: 'PrescriberName',    header: 'Prescribed By' },
+              { field: 'PharmacistName',    header: 'Pharmacist' },
+              { field: 'PrescriptionDate',  header: 'Date' },
+              { field: 'TotalAmount',       header: 'Amount (ETB)' },
+              { field: 'Status',            header: 'Status' },
+              { field: 'Notes',             header: 'Notes' }
+            ];
+          
+            // ---------- DATA ----------
+            this.medicalService.getPrescriptions().subscribe(list => {
+              this.detailRows = (list || []).map((p: any) => {
+                const prescDate = p.prescriptionDate
+                  ? new Date(p.prescriptionDate).toLocaleDateString()
+                  : '—';
+          
+                return {
+                  PrescriptionNumber: p.prescriptionNumber || p.PrescriptionNumber,
+                  PatientName:       p.patientName       || p.PatientName       || '—',
+                  CardNumber:        p.cardNumber        || p.CardNumber        || '—',
+                  PrescriberName:    p.prescriberName    || p.PrescriberName    || '—',
+                  PharmacistName:    p.pharmacistName    ?? '—',               // null → "—"
+                  PrescriptionDate:  prescDate,
+                  TotalAmount:       (p.totalAmount ?? 0).toFixed(2),
+                  Status:            p.status            || p.Status            || '—',
+                  Notes:             p.notes             || p.Notes             || '—'
+                };
+              });
+            });
+          
+            // ---------- CHART (Monthly Prescription Trend) ----------
+            this.detailChartOptions = {
+              tooltip: { trigger: 'axis' },
+              xAxis: { type: 'category', data: this.reportData.monthlyStats.map(m => m.month) },
+              yAxis: { type: 'value' },
+              series: [
+                {
+                  name: 'Prescriptions',
+                  type: 'line',
+                  data: this.reportData.monthlyStats.map(m => m.prescriptions),
+                  itemStyle: { color: '#dc3545' },
+                  areaStyle: { opacity: 0.1 }
+                }
+              ]
+            };
+            break;
       case 'totalLabTests':
         this.detailColumns = [
           { field: 'TestNumber', header: 'Test #' },

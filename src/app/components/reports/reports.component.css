@@ -117,6 +117,36 @@
   margin: 0 auto 20px;
 }
 
+.modal .table-container {
+  max-height: 420px;               /* scroll when content overflows */
+  overflow-y: auto;
+  overflow-x: auto;
+  margin-top: 12px;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+}
+
+/* ---------- Table cells ---------- */
+.modal .department-table th,
+.modal .department-table td {
+  font-size: 13px;                 /* readable on small screens */
+  padding: 8px 10px;
+  white-space: nowrap;             /* prevents line-breaks in long text */
+}
+
+/* ---------- Sticky header ---------- */
+.modal .department-table th {
+  position: sticky;
+  top: 0;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  color: white;
+  z-index: 2;
+}
+
+.modal .department-table tr:hover {
+  background-color: #f8f9fa;
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
@@ -397,57 +427,72 @@
   margin-bottom: 16px;
 }
 
-@media (max-width: 768px) {
-  .reports-container {
-    padding: 20px;
-  }
-  
-  .reports-header {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 15px;
-  }
-  
-  .report-controls {
-    justify-content: center;
-    gap: 15px;
-  }
-  
-  .stats-overview {
-    grid-template-columns: 1fr;
-  }
-  
-  .financial-cards {
-    grid-template-columns: 1fr;
-  }
-  
-  .activities-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .chart-section,
-  .department-stats,
-  .financial-summary,
-  .recent-activities {
-    padding: 20px;
+.zero-amount {
+  color: #28a745;
+  font-weight: 600;
+}
+
+@media (max-width: 480px) {
+  .modal .department-table th:nth-child(n+6),
+  .modal .department-table td:nth-child(n+6) {
+    display: none;
   }
 }
 
+/* Hide a few more on tablets (481-768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+  .modal .department-table th:nth-child(8),
+  .modal .department-table td:nth-child(8) {
+    display: none;
+  }
+}
+
+/* ---------- Chart inside modal ---------- */
+.modal .modal-chart {
+  height: 300px;                   /* slightly smaller on mobile */
+}
+
+/* ---------- Modal width & height responsiveness ---------- */
+@media (max-width: 768px) {
+  .modal {
+    width: 96vw;
+    max-height: 92vh;
+  }
+  .modal .modal-chart {
+    height: 250px;
+  }
+}
+@media (max-width: 480px) {
+  .modal .modal-chart {
+    height: 200px;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   RESPONSIVE GLOBAL ADJUSTMENTS (extra polish)
+   ────────────────────────────────────────────────────────────── */
+
+/* Make the whole dashboard tighter on very small screens */
+@media (max-width: 480px) {
+  .reports-container { padding: 15px; }
+  .reports-header h2 { font-size: 1.8rem; }
+  .report-controls { flex-direction: column; align-items: stretch; }
+  .select-wrapper, .export-buttons { width: 100%; }
+  .export-btn { justify-content: center; }
+}
+
+/* Larger screens – give a little more breathing room */
+@media (min-width: 1600px) {
+  .reports-container { max-width: 1700px; }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   PRINT STYLES (unchanged – kept from your original file)
+   ────────────────────────────────────────────────────────────── */
 @media print {
-  .reports-header .report-controls {
-    display: none;
-  }
-  
-  .export-buttons {
-    display: none;
-  }
-  
-  .reports-container {
-    max-width: none;
-    padding: 0;
-    background: none;
-  }
-  
+  .reports-header .report-controls { display: none; }
+  .export-buttons { display: none; }
+  .reports-container { max-width: none; padding: 0; background: none; }
   .stat-card,
   .chart-section,
   .department-stats,
