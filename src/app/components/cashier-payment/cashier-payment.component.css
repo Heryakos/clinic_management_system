@@ -961,6 +961,46 @@
   opacity: 0.5;
 }
 
+/* Check Voucher Specific Styles */
+.check-voucher {
+  font-family: 'Times New Roman', serif;
+  line-height: 1.6;
+  color: #000;
+}
+
+.voucher-header { text-align: center; margin-bottom: 20px; }
+.voucher-header h2 { margin: 0; font-size: 1.8em; }
+.sub-header { font-weight: bold; font-size: 1.4em; margin: 8px 0; }
+.voucher-no-date { display: flex; justify-content: space-between; font-size: 0.95em; }
+
+.payee-section .row,
+.account-section .row { display: flex; margin-bottom: 12px; }
+.payee-section label,
+.account-section label { width: 160px; font-weight: bold; }
+.value { border-bottom: 1px solid #000; padding: 2px 0; flex: 1; margin-left: 10px; }
+
+.amount { font-weight: bold; font-size: 1.1em; }
+
+.batch-table {
+  width: 100%; border-collapse: collapse; margin: 15px 0;
+}
+.batch-table th, .batch-table td {
+  border: 1px solid #000; padding: 6px 8px; text-align: left;
+}
+.batch-table th { background: #f0f0f0; }
+
+.signature-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 15px;
+  margin: 30 pola 0;
+}
+.sig { text-align: center; }
+.sig .name { margin: 8px 0; font-weight: bold; }
+.sig .line { border-top: 1px solid #000; margin: 40px 0 5px; }
+
+.footer-note { margin-top: 30px; font-style: italic; text-align: center; }
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .cashier-container {

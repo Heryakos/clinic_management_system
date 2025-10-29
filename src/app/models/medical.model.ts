@@ -114,6 +114,7 @@ export interface PatientSummary {
   FatherName?: string;
   DateOfBirth: Date;
   Age: number;
+  gender?: string;
   Gender?: string;
   phone?: string;
   Address?: string;

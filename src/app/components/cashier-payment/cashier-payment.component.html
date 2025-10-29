@@ -312,6 +312,9 @@
               class="form-control"
               required
             />
+            <small class="info-text" *ngIf="individualPaymentAmount > 3000">
+              Check required for payments over 3,000 ETB
+            </small>
           </div>
           <div class="form-group">
             <label for="paidBy">Paid By *</label>
@@ -331,11 +334,11 @@
               [(ngModel)]="individualPaymentMethod"
               class="form-control"
               required
-              (change)="individualAmountTendered = individualPaymentAmount; calculateIndividualChange()"
+              (change)="onPaymentMethodChange('individual')"
             >
-              <option value="Cash">Cash</option>
-              <option value="Check">Check</option>
-              <option value="Transfer">Bank Transfer</option>
+              <option *ngFor="let method of getAllowedPaymentMethods(individualPaymentAmount)" [value]="method.value">
+                {{ method.label }}
+              </option>
             </select>
           </div>
 
@@ -471,11 +474,11 @@
               [(ngModel)]="batchPaymentMethod"
               class="form-control"
               required
-              (change)="batchAmountTendered = getSelectedTotalAmount(); calculateBatchChange()"
+              (change)="onPaymentMethodChange('batch')"
             >
-              <option value="Cash">Cash</option>
-              <option value="Check">Check</option>
-              <option value="Transfer">Bank Transfer</option>
+              <option *ngFor="let method of getAllowedPaymentMethods(getSelectedTotalAmount())" [value]="method.value">
+                {{ method.label }}
+              </option>
             </select>
           </div>
 
@@ -569,188 +572,148 @@
   </div>
 
   <!-- Voucher Form Dialog -->
-  <div class="modal" *ngIf="showVoucherForm">
-    <div class="modal-backdrop" (click)="closeVoucherForm()"></div>
-    <div class="modal-content voucher-form-modal" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Petty Cash Payment Voucher</h3>
-        <button class="close-btn" (click)="closeVoucherForm()">&times;</button>
-      </div>
-      
-      <div class="modal-body voucher-form-body">
-        <div id="voucher-form-print" class="voucher-form">
-          <h2>Federal Housing Corporation</h2>
-          <div class="sub-header">Petty Cash Payment Voucher</div>
-
-          <div class="row">
-            <div class="col">
-              <label for="voucherNo">Voucher No:</label>
-              <input 
-                type="text" 
-                id="voucherNo" 
-                [(ngModel)]="voucherFormData.voucherNo"
-                class="voucher-input"
-                placeholder="Enter voucher number"
-              >
-            </div>
-            <div class="col">
-              <label for="date">Date:</label>
-              <input 
-                type="text" 
-                id="date" 
-                [(ngModel)]="voucherFormData.date"
-                class="voucher-input"
-                placeholder="dd/mm/yyyy"
-              >
-            </div>
-          </div>
-
-          <div class="row">
-            <label for="payee">Payee Name:</label>
-            <input 
-              type="text" 
-              id="payee" 
-              [(ngModel)]="voucherFormData.payee"
-              class="voucher-input"
-              placeholder="Enter recipient name"
-            >
-          </div>
-
-          <div class="row">
-            <label for="amountWords">Amount in Words:</label>
-            <textarea 
-              id="amountWords" 
-              [(ngModel)]="voucherFormData.amountWords"
-              class="voucher-input"
-              placeholder="Write amount in words..."
-              rows="2"
-            ></textarea>
-          </div>
-
-          <div class="row">
-            <label for="amountFigure">Amount in Figures:</label>
-            <input 
-              type="text" 
-              id="amountFigure" 
-              [(ngModel)]="voucherFormData.amountFigure"
-              class="voucher-input"
-              placeholder="e.g. 1,200.00"
-            >
-          </div>
-
-          <div class="row">
-            <label for="reason">Being payment for:</label>
-            <textarea 
-              id="reason" 
-              [(ngModel)]="voucherFormData.reason"
-              class="voucher-input"
-              placeholder="Reason for payment..."
-              rows="2"
-            ></textarea>
-          </div>
-
-          <div class="row">
-            <div class="col">
-              <label for="account">Account Code:</label>
-              <input 
-                type="text" 
-                id="account" 
-                [(ngModel)]="voucherFormData.account"
-                class="voucher-input"
-              >
-            </div>
-            <div class="col">
-              <label for="budget">Budget Line:</label>
-              <input 
-                type="text" 
-                id="budget" 
-                [(ngModel)]="voucherFormData.budget"
-                class="voucher-input"
-              >
-            </div>
-          </div>
-
-          <!-- Batch Details Section (if batch payment) -->
-          <div class="batch-details" *ngIf="getSelectedCount() > 1">
-            <h4>Batch Payment Details:</h4>
-            <div class="batch-list">
-              <div *ngFor="let approval of selectedApprovals" class="batch-item">
-                <span>{{ approval.ReimbursementNumber }} - {{ approval.PatientName }}</span>
-                <span>{{ approval.ApprovedAmount | currency: 'ETB':'symbol':'1.2-2' }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="signature">
-            <div>
-              <label>Prepared By</label>
-              <input 
-                type="text" 
-                [(ngModel)]="voucherFormData.preparedBy"
-                class="voucher-input signature-input"
-              >
-              <p>Signature</p>
-            </div>
-            <div>
-              <label>Checked By</label>
-              <input 
-                type="text" 
-                [(ngModel)]="voucherFormData.checkedBy"
-                class="voucher-input signature-input"
-              >
-              <p>Signature</p>
-            </div>
-            <div>
-              <label>Approved By</label>
-              <input 
-                type="text" 
-                [(ngModel)]="voucherFormData.approvedBy"
-                class="voucher-input signature-input"
-              >
-              <p>Signature</p>
-            </div>
-          </div>
-
-          <div class="signature">
-            <div>
-              <label>Payee</label>
-              <p>Signature</p>
-            </div>
-            <div>
-              <label>Cashier</label>
-              <input 
-                type="text" 
-                [(ngModel)]="voucherFormData.cashier"
-                class="voucher-input signature-input"
-              >
-              <p>Signature</p>
-            </div>
-            <div>
-              <label>Accountant</label>
-              <input 
-                type="text" 
-                [(ngModel)]="voucherFormData.accountant"
-                class="voucher-input signature-input"
-              >
-              <p>Signature</p>
-            </div>
-          </div>
-
-          <div class="footer">
-            <p><strong>Note:</strong> Ensure all supporting documents are attached before payment is made.</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal-actions no-print">
-        <button type="button" class="action-btn cancel" (click)="closeVoucherForm()">Close</button>
-        <button type="button" class="action-btn save" (click)="saveAsPDF()">
-          Save as PDF
-        </button>
-        <button type="button" class="action-btn confirm" (click)="printVoucherForm()">
-          Print Voucher
-        </button>
+<!-- ====== PETTY CASH VOUCHER (≤ 3000) ====== -->
+<div class="modal" *ngIf="showVoucherForm && voucherType === 'petty'">
+  <div class="modal-backdrop" (click)="closeVoucherForm()"></div>
+  <div class="modal-content voucher-form-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Petty Cash Payment Voucher</h3>
+      <button class="close-btn" (click)="closeVoucherForm()">×</button>
+    </div>
+    
+    <div class="modal-body voucher-form-body">
+      <div id="voucher-petty-print" class="voucher-form petty-cash">
+        <!-- === YOUR ORIGINAL PETTY CASH FORM === -->
+        <!-- (Copy-paste everything from your current #voucher-form-print here) -->
+        <!-- Keep the same structure, just change id to voucher-petty-print -->
+        <!-- ... (your existing petty cash form) ... -->
       </div>
     </div>
+
+    <div class="modal-actions no-print">
+      <button type="button" class="action-btn cancel" (click)="closeVoucherForm()">Close</button>
+      <button type="button" class="action-btn save" (click)="saveAsPDF('petty')">Save as PDF</button>
+      <button type="button" class="action-btn confirm" (click)="printVoucherForm('petty')">Print Voucher</button>
+    </div>
   </div>
+</div>
+
+<!-- ====== CHECK PAYMENT VOUCHER (> 3000) ====== -->
+<div class="modal" *ngIf="showVoucherForm && voucherType === 'check'">
+  <div class="modal-backdrop" (click)="closeVoucherForm()"></div>
+  <div class="modal-content voucher-form-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Check Payment Voucher</h3>
+      <button class="close-btn" (click)="closeVoucherForm()">×</button>
+    </div>
+    
+    <div class="modal-body voucher-form-body">
+      <div id="voucher-check-print" class="voucher-form check-voucher">
+        <div class="voucher-header">
+          <h2>Federal Housing Corporation</h2>
+          <div class="sub-header">CHECK PAYMENT VOUCHER</div>
+          <div class="voucher-no-date">
+            <div><strong>Voucher No:</strong> {{ voucherFormData.voucherNo }}</div>
+            <div><strong>Date:</strong> {{ voucherFormData.date }}</div>
+          </div>
+        </div>
+
+        <div class="payee-section">
+          <div class="row">
+            <label>Payee:</label>
+            <div class="value">{{ voucherFormData.payee }}</div>
+          </div>
+          <div class="row">
+            <label>Amount in Words:</label>
+            <div class="value">{{ voucherFormData.amountWords }}</div>
+          </div>
+          <div class="row">
+            <label>Amount in Figures:</label>
+            <div class="value amount">{{ voucherFormData.amountFigure | currency:'ETB':'symbol':'1.2-2' }}</div>
+          </div>
+          <div class="row">
+            <label>Being payment for:</label>
+            <div class="value">{{ voucherFormData.reason }}</div>
+          </div>
+        </div>
+
+        <div class="account-section">
+          <div class="row">
+            <div class="col">
+              <label>Account Code:</label>
+              <div class="value">{{ voucherFormData.account }}</div>
+            </div>
+            <div class="col">
+              <label>Budget Line:</label>
+              <div class="value">{{ voucherFormData.budget }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Batch Details -->
+        <div class="batch-details" *ngIf="getSelectedCount() > 1">
+          <h4>Payment Details:</h4>
+          <table class="batch-table">
+            <thead>
+              <tr><th>Reimbursement No</th><th>Patient</th><th>Amount</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let a of selectedApprovals">
+                <td>{{ a.ReimbursementNumber }}</td>
+                <td>{{ a.PatientName }}</td>
+                <td>{{ a.ApprovedAmount | currency:'ETB':'symbol':'1.2-2' }}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="2"><strong>Total</strong></td><td><strong>{{ getSelectedTotalAmount() | currency:'ETB':'symbol':'1.2-2' }}</strong></td></tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div class="signature-grid">
+          <div class="sig">
+            <label>Prepared By</label>
+            <div class="name">{{ voucherFormData.preparedBy }}</div>
+            <div class="line"></div>
+            <small>Signature</small>
+          </div>
+          <div class="sig">
+            <label>Checked By</label>
+            <div class="name">{{ voucherFormData.checkedBy }}</div>
+            <div class="line"></div>
+            <small>Signature</small>
+          </div>
+          <div class="sig">
+            <label>Approved By</label>
+            <div class="name">{{ voucherFormData.approvedBy }}</div>
+            <div class="line"></div>
+            <small>Signature</small>
+          </div>
+          <div class="sig">
+            <label>Cashier</label>
+            <div class="name">{{ voucherFormData.cashier }}</div>
+            <div class="line"></div>
+            <small>Signature</small>
+          </div>
+          <div class="sig">
+            <label>Accountant</label>
+            <div class="name">{{ voucherFormData.accountant }}</div>
+            <div class="line"></div>
+            <small>Signature</small>
+          </div>
+        </div>
+
+        <div class="footer-note">
+          <p><strong>Note:</strong> This is a Check Payment. Attach bank-approved check copy before filing.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions no-print">
+      <button type="button" class="action-btn cancel" (click)="closeVoucherForm()">Close</button>
+      <button type="button" class="action-btn save" (click)="saveAsPDF('check')">Save as PDF</button>
+      <button type="button" class="action-btn confirm" (click)="printVoucherForm('check')">Print Voucher</button>
+    </div>
+  </div>
+</div>
 </div>

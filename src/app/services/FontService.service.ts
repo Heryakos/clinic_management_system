@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { map, catchError, shareReplay } from 'rxjs/operators';
+import { from, Observable, of } from 'rxjs';
+import { concatMap, map, catchError, filter, first, shareReplay } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -12,29 +12,38 @@ export class FontService {
   constructor(private http: HttpClient) {}
 
   loadFontBase64(fontJsonPath: string): Observable<string> {
-    const fullPath = `/assets/${fontJsonPath}`;
-    
-    if (!this.fontCache[fullPath]) {
-      this.fontCache[fullPath] = this.http.get(fullPath).pipe(
-        map((data: any) => {
-          if (data && data.fontBase64) {
-            console.log('Font loaded successfully from:', fullPath);
-            return data.fontBase64;
-          } else {
-            throw new Error('Invalid font JSON format - missing fontBase64 property');
-          }
-        }),
-        catchError(error => {
-          console.error(`Failed to load font from ${fullPath}:`, error);
-          // Return empty string to trigger fallback
-          return of('');
-        }),
+    const cacheKey = fontJsonPath;
+  
+    if (!this.fontCache[cacheKey]) {
+      const candidatePaths = [
+        `assets/${fontJsonPath}`,  // Local dev build
+        `xokaerp/DesktopModules/MVC/XOKA_DNN_Case/Views/Item/assets/assets/${fontJsonPath}`, // Deployed path
+        `/xokaerp/DesktopModules/MVC/XOKA_DNN_Case/Views/Item/assets/assets/${fontJsonPath}` // Absolute fallback
+      ];
+  
+      this.fontCache[cacheKey] = from(candidatePaths).pipe(
+        concatMap(path =>
+          this.http.get(path).pipe(
+            map((data: any) => {
+              if (data?.fontBase64) {
+                console.log('%c✅ Font Loaded From: ' + path, 'color: green;');
+                return data.fontBase64 as string;
+              }
+              return '';
+            }),
+            catchError(() => of(''))
+          )
+        ),
+        filter(base64 => base64 !== ''), // Keep only valid matches
+        first(undefined, ''),            // ✅ default if all fail
         shareReplay(1)
       );
+      
     }
-    
-    return this.fontCache[fullPath];
+  
+    return this.fontCache[cacheKey];
   }
+  
 
   // Method to check if font supports specific characters
   supportsAmharic(text: string): boolean {

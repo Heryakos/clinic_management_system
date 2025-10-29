@@ -336,7 +336,7 @@ export class DoctorComponent implements OnInit {
                     FatherName: patient.FatherName,
                     DateOfBirth: new Date(patient.DateOfBirth),
                     Age: patient.Age,
-                    gender: patient.gender,
+                    gender: patient.gender || patient.Gender || 'Unknown',
                     phone: patient.phone,
                     Address: patient.Address,
                     BloodType: patient.BloodType,

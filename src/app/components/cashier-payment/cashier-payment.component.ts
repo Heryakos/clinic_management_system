@@ -51,6 +51,19 @@ export interface PaymentSummary {
   styleUrls: ['./cashier-payment.component.css']
 })
 export class CashierPaymentComponent implements OnInit {
+  // Voucher language
+voucherLang: 'en' | 'am' = 'en';
+
+// Company info (from DB or config)
+companyInfo = {
+  nameEn: 'Federal Housing Corporation',
+  nameAm: 'ፌደራል ቤቶች ኮርፖሬሽን',
+  addressEn: 'Addis Ababa, Ethiopia',
+  addressAm: 'አዲስ አበባ፣ ኢትዮጵያ',
+  phone: '+251 11 551 2345',
+  logoUrl: '/assets/images/logo.png'
+};
+  voucherType: 'petty' | 'check' = 'petty';
   approvalsForPayment: CashierApproval[] = [];
   filteredApprovals: CashierApproval[] = [];
   paymentHistory: PaymentHistory[] = [];
@@ -311,28 +324,21 @@ export class CashierPaymentComponent implements OnInit {
   }
 
   openIndividualPaymentDialog(approval: CashierApproval): void {
-    console.log('Opening dialog for approval:', approval);
-    
-    if (!approval) {
-      console.error('No approval provided to dialog');
-      this.showErrorMessage('No approval data found');
-      return;
-    }
-  
     this.selectedApproval = approval;
     this.individualPaymentAmount = approval.ApprovedAmount;
     this.individualPaidBy = this.employeeName;
-    this.individualPaymentMethod = 'Cash';
+  
+    // Auto-select correct method
+    const allowed = this.getAllowedPaymentMethods(this.individualPaymentAmount);
+    this.individualPaymentMethod = allowed[0].value;
+  
+    // Reset cash fields
+    this.individualAmountTendered = this.individualPaymentAmount;
+    this.individualChangeGiven = 0;
+  
     this.individualReferenceNumber = '';
     this.individualComments = '';
-    this.individualAmountTendered = approval.ApprovedAmount;
-    this.individualChangeGiven = 0;
     this.showPaymentDialog = true;
-    
-    console.log('Dialog data set:', {
-      selectedApproval: this.selectedApproval,
-      paymentAmount: this.individualPaymentAmount
-    });
   }
 
   openBatchPaymentDialog(): void {
@@ -340,40 +346,49 @@ export class CashierPaymentComponent implements OnInit {
       this.showErrorMessage('Please select at least one approval for batch payment.');
       return;
     }
+  
+    const total = this.getSelectedTotalAmount();
+    const allowed = this.getAllowedPaymentMethods(total);
     
     this.batchPaidBy = this.employeeName;
-    this.batchPaymentMethod = 'Cash';
-    this.batchComments = '';
-    this.batchAmountTendered = this.getSelectedTotalAmount();
+    this.batchPaymentMethod = allowed[0].value;
+    this.batchAmountTendered = total;
     this.batchChangeGiven = 0;
+    this.batchComments = '';
     this.showBatchPaymentDialog = true;
   }
 
   openVoucherForm(): void {
-    // Auto-fill with available data
+    const total = this.selectedApproval 
+      ? this.selectedApproval.ApprovedAmount 
+      : this.getSelectedTotalAmount();
+  
+    this.voucherType = total <= 3000 ? 'petty' : 'check';
+  
+    // Auto-fill from DB (you can expand this later)
+    const payeeName = this.selectedApproval?.PatientName || 
+                      (this.selectedApprovals.length === 1 
+                        ? this.selectedApprovals[0].PatientName 
+                        : 'Multiple Payees');
+  
     this.voucherFormData = {
       voucherNo: this.generateVoucherNumber(),
       date: new Date().toLocaleDateString('en-GB'),
-      payee: this.selectedApproval?.PatientName || 
-             (this.selectedApprovals.length === 1 ? this.selectedApprovals[0]?.PatientName : 'Multiple Payees'),
-      amountWords: this.selectedApproval ? 
-        this.convertAmountToWords(this.selectedApproval.ApprovedAmount) : 
-        this.convertAmountToWords(this.getSelectedTotalAmount()),
-      amountFigure: this.selectedApproval ? 
-        this.selectedApproval.ApprovedAmount : 
-        this.getSelectedTotalAmount(),
-      reason: this.selectedApproval ? 
-        `Medical Expense Reimbursement - ${this.selectedApproval.ReimbursementNumber}` :
-        `Batch Medical Expense Reimbursement - ${this.getSelectedCount()} payments`,
+      payee: payeeName,
+      amountWords: this.convertAmountToWords(total),
+      amountFigure: total,
+      reason: this.selectedApproval 
+        ? `Medical Reimbursement - ${this.selectedApproval.ReimbursementNumber}`
+        : `Batch Medical Reimbursement (${this.getSelectedCount()} items)`,
       account: 'MED-EXP-001',
-      budget: 'Medical Budget 2024',
+      budget: 'Medical Budget 2025',
       preparedBy: this.selectedApproval?.PreparedBy || this.employeeName,
       checkedBy: this.selectedApproval?.CheckedBy || this.employeeName,
       approvedBy: this.employeeName,
       cashier: this.employeeName,
       accountant: ''
     };
-    
+  
     this.showVoucherForm = true;
   }
 
@@ -384,157 +399,184 @@ export class CashierPaymentComponent implements OnInit {
   }
 
   convertAmountToWords(amount: number): string {
-    // Simple number to words conversion for Ethiopian Birr
+    if (amount === 0) return 'Zero Birr Only';
+  
     const units = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
     const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
     const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-    
-    if (amount === 0) return 'Zero Birr Only';
-    
+    const scales = ['', 'Thousand', 'Million', 'Billion'];
+  
     let words = '';
-    const wholePart = Math.floor(amount);
-    const decimalPart = Math.round((amount - wholePart) * 100);
-    
-    // Convert whole part
-    if (wholePart >= 1000) {
-      words += units[Math.floor(wholePart / 1000)] + ' Thousand ';
-      amount %= 1000;
-    }
-    
-    if (wholePart >= 100) {
-      words += units[Math.floor(wholePart / 100)] + ' Hundred ';
-      amount %= 100;
-    }
-    
-    if (wholePart >= 20) {
-      words += tens[Math.floor(wholePart / 10)] + ' ';
-      amount %= 10;
-    } else if (wholePart >= 10) {
-      words += teens[wholePart - 10] + ' ';
-      amount = 0;
-    }
-    
-    if (wholePart > 0 && wholePart < 10) {
-      words += units[wholePart] + ' ';
-    }
-    
-    words += 'Birr';
-    
-    // Convert decimal part
+    let num = Math.floor(amount); // Work with whole number only
+    let scaleIndex = 0;
+  
+    // Handle up to billions
+    do {
+      const chunk = num % 1000;
+      if (chunk !== 0) {
+        const chunkWords = this.convertChunkToWords(chunk, units, teens, tens);
+        words = chunkWords + (scaleIndex > 0 ? ' ' + scales[scaleIndex] + ' ' : '') + words;
+      }
+      num = Math.floor(num / 1000);
+      scaleIndex++;
+    } while (num > 0);
+  
+    // Add decimal part (cents)
+    const decimalPart = Math.round((amount - Math.floor(amount)) * 100);
     if (decimalPart > 0) {
-      words += ' and ';
-      if (decimalPart >= 20) {
-        words += tens[Math.floor(decimalPart / 10)] + ' ';
-        words += units[decimalPart % 10] + ' ';
-      } else if (decimalPart >= 10) {
-        words += teens[decimalPart - 10] + ' ';
+      words += ' and ' + this.convertChunkToWords(decimalPart, units, teens, tens) + ' Cents';
+    }
+  
+    return words.trim() + ' Birr Only';
+  }
+  
+  // Helper: Convert numbers 1–999 to words
+  private convertChunkToWords(num: number, units: string[], teens: string[], tens: string[]): string {
+    let words = '';
+  
+    if (num >= 100) {
+      words += units[Math.floor(num / 100)] + ' Hundred ';
+      num %= 100;
+    }
+  
+    if (num >= 20) {
+      words += tens[Math.floor(num / 10)] + ' ';
+      num %= 10;
+    } else if (num >= 10) {
+      words += teens[num - 10] + ' ';
+      return words;
+    }
+  
+    if (num > 0) {
+      words += units[num] + ' ';
+    }
+  
+    return words;
+  }
+  updateAmountWords(): void {
+    const figure = parseFloat(this.voucherFormData.amountFigure.replace(/,/g, ''));
+    if (!isNaN(figure)) {
+      this.voucherFormData.amountWords = this.convertAmountToWords(figure);
+    }
+  }
+  getAllowedPaymentMethods(amount: number): { value: string; label: string }[] {
+    if (amount <= 3000) {
+      return [{ value: 'Cash', label: 'Cash' }];
+    } else {
+      return [{ value: 'Check', label: 'Check' }];
+    }
+  }
+  onPaymentMethodChange(type: 'individual' | 'batch'): void {
+    const amount = type === 'individual' 
+      ? this.individualPaymentAmount 
+      : this.getSelectedTotalAmount();
+  
+    const allowed = this.getAllowedPaymentMethods(amount);
+    const current = type === 'individual' ? this.individualPaymentMethod : this.batchPaymentMethod;
+  
+    // If current method is not allowed, auto-switch to the only valid one
+    if (!allowed.some(m => m.value === current)) {
+      const newMethod = allowed[0].value;
+      if (type === 'individual') {
+        this.individualPaymentMethod = newMethod;
+        this.individualAmountTendered = this.individualPaymentAmount;
+        this.calculateIndividualChange();
       } else {
-        words += units[decimalPart] + ' ';
-      }
-      words += 'Cents';
-    }
-    
-    return words + ' Only';
-  }
-
-  printVoucherForm(): void {
-    const voucherElement = document.getElementById('voucher-form-print');
-    if (voucherElement) {
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(`
-          <html>
-            <head>
-              <title>Petty Cash Payment Voucher - ${this.voucherFormData.voucherNo}</title>
-              <style>
-                body { 
-                  font-family: Arial, sans-serif; 
-                  background: #f8f9fa; 
-                  margin: 40px; 
-                }
-                .voucher { 
-                  background: #fff; 
-                  border: 2px solid #000; 
-                  padding: 20px 30px; 
-                  max-width: 800px; 
-                  margin: auto; 
-                }
-                h2 { 
-                  text-align: center; 
-                  text-transform: uppercase; 
-                  margin-bottom: 5px; 
-                }
-                .sub-header { 
-                  text-align: center; 
-                  font-weight: bold; 
-                  margin-bottom: 20px; 
-                }
-                .row { 
-                  display: flex; 
-                  justify-content: space-between; 
-                  margin-bottom: 10px; 
-                }
-                label { 
-                  font-weight: bold; 
-                  width: 180px; 
-                  display: inline-block; 
-                }
-                .value { 
-                  border-bottom: 1px solid #999; 
-                  padding: 4px; 
-                  flex: 1; 
-                  margin-left: 10px; 
-                  min-height: 20px;
-                }
-                .col { 
-                  width: 48%; 
-                }
-                .footer { 
-                  margin-top: 25px; 
-                  border-top: 1px solid #000; 
-                  padding-top: 10px; 
-                  font-size: 14px; 
-                }
-                .signature { 
-                  display: flex; 
-                  justify-content: space-between; 
-                  margin-top: 25px; 
-                }
-                .signature div { 
-                  width: 30%; 
-                  text-align: center; 
-                }
-                .signature div p { 
-                  border-top: 1px solid #000; 
-                  margin-top: 50px; 
-                  padding-top: 5px; 
-                }
-                @media print { 
-                  body { margin: 0; background: white; }
-                  .no-print { display: none; }
-                  .voucher { border: 2px solid #000; box-shadow: none; }
-                }
-              </style>
-            </head>
-            <body>
-              ${voucherElement.innerHTML}
-            </body>
-          </html>
-        `);
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => {
-          printWindow.print();
-        }, 500);
+        this.batchPaymentMethod = newMethod;
+        this.batchAmountTendered = this.getSelectedTotalAmount();
+        this.calculateBatchChange();
       }
     }
   }
 
-  saveAsPDF(): void {
-    // For now, use print functionality
-    // You can implement proper PDF generation here using libraries like html2pdf.js or jspdf
-    this.printVoucherForm();
+  printVoucherForm(type: 'petty' | 'check'): void {
+    const printId = type === 'petty' ? 'voucher-petty-print' : 'voucher-check-print';
+    const element = document.getElementById(printId);
+    if (!element) return;
+  
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+  
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${type === 'petty' ? 'Petty Cash' : 'Check'} Voucher - ${this.voucherFormData.voucherNo}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 30px; }
+          @media print { body { margin: 10mm; } }
+          ${type === 'check' ? document.querySelector('style')?.innerHTML || '' : ''}
+        </style>
+      </head>
+      <body>
+        ${element.innerHTML}
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    setTimeout(() => printWindow.print(), 500);
   }
+  
+  saveAsPDF(type: 'petty' | 'check'): void {
+    const printId = type === 'petty' ? 'voucher-petty-print' : 'voucher-check-print';
+    const element = document.getElementById(printId);
+    if (!element) return;
+  
+    import('html2canvas').then(html2canvas => {
+      import('jspdf').then(jsPDF => {
+        const doc = new jsPDF.jsPDF('p', 'mm', 'a4');
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+  
+        // Add logo
+        const logo = new Image();
+        logo.src = this.companyInfo.logoUrl;
+        logo.onload = () => {
+          const logoWidth = 40;
+          const logoHeight = 15;
+          doc.addImage(logo, 'PNG', 10, 8, logoWidth, logoHeight);
+  
+          // Add company name (Amharic or English)
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(14);
+          const companyName = this.voucherLang === 'am' ? this.companyInfo.nameAm : this.companyInfo.nameEn;
+          doc.text(companyName, pageWidth / 2, 15, { align: 'center' });
+  
+          doc.setFontSize(10);
+          const address = this.voucherLang === 'am' ? this.companyInfo.addressAm : this.companyInfo.addressEn;
+          doc.text(address, pageWidth / 2, 20, { align: 'center' });
+          doc.text(this.companyInfo.phone, pageWidth / 2, 25, { align: 'center' });
+  
+          // Convert HTML to canvas
+          html2canvas.default(element as HTMLElement, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff'
+          }).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const imgWidth = pageWidth - 20;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+  
+            let heightLeft = imgHeight;
+            let position = 35;
+  
+            doc.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight - 45;
+  
+            while (heightLeft > 0) {
+              position = heightLeft - imgHeight + 35;
+              doc.addPage();
+              doc.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+              heightLeft -= pageHeight - 45;
+            }
+  
+            doc.save(`${this.voucherFormData.voucherNo}_${type === 'petty' ? 'PettyCash' : 'Check'}.pdf`);
+          });
+        };
+      });
+    });
+  }
+  
 
   closePaymentDialog(): void {
     this.showPaymentDialog = false;
@@ -553,6 +595,7 @@ export class CashierPaymentComponent implements OnInit {
 
   closeVoucherForm(): void {
     this.showVoucherForm = false;
+    this.voucherType = 'petty'; // Reset to default
     this.voucherFormData = {
       voucherNo: '',
       date: '',
