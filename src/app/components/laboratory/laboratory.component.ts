@@ -148,6 +148,8 @@ export class LaboratoryComponent implements OnInit {
     // Get patient laboratory tests by card number
     this.medicalService.getPatientLaboratoryTestscardNumber(this.cardNumberSearch).subscribe(
       (result: any) => {
+        console.log('resultaaaa',result);
+        
         if (result && Array.isArray(result) && result.length > 0) {
           this.allCardSearchResults = result.filter(r => !r.reportedByName); // Hide if reportedByName is not empty
           this.cardSearchResult = this.allCardSearchResults[0] || null; // Default to first result if any

@@ -1,0 +1,496 @@
+<div class="finance-container">
+  <h2>Finance Approval</h2>
+  <p class="subtitle">Review and approve medical expense reimbursements</p>
+
+  <!-- Tab Navigation -->
+  <div class="tab-navigation">
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'new'"
+      (click)="switchTab('new')"
+    >
+      New Approvals
+    </button>
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'pending'"
+      (click)="switchTab('pending')"
+    >
+      Pending Approvals
+    </button>
+  </div>
+
+  <!-- New Approval Tab -->
+  <div class="tab-content" *ngIf="activeTab === 'new'">
+
+  <div class="search-container">
+    <input
+      type="text"
+      [(ngModel)]="searchTerm"
+      (input)="filterReimbursements()"
+      placeholder="Search by Payroll No, Patient Name, or Reimbursement Number"
+    />
+  </div>
+
+  <div class="actions-container">
+    <div class="selection-info" *ngIf="getSelectedCount() > 0">
+      <span class="selected-count">{{ getSelectedCount() }} selected</span>
+      <span class="selected-amount">Total: {{ getSelectedTotalAmount() | currency: 'ETB':'symbol':'1.2-2' }}</span>
+    </div>
+    <div class="action-buttons">
+      <button 
+        type="button" 
+        class="action-btn select-all"
+        (click)="toggleSelectAll()"
+      >
+      {{ areAllSelected() ? 'Deselect All' : 'Select All' }}
+      </button>
+      <button 
+        type="button" 
+        class="action-btn batch-approve"
+        (click)="openBatchApprovalDialog()"
+        [disabled]="getSelectedCount() === 0"
+      >
+        Batch Approve ({{ getSelectedCount() }})
+      </button>
+    </div>
+  </div>
+
+  <div class="reimbursements-list">
+    <h3>Approved Reimbursements</h3>
+    <div class="table-container">
+      <table class="reimbursements-table">
+        <thead>
+          <tr>
+            <th class="checkbox-column">
+              <input 
+                type="checkbox" 
+                [checked]="areAllSelected()"
+                [indeterminate]="isIndeterminate()"
+                (change)="toggleSelectAll()"
+              />
+            </th>
+            <th>Reimbursement No</th>
+            <th>Patient Name</th>
+            <th>Payroll No</th>
+            <th>Department</th>
+            <th>Total Amount</th>
+            <th>Approved Amount</th>
+            <th>Submission Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let reimbursement of filteredReimbursements; trackBy: trackByReimbursement" 
+              [class.selected-row]="reimbursement.selected">
+            <td class="checkbox-column">
+              <input 
+                type="checkbox" 
+                [checked]="reimbursement.selected"
+                (change)="toggleSelection(reimbursement)"
+              />
+            </td>
+            <td>{{ reimbursement.ReimbursementNumber }}</td>
+            <td>{{ reimbursement.PatientName }}</td>
+            <td>{{ reimbursement.PayrollNumber }}</td>
+            <td>{{ reimbursement.Department }}</td>
+            <td class="amount">{{ reimbursement.TotalAmount | currency: 'ETB':'symbol':'1.2-2' }}</td>
+            <td class="amount approved">{{ reimbursement.ApprovedAmount | currency: 'ETB':'symbol':'1.2-2' }}</td>
+            <td>{{ reimbursement.SubmissionDate | date: 'short' }}</td>
+            <td>
+              <button 
+                type="button" 
+                class="action-btn approve"
+                (click)="openIndividualApprovalDialog(reimbursement)"
+              >
+                Approve
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Individual Approval Dialog -->
+  <div class="modal" *ngIf="showApprovalDialog">
+    <div class="modal-backdrop" (click)="closeApprovalDialog()"></div>
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Create Finance Approval</h3>
+        <button class="close-btn" (click)="closeApprovalDialog()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="approval-info">
+          <h4>Reimbursement Details</h4>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Reimbursement Number:</label>
+              <span>{{ selectedReimbursement?.ReimbursementNumber }}</span>
+            </div>
+            <div class="info-item">
+              <label>Patient Name:</label>
+              <span>{{ selectedReimbursement?.PatientName }}</span>
+            </div>
+            <div class="info-item">
+              <label>Payroll Number:</label>
+              <span>{{ selectedReimbursement?.PayrollNumber }}</span>
+            </div>
+            <div class="info-item">
+              <label>Department:</label>
+              <span>{{ selectedReimbursement?.Department }}</span>
+            </div>
+            <div class="info-item">
+              <label>Total Amount:</label>
+              <span class="amount">{{ selectedReimbursement?.TotalAmount | currency: 'ETB':'symbol':'1.2-2' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Approved Amount:</label>
+              <span class="amount approved">{{ selectedReimbursement?.ApprovedAmount | currency: 'ETB':'symbol':'1.2-2' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="approval-form">
+          <h4>Approval Details</h4>
+          <div class="form-group">
+            <label for="approvedAmount">Approved Amount *</label>
+            <input 
+              type="number" 
+              id="approvedAmount"
+              [(ngModel)]="individualApprovedAmount"
+              step="0.01"
+              min="0"
+              class="form-control"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="preparedBy">Prepared By *</label>
+            <input 
+              type="text" 
+              id="preparedBy"
+              [(ngModel)]="individualPreparedBy"
+              class="form-control"
+              placeholder="Enter preparer name"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="checkedBy">Checked By *</label>
+            <input 
+              type="text" 
+              id="checkedBy"
+              [(ngModel)]="individualCheckedBy"
+              class="form-control"
+              placeholder="Enter checker name"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="comments">Comments</label>
+            <textarea 
+              id="comments"
+              [(ngModel)]="individualComments"
+              class="form-control"
+              rows="3"
+              placeholder="Optional comments"
+            ></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="action-btn cancel" (click)="closeApprovalDialog()">Cancel</button>
+        <button 
+          type="button" 
+          class="action-btn confirm"
+          (click)="createIndividualApproval()"
+          [disabled]="!individualPreparedBy?.trim() || !individualCheckedBy?.trim()"
+        >
+          Create Approval
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Batch Approval Dialog -->
+  <div class="modal" *ngIf="showBatchApprovalDialog">
+    <div class="modal-backdrop" (click)="closeBatchApprovalDialog()"></div>
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Create Batch Finance Approval</h3>
+        <button class="close-btn" (click)="closeBatchApprovalDialog()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="batch-info">
+          <h4>Batch Information</h4>
+          <div class="batch-summary">
+            <div class="summary-item">
+              <span class="label">Selected Reimbursements:</span>
+              <span class="value">{{ getSelectedCount() }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Total Amount:</span>
+              <span class="value amount">{{ getSelectedTotalAmount() | currency: 'ETB':'symbol':'1.2-2' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="batch-form">
+          <h4>Batch Details</h4>
+          <div class="form-group">
+            <label for="batchName">Batch Name *</label>
+            <input 
+              type="text" 
+              id="batchName"
+              [(ngModel)]="batchName"
+              class="form-control"
+              placeholder="Enter batch name"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="batchPreparedBy">Prepared By *</label>
+            <input 
+              type="text" 
+              id="batchPreparedBy"
+              [(ngModel)]="preparedBy"
+              class="form-control"
+              placeholder="Enter preparer name"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="batchCheckedBy">Checked By *</label>
+            <input 
+              type="text" 
+              id="batchCheckedBy"
+              [(ngModel)]="checkedBy"
+              class="form-control"
+              placeholder="Enter checker name"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="batchComments">Comments</label>
+            <textarea 
+              id="batchComments"
+              [(ngModel)]="batchComments"
+              class="form-control"
+              rows="3"
+              placeholder="Optional comments for the batch"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="selected-reimbursements">
+          <h4>Selected Reimbursements</h4>
+          <div class="selected-list">
+            <div *ngFor="let reimbursement of selectedReimbursements; trackBy: trackByReimbursement" class="selected-item">
+              <span class="reimbursement-info">
+                {{ reimbursement.ReimbursementNumber }} - {{ reimbursement.PatientName }} 
+                ({{ reimbursement.PayrollNumber }})
+              </span>
+              <span class="amount">{{ reimbursement.ApprovedAmount | currency: 'ETB':'symbol':'1.2-2' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="action-btn cancel" (click)="closeBatchApprovalDialog()">Cancel</button>
+        <button 
+          type="button" 
+          class="action-btn confirm"
+          (click)="createBatchApproval()"
+          [disabled]="!batchName?.trim() || !preparedBy?.trim() || !checkedBy?.trim()"
+        >
+          Create Batch Approval
+        </button>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- Pending Approvals Tab -->
+  <div class="tab-content" *ngIf="activeTab === 'pending'">
+    <div class="search-container">
+      <input
+        type="text"
+        [(ngModel)]="searchTermPending"
+        (input)="filterPendingApprovals()"
+        placeholder="Search by Payroll No, Patient Name, or Reimbursement Number"
+      />
+    </div>
+
+    <div class="actions-container">
+      <div class="selection-info" *ngIf="getPendingSelectedCount() > 0">
+        <span class="selected-count">{{ getPendingSelectedCount() }} selected</span>
+      </div>
+      <div class="action-buttons">
+        <button 
+          type="button" 
+          class="action-btn select-all"
+          (click)="toggleSelectAllPending()"
+        >
+          {{ areAllPendingSelected() ? 'Deselect All' : 'Select All' }}
+        </button>
+        <button 
+          type="button" 
+          class="action-btn batch-approve"
+          (click)="approveBatchPendingApprovals()"
+          [disabled]="getPendingSelectedCount() === 0 || !approvalApprovedBy?.trim()"
+        >
+          Batch Approve ({{ getPendingSelectedCount() }})
+        </button>
+      </div>
+    </div>
+
+    <div class="pending-approvals-form" style="margin-bottom: 20px;">
+      <div class="form-group">
+        <label for="approvalApprovedBy">Approved By *</label>
+        <input 
+          type="text" 
+          id="approvalApprovedBy"
+          [(ngModel)]="approvalApprovedBy"
+          class="form-control"
+          placeholder="Enter approver name"
+          required
+        />
+      </div>
+    </div>
+
+    <div class="approvals-list">
+      <h3>Pending Finance Approvals</h3>
+      <div class="table-container">
+        <table class="reimbursements-table">
+          <thead>
+            <tr>
+              <th class="checkbox-column">
+                <input 
+                  type="checkbox" 
+                  [checked]="areAllPendingSelected()"
+                  [indeterminate]="isPendingIndeterminate()"
+                  (change)="toggleSelectAllPending()"
+                />
+              </th>
+              <th>Reimbursement No</th>
+              <th>Patient Name</th>
+              <th>Payroll No</th>
+              <th>Department</th>
+              <th>Total Amount</th>
+              <th>Approved Amount</th>
+              <th>Prepared By</th>
+              <th>Checked By</th>
+              <th>Prepared Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let approval of filteredPendingApprovals; trackBy: trackByPendingApproval" 
+                [class.selected-row]="approval.selected">
+              <td class="checkbox-column">
+                <input 
+                  type="checkbox" 
+                  [checked]="approval.selected"
+                  (change)="togglePendingSelection(approval)"
+                />
+              </td>
+              <td>{{ approval.ReimbursementNumber }}</td>
+              <td>{{ approval.PatientName }}</td>
+              <td>{{ approval.PayrollNumber }}</td>
+              <td>{{ approval.Department }}</td>
+              <td class="amount">{{ approval.TotalAmount | currency: 'ETB':'symbol':'1.2-2' }}</td>
+              <td class="amount approved">{{ approval.ApprovedAmount | currency: 'ETB':'symbol':'1.2-2' }}</td>
+              <td>{{ approval.PreparedBy }}</td>
+              <td>{{ approval.CheckedBy }}</td>
+              <td>{{ approval.PreparedDate | date: 'short' }}</td>
+              <td>
+                <button 
+                  type="button" 
+                  class="action-btn approve"
+                  (click)="openApprovePendingDialog(approval)"
+                >
+                  Approve
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Individual Pending Approval Dialog -->
+    <div class="modal" *ngIf="showPendingApprovalDialog">
+      <div class="modal-backdrop" (click)="closeApprovePendingDialog()"></div>
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Approve Finance Approval</h3>
+          <button class="close-btn" (click)="closeApprovePendingDialog()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="approval-info">
+            <h4>Approval Details</h4>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Reimbursement Number:</label>
+                <span>{{ selectedPendingApproval?.ReimbursementNumber }}</span>
+              </div>
+              <div class="info-item">
+                <label>Patient Name:</label>
+                <span>{{ selectedPendingApproval?.PatientName }}</span>
+              </div>
+              <div class="info-item">
+                <label>Payroll Number:</label>
+                <span>{{ selectedPendingApproval?.PayrollNumber }}</span>
+              </div>
+              <div class="info-item">
+                <label>Department:</label>
+                <span>{{ selectedPendingApproval?.Department }}</span>
+              </div>
+              <div class="info-item">
+                <label>Total Amount:</label>
+                <span class="amount">{{ selectedPendingApproval?.TotalAmount | currency: 'ETB':'symbol':'1.2-2' }}</span>
+              </div>
+              <div class="info-item">
+                <label>Approved Amount:</label>
+                <span class="amount approved">{{ selectedPendingApproval?.ApprovedAmount | currency: 'ETB':'symbol':'1.2-2' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="approval-form">
+            <h4>Approval Details</h4>
+            <div class="form-group">
+              <label for="approverName">Approved By *</label>
+              <input 
+                type="text" 
+                id="approverName"
+                [(ngModel)]="approvalApprovedBy"
+                class="form-control"
+                placeholder="Enter approver name"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="action-btn cancel" (click)="closeApprovePendingDialog()">Cancel</button>
+          <button 
+            type="button" 
+            class="action-btn confirm"
+            (click)="approvePendingApproval()"
+            [disabled]="!approvalApprovedBy?.trim()"
+          >
+            Approve
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

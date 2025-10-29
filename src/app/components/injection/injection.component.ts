@@ -544,57 +544,48 @@ export class InjectionComponent implements OnInit {
     // Utility method to convert PascalCase to camelCase and ensure field mapping
     private convertToCamelCase(obj: any): any {
         if (!obj) return obj;
-    
-        const result: any = {
-            procedureID: obj.ProcedureID,  // ✅ PRESERVE FROM SP
-            procedureNumber: obj.ProcedureNumber,
-            procedureDate: obj.ProcedureDate,
-            status: obj.Status,
-            patientID: obj.PatientID,
-            cardNumber: obj.CardNumber,
-            fullName: obj.PatientName,  // ← PatientName from SP
-            InjectionNumber: obj.InjectionNumber,
-            InjectionDate: obj.InjectionDate,
-            Status: obj.Status,
-            AdministeredBy: obj.AdministeredBy,
-            AdministeredByName: obj.AdministeredByName,
-            AdministeredDate: obj.AdministeredDate,
-            Notes: obj.Notes,
-            FullName:obj.FullName,
-            Gender: obj.Gender,
-            Age: obj.Age,
-            Weight: obj.Weight,
-            Woreda: obj.Woreda,
-            HouseNo: obj.HouseNo,
-            Phone: obj.Phone,
-            MedicalHistory: obj.MedicalHistory,
-            MedicationName: obj.MedicationName,
-            Strength: obj.Strength,
-            DosageForm: obj.DosageForm,
-            Dose: obj.Dose,
-            Route: obj.Route,
-            Site: obj.Site,
-            Frequency: obj.Frequency,
-            Duration: obj.Duration,
-            Instructions: obj.Instructions,
-            AdministeredDoses: obj.AdministeredDoses,
-            TotalDoses: obj.TotalDoses,
-            Schedules: obj.Schedules,
-            PatientID: obj.PatientID,
-            CardNumber: obj.CardNumber,
-            OrderingPhysicianID: obj.OrderingPhysicianID,
-            OrderingPhysicianName: obj.OrderingPhysicianName,
-            MedicationID: obj.MedicationID,
-            CreatedBy: obj.CreatedBy,
-            CreatedDate: obj.CreatedDate,
-            IsRecurring: obj.IsRecurring,
-            StartDate: obj.StartDate,
-            EndDate: obj.EndDate
-
-        };
-    
+      
+        const result: any = {};
+        for (const key in obj) {
+          if (Object.prototype.hasOwnProperty.call(obj, key)) {
+            const camelKey = key.charAt(0).toLowerCase() + key.slice(1);
+            result[camelKey] = obj[key];
+          }
+        }
+      
+        // Ensure critical fields are mapped correctly
+        result.id = obj.InjectionID || obj.ProcedureID || obj.ScheduleID || obj.id;
+        result.procedureId = obj.ProcedureID || obj.InjectionID;
+        result.scheduleId = obj.ScheduleID || result.scheduleId;
+        result.injectionId = obj.InjectionID || result.injectionId;
+        result.woundCareId = obj.WoundCareID || obj.ProcedureID;
+        result.suturingId = obj.SuturingID || obj.ProcedureID;
+        result.earIrrigationId = obj.EarIrrigationID || obj.ProcedureID;
+        result.patientId = obj.PatientID || result.patientId;
+        result.fullName = obj.FullName || obj.PatientName || result.fullName || '';
+        result.cardNumber = obj.CardNumber || result.cardNumber || '';
+        result.medicationName = obj.MedicationName || result.medicationName || '';
+        result.status = obj.Status || result.status || '';
+        result.procedureType = obj.ProcedureType || result.procedureType || '';
+      
+        // Procedure-specific fields
+        if (obj.ProcedureType === 'WoundCare') {
+          result.woundType = obj.WoundType || '';
+          result.woundLocation = obj.WoundLocation || '';
+          result.treatmentPlan = obj.TreatmentPlan || '';
+        } else if (obj.ProcedureType === 'Suturing') {
+          result.woundType = obj.WoundType || '';
+          result.woundLocation = obj.WoundLocation || '';
+          result.sutureType = obj.SutureType || obj.TreatmentPlan || '';
+        } else if (obj.ProcedureType === 'EarIrrigation') {
+          result.earSide = obj.EarSide || obj.WoundType || '';
+          result.irrigationSolution = obj.IrrigationSolution || obj.WoundLocation || '';
+          result.solutionTemperature = obj.SolutionTemperature || obj.TreatmentPlan || '';
+        }
+      
+        console.log('Converted to camelCase:', result);
         return result;
-    }
+      }
 
     private showSnackBar(message: string, panelClass: string = 'info-snackbar'): void {
         this.snackBar.open(message, 'Close', {

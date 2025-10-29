@@ -1,0 +1,756 @@
+<div class="cashier-container">
+  <h2>Cashier Payment</h2>
+  <p class="subtitle">Process payments for approved medical expense reimbursements</p>
+
+  <!-- Payment Summary -->
+  <div class="summary-cards" *ngIf="paymentSummary">
+    <div class="summary-card pending">
+      <div class="card-header">
+        <h3>Pending Payments</h3>
+        <span class="card-icon">⏳</span>
+      </div>
+      <div class="card-content">
+        <div class="card-stat">
+          <span class="stat-number">{{ paymentSummary?.PendingPayments?.Count || 0 }}</span>
+          <span class="stat-label">Payments</span>
+        </div>
+        <div class="card-stat">
+          <span class="stat-number">{{ (paymentSummary?.PendingPayments?.Amount || 0) | currency: 'ETB':'symbol':'1.2-2' }}</span>
+          <span class="stat-label">Total Amount</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="summary-card today">
+      <div class="card-header">
+        <h3>Today's Payments</h3>
+        <span class="card-icon">💰</span>
+      </div>
+      <div class="card-content">
+        <div class="card-stat">
+          <span class="stat-number">{{ paymentSummary?.TodayPayments?.Count || 0 }}</span>
+          <span class="stat-label">Payments</span>
+        </div>
+        <div class="card-stat">
+          <span class="stat-number">{{ (paymentSummary?.TodayPayments?.Amount || 0) | currency: 'ETB':'symbol':'1.2-2' }}</span>
+          <span class="stat-label">Total Amount</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="tab-navigation">
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'pending'"
+      (click)="switchTab('pending')"
+    >
+      Pending Payments
+    </button>
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'history'"
+      (click)="switchTab('history')"
+    >
+      Payment History
+    </button>
+  </div>
+
+  <!-- Pending Payments Tab -->
+  <div class="tab-content" *ngIf="activeTab === 'pending'">
+    <div class="search-container">
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="filterApprovals()"
+        placeholder="Search by Payroll No, Patient Name, or Reimbursement Number"
+      />
+    </div>
+
+    <div class="actions-container">
+      <div class="selection-info" *ngIf="getSelectedCount() > 0">
+        <span class="selected-count">{{ getSelectedCount() }} selected</span>
+        <span class="selected-amount">Total: {{ getSelectedTotalAmount() | currency: 'ETB':'symbol':'1.2-2' }}</span>
+      </div>
+      <div class="action-buttons">
+        <button 
+          type="button" 
+          class="action-btn select-all"
+          (click)="toggleSelectAll()"
+        >
+          {{ areAllSelected() ? 'Deselect All' : 'Select All' }}
+        </button>
+        <button 
+          type="button" 
+          class="action-btn batch-pay"
+          (click)="openBatchPaymentDialog()"
+          [disabled]="getSelectedCount() === 0"
+        >
+          Batch Pay ({{ getSelectedCount() }})
+        </button>
+        <!-- Add Voucher Button -->
+        <button 
+          type="button" 
+          class="action-btn voucher-btn"
+          (click)="openVoucherForm()"
+          [disabled]="getSelectedCount() === 0 && !selectedApproval"
+        >
+          Generate Voucher
+        </button>
+      </div>
+    </div>
+
+    <div class="approvals-list">
+      <h3>Approvals for Payment</h3>
+      <div class="table-container">
+        <table class="approvals-table">
+          <thead>
+            <tr>
+              <th class="checkbox-column">
+                <input 
+                  type="checkbox" 
+                  [checked]="areAllSelected()"
+                  [indeterminate]="isIndeterminate()"
+                  (change)="toggleSelectAll()"
+                />
+              </th>
+              <th>Reimbursement No</th>
+              <th>Patient Name</th>
+              <th>Payroll No</th>
+              <th>Department</th>
+              <th>Amount</th>
+              <th>Prepared By</th>
+              <th>Checked By</th>
+              <th>Prepared Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let approval of filteredApprovals; trackBy: trackByApproval" 
+                [class.selected-row]="approval.selected">
+              <td class="checkbox-column">
+                <input 
+                  type="checkbox" 
+                  [checked]="approval.selected"
+                  (change)="toggleSelection(approval)"
+                />
+              </td>
+              <td>{{ approval.ReimbursementNumber }}</td>
+              <td>{{ approval.PatientName }}</td>
+              <td>{{ approval.PayrollNumber }}</td>
+              <td>{{ approval.Department }}</td>
+              <td class="amount">{{ approval.ApprovedAmount | currency: 'ETB':'symbol':'1.2-2' }}</td>
+              <td>{{ approval.PreparedBy }}</td>
+              <td>{{ approval.CheckedBy }}</td>
+              <td>{{ approval.PreparedDate | date: 'short' }}</td>
+              <td>
+                <button 
+                  type="button" 
+                  class="action-btn pay"
+                  (click)="openIndividualPaymentDialog(approval)"
+                >
+                  Pay
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment History Tab -->
+  <div class="tab-content" *ngIf="activeTab === 'history'">
+    <div class="history-filters">
+      <div class="filter-group">
+        <label for="startDate">Start Date:</label>
+        <input 
+          type="date" 
+          id="startDate"
+          [(ngModel)]="startDate"
+          class="form-control"
+        />
+      </div>
+      <div class="filter-group">
+        <label for="endDate">End Date:</label>
+        <input 
+          type="date" 
+          id="endDate"
+          [(ngModel)]="endDate"
+          class="form-control"
+        />
+      </div>
+      <div class="filter-group">
+        <label for="statusFilter">Status:</label>
+        <select 
+          id="statusFilter"
+          [(ngModel)]="statusFilter"
+          class="form-control"
+        >
+          <option value="">All Status</option>
+          <option value="Paid">Paid</option>
+          <option value="Pending">Pending</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+      </div>
+      <div class="filter-actions">
+        <button 
+          type="button" 
+          class="action-btn apply"
+          (click)="applyHistoryFilters()"
+        >
+          Apply Filters
+        </button>
+        <button 
+          type="button" 
+          class="action-btn clear"
+          (click)="clearHistoryFilters()"
+        >
+          Clear
+        </button>
+      </div>
+    </div>
+
+    <div class="history-list">
+      <h3>Payment History</h3>
+      <div class="table-container">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Payment ID</th>
+              <th>Reimbursement No</th>
+              <th>Patient Name</th>
+              <th>Payroll No</th>
+              <th>Department</th>
+              <th>Amount</th>
+              <th>Paid By</th>
+              <th>Payment Date</th>
+              <th>Method</th>
+              <th>Reference</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let payment of paymentHistory; trackBy: trackByPayment">
+              <td>{{ payment.PaymentID }}</td>
+              <td>{{ payment.ReimbursementNumber }}</td>
+              <td>{{ payment.PatientName }}</td>
+              <td>{{ payment.PayrollNumber }}</td>
+              <td>{{ payment.Department }}</td>
+              <td class="amount">{{ payment.PaymentAmount | currency: 'ETB':'symbol':'1.2-2' }}</td>
+              <td>{{ payment.PaidBy }}</td>
+              <td>{{ payment.PaymentDate | date: 'short' }}</td>
+              <td>{{ payment.PaymentMethod }}</td>
+              <td>{{ payment.ReferenceNumber || 'N/A' }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="payment.Status.toLowerCase()">
+                  {{ payment.Status }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Individual Payment Dialog -->
+  <div class="modal" *ngIf="showPaymentDialog">
+    <div class="modal-backdrop" (click)="closePaymentDialog()"></div>
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Create Payment</h3>
+        <button class="close-btn" (click)="closePaymentDialog()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="payment-info" *ngIf="selectedApproval">
+          <h4>Approval Details</h4>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Reimbursement Number:</label>
+              <span>{{ selectedApproval?.ReimbursementNumber || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Patient Name:</label>
+              <span>{{ selectedApproval?.PatientName || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Payroll Number:</label>
+              <span>{{ selectedApproval?.PayrollNumber || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Department:</label>
+              <span>{{ selectedApproval?.Department || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Approved Amount:</label>
+              <span class="amount">{{ (selectedApproval?.ApprovedAmount || 0) | currency: 'ETB':'symbol':'1.2-2' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Prepared By:</label>
+              <span>{{ selectedApproval?.PreparedBy || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Checked By:</label>
+              <span>{{ selectedApproval?.CheckedBy || 'N/A' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="payment-form">
+          <h4>Payment Details</h4>
+          <div class="form-group">
+            <label for="paymentAmount">Payment Amount *</label>
+            <input 
+              type="number" 
+              id="paymentAmount"
+              [(ngModel)]="individualPaymentAmount"
+              step="0.01"
+              min="0"
+              class="form-control"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="paidBy">Paid By *</label>
+            <input 
+              type="text" 
+              id="paidBy"
+              [(ngModel)]="individualPaidBy"
+              class="form-control"
+              placeholder="Enter cashier name"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="paymentMethod">Payment Method *</label>
+            <select 
+              id="paymentMethod"
+              [(ngModel)]="individualPaymentMethod"
+              class="form-control"
+              required
+              (change)="individualAmountTendered = individualPaymentAmount; calculateIndividualChange()"
+            >
+              <option value="Cash">Cash</option>
+              <option value="Check">Check</option>
+              <option value="Transfer">Bank Transfer</option>
+            </select>
+          </div>
+
+          <!-- Cash Payment Specific Fields -->
+          <div class="cash-payment-section" *ngIf="individualPaymentMethod === 'Cash'">
+            <div class="cash-payment-header">
+              <h5>Cash Payment Details</h5>
+              <span class="exact-payment-badge" *ngIf="isIndividualExactPayment()">Exact Amount</span>
+            </div>
+            
+            <div class="form-group">
+              <label for="amountTendered">Amount Tendered *</label>
+              <input 
+                type="number" 
+                id="amountTendered"
+                [(ngModel)]="individualAmountTendered"
+                (input)="calculateIndividualChange()"
+                step="0.01"
+                min="0"
+                class="form-control"
+                [class.insufficient]="individualAmountTendered < individualPaymentAmount"
+                required
+              />
+              <div class="validation-message" *ngIf="individualAmountTendered < individualPaymentAmount">
+                ⚠️ Amount tendered is less than payment amount
+              </div>
+            </div>
+
+            <div class="change-display">
+              <div class="change-item">
+                <label>Change to Give:</label>
+                <span class="change-amount" [class.exact]="individualChangeGiven === 0">
+                  {{ individualChangeGiven | currency: 'ETB':'symbol':'1.2-2' }}
+                </span>
+              </div>
+              <div class="payment-breakdown">
+                <div class="breakdown-item">
+                  <span>Payment Amount:</span>
+                  <span>{{ individualPaymentAmount | currency: 'ETB':'symbol':'1.2-2' }}</span>
+                </div>
+                <div class="breakdown-item">
+                  <span>Amount Tendered:</span>
+                  <span>{{ individualAmountTendered | currency: 'ETB':'symbol':'1.2-2' }}</span>
+                </div>
+                <div class="breakdown-item total">
+                  <span>Change Due:</span>
+                  <span>{{ individualChangeGiven | currency: 'ETB':'symbol':'1.2-2' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group" *ngIf="individualPaymentMethod !== 'Cash'">
+            <label for="referenceNumber">Reference Number *</label>
+            <input 
+              type="text" 
+              id="referenceNumber"
+              [(ngModel)]="individualReferenceNumber"
+              class="form-control"
+              placeholder="Enter reference number"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="paymentComments">Comments</label>
+            <textarea 
+              id="paymentComments"
+              [(ngModel)]="individualComments"
+              class="form-control"
+              rows="3"
+              placeholder="Optional comments"
+            ></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="action-btn cancel" (click)="closePaymentDialog()">Cancel</button>
+        <button 
+          type="button" 
+          class="action-btn confirm"
+          (click)="createIndividualPayment()"
+          [disabled]="!individualPaidBy?.trim() || (individualPaymentMethod === 'Cash' && individualAmountTendered < individualPaymentAmount)"
+        >
+          Process Payment
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Batch Payment Dialog -->
+  <div class="modal" *ngIf="showBatchPaymentDialog">
+    <div class="modal-backdrop" (click)="closeBatchPaymentDialog()"></div>
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Create Batch Payment</h3>
+        <button class="close-btn" (click)="closeBatchPaymentDialog()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="batch-info">
+          <h4>Batch Information</h4>
+          <div class="batch-summary">
+            <div class="summary-item">
+              <span class="label">Selected Approvals:</span>
+              <span class="value">{{ getSelectedCount() }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Total Amount:</span>
+              <span class="value amount">{{ getSelectedTotalAmount() | currency: 'ETB':'symbol':'1.2-2' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="batch-form">
+          <h4>Payment Details</h4>
+          <div class="form-group">
+            <label for="batchPaidBy">Paid By *</label>
+            <input 
+              type="text" 
+              id="batchPaidBy"
+              [(ngModel)]="batchPaidBy"
+              class="form-control"
+              placeholder="Enter cashier name"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="batchPaymentMethod">Payment Method *</label>
+            <select 
+              id="batchPaymentMethod"
+              [(ngModel)]="batchPaymentMethod"
+              class="form-control"
+              required
+              (change)="batchAmountTendered = getSelectedTotalAmount(); calculateBatchChange()"
+            >
+              <option value="Cash">Cash</option>
+              <option value="Check">Check</option>
+              <option value="Transfer">Bank Transfer</option>
+            </select>
+          </div>
+
+          <!-- Batch Cash Payment Specific Fields -->
+          <div class="cash-payment-section" *ngIf="batchPaymentMethod === 'Cash'">
+            <div class="cash-payment-header">
+              <h5>Cash Payment Details</h5>
+              <span class="exact-payment-badge" *ngIf="isBatchExactPayment()">Exact Amount</span>
+            </div>
+            
+            <div class="form-group">
+              <label for="batchAmountTendered">Total Amount Tendered *</label>
+              <input 
+                type="number" 
+                id="batchAmountTendered"
+                [(ngModel)]="batchAmountTendered"
+                (input)="calculateBatchChange()"
+                step="0.01"
+                min="0"
+                class="form-control"
+                [class.insufficient]="batchAmountTendered < getSelectedTotalAmount()"
+                required
+              />
+              <div class="validation-message" *ngIf="batchAmountTendered < getSelectedTotalAmount()">
+                ⚠️ Amount tendered is less than total payment amount
+              </div>
+            </div>
+
+            <div class="change-display">
+              <div class="change-item">
+                <label>Total Change to Give:</label>
+                <span class="change-amount" [class.exact]="batchChangeGiven === 0">
+                  {{ batchChangeGiven | currency: 'ETB':'symbol':'1.2-2' }}
+                </span>
+              </div>
+              <div class="payment-breakdown">
+                <div class="breakdown-item">
+                  <span>Total Payment Amount:</span>
+                  <span>{{ getSelectedTotalAmount() | currency: 'ETB':'symbol':'1.2-2' }}</span>
+                </div>
+                <div class="breakdown-item">
+                  <span>Amount Tendered:</span>
+                  <span>{{ batchAmountTendered | currency: 'ETB':'symbol':'1.2-2' }}</span>
+                </div>
+                <div class="breakdown-item total">
+                  <span>Change Due:</span>
+                  <span>{{ batchChangeGiven | currency: 'ETB':'symbol':'1.2-2' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="batchComments">Comments</label>
+            <textarea 
+              id="batchComments"
+              [(ngModel)]="batchComments"
+              class="form-control"
+              rows="3"
+              placeholder="Optional comments for the batch"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="selected-approvals">
+          <h4>Selected Approvals</h4>
+          <div class="selected-list">
+            <div *ngFor="let approval of selectedApprovals; trackBy: trackByApproval" class="selected-item">
+              <span class="approval-info">
+                {{ approval.ReimbursementNumber }} - {{ approval.PatientName }} 
+                ({{ approval.PayrollNumber }})
+              </span>
+              <span class="amount">{{ approval.ApprovedAmount | currency: 'ETB':'symbol':'1.2-2' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="action-btn cancel" (click)="closeBatchPaymentDialog()">Cancel</button>
+        <button 
+          type="button" 
+          class="action-btn confirm"
+          (click)="createBatchPayment()"
+          [disabled]="!batchPaidBy?.trim() || (batchPaymentMethod === 'Cash' && batchAmountTendered < getSelectedTotalAmount())"
+        >
+          Process Batch Payment
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Voucher Form Dialog -->
+  <div class="modal" *ngIf="showVoucherForm">
+    <div class="modal-backdrop" (click)="closeVoucherForm()"></div>
+    <div class="modal-content voucher-form-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Petty Cash Payment Voucher</h3>
+        <button class="close-btn" (click)="closeVoucherForm()">&times;</button>
+      </div>
+      
+      <div class="modal-body voucher-form-body">
+        <div id="voucher-form-print" class="voucher-form">
+          <h2>Federal Housing Corporation</h2>
+          <div class="sub-header">Petty Cash Payment Voucher</div>
+
+          <div class="row">
+            <div class="col">
+              <label for="voucherNo">Voucher No:</label>
+              <input 
+                type="text" 
+                id="voucherNo" 
+                [(ngModel)]="voucherFormData.voucherNo"
+                class="voucher-input"
+                placeholder="Enter voucher number"
+              >
+            </div>
+            <div class="col">
+              <label for="date">Date:</label>
+              <input 
+                type="text" 
+                id="date" 
+                [(ngModel)]="voucherFormData.date"
+                class="voucher-input"
+                placeholder="dd/mm/yyyy"
+              >
+            </div>
+          </div>
+
+          <div class="row">
+            <label for="payee">Payee Name:</label>
+            <input 
+              type="text" 
+              id="payee" 
+              [(ngModel)]="voucherFormData.payee"
+              class="voucher-input"
+              placeholder="Enter recipient name"
+            >
+          </div>
+
+          <div class="row">
+            <label for="amountWords">Amount in Words:</label>
+            <textarea 
+              id="amountWords" 
+              [(ngModel)]="voucherFormData.amountWords"
+              class="voucher-input"
+              placeholder="Write amount in words..."
+              rows="2"
+            ></textarea>
+          </div>
+
+          <div class="row">
+            <label for="amountFigure">Amount in Figures:</label>
+            <input 
+              type="text" 
+              id="amountFigure" 
+              [(ngModel)]="voucherFormData.amountFigure"
+              class="voucher-input"
+              placeholder="e.g. 1,200.00"
+            >
+          </div>
+
+          <div class="row">
+            <label for="reason">Being payment for:</label>
+            <textarea 
+              id="reason" 
+              [(ngModel)]="voucherFormData.reason"
+              class="voucher-input"
+              placeholder="Reason for payment..."
+              rows="2"
+            ></textarea>
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <label for="account">Account Code:</label>
+              <input 
+                type="text" 
+                id="account" 
+                [(ngModel)]="voucherFormData.account"
+                class="voucher-input"
+              >
+            </div>
+            <div class="col">
+              <label for="budget">Budget Line:</label>
+              <input 
+                type="text" 
+                id="budget" 
+                [(ngModel)]="voucherFormData.budget"
+                class="voucher-input"
+              >
+            </div>
+          </div>
+
+          <!-- Batch Details Section (if batch payment) -->
+          <div class="batch-details" *ngIf="getSelectedCount() > 1">
+            <h4>Batch Payment Details:</h4>
+            <div class="batch-list">
+              <div *ngFor="let approval of selectedApprovals" class="batch-item">
+                <span>{{ approval.ReimbursementNumber }} - {{ approval.PatientName }}</span>
+                <span>{{ approval.ApprovedAmount | currency: 'ETB':'symbol':'1.2-2' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="signature">
+            <div>
+              <label>Prepared By</label>
+              <input 
+                type="text" 
+                [(ngModel)]="voucherFormData.preparedBy"
+                class="voucher-input signature-input"
+              >
+              <p>Signature</p>
+            </div>
+            <div>
+              <label>Checked By</label>
+              <input 
+                type="text" 
+                [(ngModel)]="voucherFormData.checkedBy"
+                class="voucher-input signature-input"
+              >
+              <p>Signature</p>
+            </div>
+            <div>
+              <label>Approved By</label>
+              <input 
+                type="text" 
+                [(ngModel)]="voucherFormData.approvedBy"
+                class="voucher-input signature-input"
+              >
+              <p>Signature</p>
+            </div>
+          </div>
+
+          <div class="signature">
+            <div>
+              <label>Payee</label>
+              <p>Signature</p>
+            </div>
+            <div>
+              <label>Cashier</label>
+              <input 
+                type="text" 
+                [(ngModel)]="voucherFormData.cashier"
+                class="voucher-input signature-input"
+              >
+              <p>Signature</p>
+            </div>
+            <div>
+              <label>Accountant</label>
+              <input 
+                type="text" 
+                [(ngModel)]="voucherFormData.accountant"
+                class="voucher-input signature-input"
+              >
+              <p>Signature</p>
+            </div>
+          </div>
+
+          <div class="footer">
+            <p><strong>Note:</strong> Ensure all supporting documents are attached before payment is made.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions no-print">
+        <button type="button" class="action-btn cancel" (click)="closeVoucherForm()">Close</button>
+        <button type="button" class="action-btn save" (click)="saveAsPDF()">
+          Save as PDF
+        </button>
+        <button type="button" class="action-btn confirm" (click)="printVoucherForm()">
+          Print Voucher
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

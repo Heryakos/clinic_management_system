@@ -22,6 +22,8 @@ import { InventoryManagementComponent } from './components/inventory-management/
 import { ItemReceivingComponent } from './components/item-receiving/item-receiving.component';
 import { SupervisorInventoryComponent } from './components/supervisor-inventory/supervisor-inventory.component';
 import { ReimbursementDocumentUploadComponent } from './components/reimbursement-document-upload/reimbursement-document-upload.component';
+import { FinanceApprovalComponent } from './components/finance-approval/finance-approval.component';
+import { CashierPaymentComponent } from './components/cashier-payment/cashier-payment.component';
 
 export const routes: Routes = [
   // ✅ 1. EMPTY PATH
@@ -166,6 +168,19 @@ export const routes: Routes = [
     canActivate: [RoleGuard],
     data: { expectedRole: '46dc8001-85ca-4e4f-921b-91d145f607a8' },
   },
+  // Add these routes in your routes array
+{
+  path: 'xokaerp/en-us/finance-approval',
+  component: FinanceApprovalComponent,
+  canActivate: [RoleGuard],
+  data: { expectedRole: '7263ca4e-76b2-489d-aa0a-0cf57892c7ae' }, // Replace with actual role ID
+},
+{
+  path: 'xokaerp/en-us/cashier-payment',
+  component: CashierPaymentComponent,
+  canActivate: [RoleGuard],
+  data: { expectedRole: '7263ca4e-76b2-489d-aa0a-0cf57892c7ae' }, // Replace with actual role ID
+},
 
   // ✅ 4. WILDCARD LAST
   { path: '**', redirectTo: '/xokaerp/en-us/medical-request' }

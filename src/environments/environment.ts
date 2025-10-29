@@ -28,6 +28,7 @@ export const environment = {
   // username: 'C00067', // patient
   // username: '11094', // patient
   // username: '05350', // cardroom
+  // username: '10792', // finace
   phisicalPath: "./assets/i18n/",
   assetBasePath: window.assetBasePath || 'assets/',
   Lang: "10D04E8B-3361-E111-95D5-00E04C05559B",

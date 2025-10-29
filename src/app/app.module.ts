@@ -8,6 +8,12 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatSelectModule } from '@angular/material/select';
+import { MatTabsModule } from '@angular/material/tabs';
 
 
 import { AppComponent } from './app.component';
@@ -68,6 +74,8 @@ import { MatTableModule } from '@angular/material/table';
 import { WoundCarePaperComponent } from './components/wound-care-paper/wound-care-paper.component';
 import { SuturingPaperComponent } from './components/suturing-paper/suturing-paper.component';
 import { EarIrrigationPaperComponent } from './components/ear-irrigation-paper/ear-irrigation-paper.component';
+import { FinanceApprovalComponent } from './components/finance-approval/finance-approval.component';
+import { CashierPaymentComponent } from './components/cashier-payment/cashier-payment.component';
 
 
 @NgModule({
@@ -116,13 +124,21 @@ import { EarIrrigationPaperComponent } from './components/ear-irrigation-paper/e
     InjectionManagementComponent,
     WoundCarePaperComponent,
     SuturingPaperComponent,
-    EarIrrigationPaperComponent
+    EarIrrigationPaperComponent,
+    FinanceApprovalComponent,
+    CashierPaymentComponent,
     // EthiopianDatePickerComponent,
     // StockRequestFormComponent
     // PatientMedicalHistoryComponent
     // PatientInfoCardComponent
   ],
   imports: [
+    MatButtonModule,
+    MatCheckboxModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    MatSelectModule,
+    MatTabsModule,
     MatTableModule,
     MatPaginatorModule,
     MatInputModule,

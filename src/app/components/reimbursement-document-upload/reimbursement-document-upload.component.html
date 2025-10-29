@@ -1,4 +1,3 @@
-
 <div class="reimbursement-upload-container">
   <div class="form-section">
     <h2>Reimbursement Document Upload</h2>
@@ -11,7 +10,11 @@
         </div>
         <div class="info-item">
           <span class="label">Payroll Number:</span>
-          <span class="value">{{ payrollNumber || 'Loading...' }}</span>
+          <span class="value">{{ payrollNo || 'Loading...' }}</span> <!-- Changed to payrollNo -->
+        </div>
+        <div class="info-item">
+          <span class="label">Department:</span>
+          <span class="value">{{ departmentName || 'Loading...' }}</span> <!-- Added departmentName -->
         </div>
       </div>
     </div>
@@ -47,15 +50,15 @@
         </div>
 
         <div class="form-group">
-          <label for="payrollNumber">Payroll Number: <span class="required">*</span></label>
+          <label for="payrollNo">Payroll Number: <span class="required">*</span></label>
           <input
             type="text"
-            id="payrollNumber"
-            formControlName="payrollNumber"
+            id="payrollNo"
+            formControlName="payrollNo"
             class="form-control"
             placeholder="Enter payroll number"
             readonly>
-          <div class="error-message" *ngIf="uploadForm.get('payrollNumber')?.invalid && uploadForm.get('payrollNumber')?.touched">
+          <div class="error-message" *ngIf="uploadForm.get('payrollNo')?.invalid && uploadForm.get('payrollNo')?.touched">
             Payroll number is required
           </div>
         </div>
@@ -67,7 +70,8 @@
             id="department"
             formControlName="department"
             class="form-control"
-            placeholder="Enter department">
+            placeholder="Enter department"
+            readonly>
           <div class="error-message" *ngIf="uploadForm.get('department')?.invalid && uploadForm.get('department')?.touched">
             Department is required
           </div>
@@ -81,9 +85,9 @@
             formControlName="doneAt"
             class="form-control"
             placeholder="Enter location where investigation was done">
-          <!-- <div class="error-message" *ngIf="uploadForm.get('doneAt')?.invalid && uploadForm.get('doneAt')?.touched"> -->
+          <div class="error-message" *ngIf="uploadForm.get('doneAt')?.invalid && uploadForm.get('doneAt')?.touched">
             Done At is required
-          <!-- </div> -->
+          </div>
         </div>
 
         <div class="form-group">
@@ -94,9 +98,9 @@
             formControlName="orderedFrom"
             class="form-control"
             placeholder="Enter where investigation was ordered from">
-          <!-- <div class="error-message" *ngIf="uploadForm.get('orderedFrom')?.invalid && uploadForm.get('orderedFrom')?.touched"> -->
+          <div class="error-message" *ngIf="uploadForm.get('orderedFrom')?.invalid && uploadForm.get('orderedFrom')?.touched">
             Ordered From is required
-          <!-- </div> -->
+          </div>
         </div>
 
         <!-- Investigations Section -->
@@ -307,9 +311,9 @@
                               <span class="retry-icon">🔄</span> 
                               Retry {{ (pdfRetryCount[doc.documentID] || 0) > 0 ? '(' + (pdfRetryCount[doc.documentID] || 0) + '/3)' : '' }}
                             </button>
-                          <button type="button" class="download-btn" (click)="downloadDocument(doc)">
-                            <span class="download-icon">↓</span> Download Instead
-                          </button>
+                            <button type="button" class="download-btn" (click)="downloadDocument(doc)">
+                              <span class="download-icon">↓</span> Download Instead
+                            </button>
                           </div>
                         </div>
                       </ng-container>
@@ -412,7 +416,7 @@
 
         <div class="row">
           <div class="label">2. Payroll no</div>
-          <div class="short-fill">{{ uploadForm.get('payrollNumber')?.value || '' }}</div>
+          <div class="short-fill">{{ uploadForm.get('payrollNo')?.value || '' }}</div>
         </div>
 
         <div class="row">

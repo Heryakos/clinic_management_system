@@ -1,4 +1,3 @@
-// Updated TypeScript component - Remove extract methods and old bindings
 import { Component, Inject, OnInit, ChangeDetectorRef, Input } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MedicalService } from 'src/app/medical.service';
@@ -6,6 +5,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { ASSETS } from '../../assets.config';
+import { FontService } from '../../services/FontService.service';
 
 @Component({
   selector: 'app-prescription-paper',
@@ -26,7 +26,8 @@ export class PrescriptionPaperComponent implements OnInit {
     private medicalService: MedicalService,
     private cdr: ChangeDetectorRef,
     public dialogRef: MatDialogRef<PrescriptionPaperComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { cardNumber: string; medicationDetails: string; prescription: any; dialogTitle: string }
+    @Inject(MAT_DIALOG_DATA) public data: { cardNumber: string; medicationDetails: string; prescription: any; dialogTitle: string },
+    private fontService: FontService
   ) {}
 
   ngOnInit(): void {
@@ -217,19 +218,168 @@ export class PrescriptionPaperComponent implements OnInit {
   }
 
   exportToPDF(): void {
+    // Load font async - using the same pattern as your working injection component
+    this.fontService.loadFontBase64('fonts/AbyssinicaSIL-Regular.json').subscribe(fontBase64 => {
+      if (!fontBase64) {
+        console.error('Font loading failed; falling back to default font.');
+        this.generatePDFWithoutCustomFont();
+        return;
+      }
+  
+      const doc = new jsPDF();
+      const formValue = this.prescriptionForm.getRawValue();
+  
+      // Add custom font for Amharic support - EXACTLY like your working injection component
+      const fontName = 'AbyssinicaSIL-Regular.ttf';
+      const fontFamily = 'AbyssinicaSIL';
+  
+      doc.addFileToVFS(fontName, fontBase64);
+      doc.addFont(fontName, fontFamily, 'normal');
+      doc.setFont(fontFamily);
+  
+      // Use the CORRECT text method format for your jsPDF version
+      // For centered text, we'll use a different approach
+      doc.setFontSize(14);
+      const clinicText = 'FEDERAL HOUSING CORPORATION MEDIUM CLINIC';
+      const clinicWidth = doc.getTextWidth(clinicText);
+      doc.text(clinicText, (210 - clinicWidth) / 2, 20); // Center horizontally on A4 (210mm wide)
+      
+      doc.setFontSize(10);
+      const telText = 'TEL. 0118 553615';
+      const telWidth = doc.getTextWidth(telText);
+      doc.text(telText, (210 - telWidth) / 2, 30);
+      
+      doc.setFontSize(12);
+      const titleText = this.data.dialogTitle || 'Prescription';
+      const titleWidth = doc.getTextWidth(titleText);
+      doc.text(titleText, (210 - titleWidth) / 2, 40);
+  
+      // PATIENT INFORMATION - Use simple text calls
+      doc.setFontSize(10);
+      let y = 50;
+      
+      doc.text(`Patient's Full Name: ${formValue.FullName || ''}`, 20, y);
+      doc.text(`Town/Region: ${formValue.woreda || ''}`, 20, y + 10);
+      doc.text(`Woreda: ${formValue.woreda || ''}`, 80, y + 10);
+      doc.text(`Kebele/House No: ${formValue.houseNo || ''}`, 20, y + 20);
+      doc.text(`Tel No: ${formValue.phone || ''}`, 80, y + 20);
+      doc.text(`Sex: ${formValue.gender || ''}`, 20, y + 30);
+      doc.text(`Age: ${formValue.age || ''}`, 60, y + 30);
+      doc.text(`Weight: ${formValue.Weight || ''}`, 90, y + 30);
+      doc.text(`Card No: ${formValue.CardNumber || ''}`, 130, y + 30);
+      doc.text(`Diagnosis: ${formValue.MedicalHistory || ''}`, 20, y + 40);
+  
+      y += 50;
+  
+      // MEDICATIONS TABLE
+      let tableBody: any[][] = this.medications.map(med => [
+        'Rx',
+        `${med.MedicationName || ''}`,
+        `${med.Strength || ''}`,
+        `${med.DosageForm || ''}`,
+        `${med.Dose || ''}`,
+        `${med.Frequency || ''}`,
+        `${med.Duration || ''}`,
+        `${med.Quantity || ''}`,
+        `${med.Instructions || ''}`,
+        med.UnitPrice != null ? `${(med.UnitPrice * (med.Quantity || 1))}` : ''
+      ]);
+  
+      // Add empty rows if needed
+      while (tableBody.length < 3) {
+        tableBody.push(['', '', '', '', '', '', '', '', '', '']);
+      }
+  
+      const total = formValue.TotalAmount || this.calculateTotal();
+      tableBody.push(['Total price', '', '', '', '', '', '', '', '', `${total}`]);
+  
+      // Create table with custom font
+      autoTable(doc, {
+        startY: y,
+        head: [[
+          'Rx',
+          'Medicine name',
+          'Strength',
+          'Dosage form',
+          'Dose',
+          'Frequency',
+          'Duration',
+          'Quantity',
+          'How to use and other information',
+          'Price'
+        ]],
+        body: tableBody,
+        theme: 'grid',
+        styles: { 
+          fontSize: 8,
+          font: fontFamily // Apply custom font to table
+        },
+        headStyles: { 
+          fillColor: [200, 200, 200],
+          fontStyle: 'bold'
+        },
+        columnStyles: {
+          0: { cellWidth: 10 },
+          1: { cellWidth: 25 },
+          2: { cellWidth: 15 },
+          3: { cellWidth: 20 },
+          4: { cellWidth: 15 },
+          5: { cellWidth: 15 },
+          6: { cellWidth: 15 },
+          7: { cellWidth: 15 },
+          8: { cellWidth: 40 },
+          9: { cellWidth: 20, halign: 'center' }
+        }
+      });
+  
+      // SIGNATURES SECTION
+      y = (doc as any).lastAutoTable.finalY + 10;
+      doc.text("Prescriber's", 20, y);
+      doc.text(`Full Name: ${formValue.PrescriberName || ''}`, 20, y + 10);
+      doc.text('Qualification: ', 20, y + 20);
+      doc.text('Registration: ', 20, y + 30);
+      doc.text('Signature: ', 20, y + 40);
+      doc.text(`Date: ${formValue.PrescriptionDate || ''}`, 20, y + 50);
+  
+      doc.text("Dispenser's", 110, y);
+      doc.text(`Full Name: ${formValue.PharmacistName || ''}`, 110, y + 10);
+      doc.text('Qualification: ', 110, y + 20);
+      doc.text('Registration: ', 110, y + 30);
+      doc.text('Signature: ', 110, y + 40);
+      doc.text(`Date: ${formValue.PrescriptionDate || ''}`, 110, y + 50);
+  
+      doc.save(`${this.data.dialogTitle?.toLowerCase().replace(' ', '-') || 'prescription'}.pdf`);
+    });
+  }
+  
+  // Fallback method without custom font
+  private generatePDFWithoutCustomFont(): void {
     const doc = new jsPDF();
     const formValue = this.prescriptionForm.getRawValue();
-
-    doc.setFont('Amiri', 'normal');
+  
+    // Use standard font
+    doc.setFont('helvetica');
+  
+    // HEADER - Manual centering
     doc.setFontSize(14);
-    doc.text('FEDERAL HOUSING CORPORATION MEDIUM CLINIC', 105, 20, { align: 'center' });
+    const clinicText = 'FEDERAL HOUSING CORPORATION MEDIUM CLINIC';
+    const clinicWidth = doc.getTextWidth(clinicText);
+    doc.text(clinicText, (210 - clinicWidth) / 2, 20);
+    
     doc.setFontSize(10);
-    doc.text('TEL. 0118 553615', 105, 30, { align: 'center' });
+    const telText = 'TEL. 0118 553615';
+    const telWidth = doc.getTextWidth(telText);
+    doc.text(telText, (210 - telWidth) / 2, 30);
+    
     doc.setFontSize(12);
-    doc.text(this.data.dialogTitle, 105, 40, { align: 'center' });
-
+    const titleText = this.data.dialogTitle || 'Prescription';
+    const titleWidth = doc.getTextWidth(titleText);
+    doc.text(titleText, (210 - titleWidth) / 2, 40);
+  
+    // PATIENT INFORMATION
     doc.setFontSize(10);
     let y = 50;
+    
     doc.text(`Patient's Full Name: ${formValue.FullName || ''}`, 20, y);
     doc.text(`Town/Region: ${formValue.woreda || ''}`, 20, y + 10);
     doc.text(`Woreda: ${formValue.woreda || ''}`, 80, y + 10);
@@ -240,29 +390,30 @@ export class PrescriptionPaperComponent implements OnInit {
     doc.text(`Weight: ${formValue.Weight || ''}`, 90, y + 30);
     doc.text(`Card No: ${formValue.CardNumber || ''}`, 130, y + 30);
     doc.text(`Diagnosis: ${formValue.MedicalHistory || ''}`, 20, y + 40);
-
+  
     y += 50;
-
+  
+    // MEDICATIONS TABLE
     let tableBody: any[][] = this.medications.map(med => [
       'Rx',
-      med.MedicationName || '',
-      med.Strength || '',
-      med.DosageForm || '',
-      med.Dose || '',
-      med.Frequency || '',
-      med.Duration || '',
-      med.Quantity || '',
-      med.Instructions || '',
-      med.UnitPrice != null ? (med.UnitPrice * (med.Quantity || 1)) : ''
+      `${med.MedicationName || ''}`,
+      `${med.Strength || ''}`,
+      `${med.DosageForm || ''}`,
+      `${med.Dose || ''}`,
+      `${med.Frequency || ''}`,
+      `${med.Duration || ''}`,
+      `${med.Quantity || ''}`,
+      `${med.Instructions || ''}`,
+      med.UnitPrice != null ? `${(med.UnitPrice * (med.Quantity || 1))}` : ''
     ]);
-
+  
     while (tableBody.length < 3) {
       tableBody.push(['', '', '', '', '', '', '', '', '', '']);
     }
-
+  
     const total = formValue.TotalAmount || this.calculateTotal();
-    tableBody.push(['Total price', '', '', '', '', '', '', '', '', total.toString()]);
-
+    tableBody.push(['Total price', '', '', '', '', '', '', '', '', `${total}`]);
+  
     autoTable(doc, {
       startY: y,
       head: [[
@@ -279,7 +430,7 @@ export class PrescriptionPaperComponent implements OnInit {
       ]],
       body: tableBody,
       theme: 'grid',
-      styles: { fontSize: 8, font: 'Amiri' },
+      styles: { fontSize: 8 },
       headStyles: { fillColor: [200, 200, 200] },
       columnStyles: {
         0: { cellWidth: 10 },
@@ -294,7 +445,8 @@ export class PrescriptionPaperComponent implements OnInit {
         9: { cellWidth: 20, halign: 'center' }
       }
     });
-
+  
+    // SIGNATURES SECTION
     y = (doc as any).lastAutoTable.finalY + 10;
     doc.text("Prescriber's", 20, y);
     doc.text(`Full Name: ${formValue.PrescriberName || ''}`, 20, y + 10);
@@ -302,14 +454,14 @@ export class PrescriptionPaperComponent implements OnInit {
     doc.text('Registration: ', 20, y + 30);
     doc.text('Signature: ', 20, y + 40);
     doc.text(`Date: ${formValue.PrescriptionDate || ''}`, 20, y + 50);
-
+  
     doc.text("Dispenser's", 110, y);
     doc.text(`Full Name: ${formValue.PharmacistName || ''}`, 110, y + 10);
     doc.text('Qualification: ', 110, y + 20);
     doc.text('Registration: ', 110, y + 30);
     doc.text('Signature: ', 110, y + 40);
     doc.text(`Date: ${formValue.PrescriptionDate || ''}`, 110, y + 50);
-
-    doc.save(`${this.data.dialogTitle.toLowerCase().replace(' ', '-')}.pdf`);
+  
+    doc.save(`${this.data.dialogTitle?.toLowerCase().replace(' ', '-') || 'prescription'}-standard.pdf`);
   }
 }

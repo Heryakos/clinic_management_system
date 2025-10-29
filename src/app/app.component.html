@@ -107,6 +107,20 @@
             <span class="text">Expenses</span>
           </a>
         </li>
+
+        <li *ngIf="showFinanceApproval">
+          <a routerLink="/xokaerp/en-us/finance-approval" routerLinkActive="active">
+            <span class="icon">✅</span>
+            <span class="text">Finance Approval</span>
+          </a>
+        </li>
+        
+        <li *ngIf="showCashierPayment">
+          <a routerLink="/xokaerp/en-us/cashier-payment" routerLinkActive="active">
+            <span class="icon">💳</span>
+            <span class="text">Cashier Payment</span>
+          </a>
+        </li>
         
         <li *ngIf="showInventoryRequest">
           <a routerLink="/xokaerp/en-us/inventory-request" routerLinkActive="active">

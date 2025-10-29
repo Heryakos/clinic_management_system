@@ -6,6 +6,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { ASSETS } from '../../assets.config';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { FontService } from '../../services/FontService.service';
 
 @Component({
   selector: 'app-sick-leave',
@@ -29,7 +30,8 @@ export class SickLeaveComponent implements OnInit {
     private fb: FormBuilder,
     private medicalService: MedicalService,
     private cdr: ChangeDetectorRef,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private fontService: FontService  // ✅ Inject the new service
   ) {}
   ngOnInit(): void {
     console.log('SickLeaveComponent initialized with patientID:', this.patientID, 'createdBy:', this.createdBy);
@@ -107,7 +109,7 @@ export class SickLeaveComponent implements OnInit {
             diagnosis: patient.MedicalHistory || 'To be determined',
             age: patient.Age || null,
             sex: patient.Gender === 'ወንድ / Male' ? 'Male' : patient.Gender === 'ሴት / Female' ? 'Female' : patient.Gender || null,
-            examinedOn: patient.LastVisitDate ? new Date(patient.LastVisitDate).toISOString().split('T')[0] : null
+            examinedOn: patient.LastVisitDate ? patient.LastVisitDate.split('T')[0] : null
           });
   
           if (this.patientID) {
@@ -279,6 +281,79 @@ handleSignatureError(event: any): void {
   downloadCertificate(): void {
     if (!this.selectedLeave) return;
 
+    // Load font async
+    this.fontService.loadFontBase64('fonts/AbyssinicaSIL-Regular.json').subscribe(fontBase64 => {
+      if (!fontBase64) {
+        console.error('Font loading failed; falling back to default font.');
+        this.generateDownloadPDFWithoutCustomFont();
+        return;
+      }
+
+      const doc = new jsPDF();
+
+      // Add custom font for Amharic (Ethiopic script) support
+      const fontName = 'AbyssinicaSIL-Regular.ttf'; // Matches your font file name
+      const fontFamily = 'AbyssinicaSIL'; // Custom family name
+
+      doc.addFileToVFS(fontName, fontBase64);
+      doc.addFont(fontName, fontFamily, 'normal');
+      doc.setFont(fontFamily); // Set the custom font for the entire document to handle Amharic/Unicode
+
+      const logoUrl = 'assets/photo_2025-07-21_14-48-47.jpg';
+
+      doc.addImage(logoUrl, 'JPEG', 15, 10, 30, 30);
+
+      doc.setFontSize(16);
+      doc.text('FEDERAL HOUSING COOPERATION MEDIUM CLINIC', 60, 20);
+      doc.setFontSize(10);
+      doc.text('TEL. 011-855-3615', 60, 25);
+
+      doc.setFontSize(12);
+      doc.text('Medical Certificate', 85, 50, { align: 'center' });
+      doc.text(`Date: ${this.selectedLeave!.issueDate?.toLocaleDateString() || new Date().toLocaleDateString()}`, 15, 60);
+
+      doc.setFontSize(10);
+      doc.text('Name:', 15, 70);
+      doc.text(this.selectedLeave!.employeeName || '', 30, 70);
+      doc.text('Age:', 80, 70);
+      doc.text(this.selectedLeave!.age?.toString() || '', 90, 70);
+      doc.text('Sex:', 110, 70);
+      doc.text(this.selectedLeave!.sex || '', 120, 70);
+
+      doc.text('Address:', 15, 80);
+      doc.text(this.selectedLeave!.address || '', 30, 80);
+
+      doc.text('Examined on:', 15, 90);
+      doc.text(this.selectedLeave!.examinedOn?.toLocaleDateString() || '', 40, 90);
+
+      doc.text('Diagnosis:', 15, 100);
+      doc.text(this.selectedLeave!.diagnosis, 30, 100);
+
+      doc.text("Doctor's Recommendation:", 15, 110);
+      doc.text(this.selectedLeave!.recommendations || 'Rest and follow-up as needed', 40, 110);
+
+      doc.text('Rest Required:', 15, 120);
+      doc.text(
+        `${this.selectedLeave!.totalDays} days (${this.selectedLeave!.startDate?.toLocaleDateString() || ''} - ${this.selectedLeave!.endDate?.toLocaleDateString() || ''})`,
+        40,
+        120
+      );
+
+      doc.text("Doctor's Name:", 15, 130);
+      doc.text(this.selectedLeave!.doctorName || '', 40, 130);
+      doc.text('Signature:', 15, 140);
+      if (this.selectedLeave!.signature) {
+        doc.addImage(`data:image/png;base64,${this.selectedLeave!.signature}`, 'PNG', 40, 135, 60, 20);
+      }
+      doc.text('Date:', 15, 150);
+      doc.text(this.selectedLeave!.issueDate?.toLocaleDateString() || '', 30, 150);
+
+      doc.save(`medical-certificate-${this.selectedLeave!.certificateID}.pdf`);
+    });
+  }
+
+  // Fallback download without custom font
+  private generateDownloadPDFWithoutCustomFont(): void {
     const doc = new jsPDF();
     const logoUrl = 'assets/photo_2025-07-21_14-48-47.jpg';
 
@@ -291,50 +366,124 @@ handleSignatureError(event: any): void {
 
     doc.setFontSize(12);
     doc.text('Medical Certificate', 85, 50, { align: 'center' });
-    doc.text(`Date: ${this.selectedLeave.issueDate?.toLocaleDateString() || new Date().toLocaleDateString()}`, 15, 60);
+    doc.text(`Date: ${this.selectedLeave!.issueDate?.toLocaleDateString() || new Date().toLocaleDateString()}`, 15, 60);
 
     doc.setFontSize(10);
     doc.text('Name:', 15, 70);
-    doc.text(this.selectedLeave.employeeName || '', 30, 70);
+    doc.text(this.selectedLeave!.employeeName || '', 30, 70);
     doc.text('Age:', 80, 70);
-    doc.text(this.selectedLeave.age?.toString() || '', 90, 70);
+    doc.text(this.selectedLeave!.age?.toString() || '', 90, 70);
     doc.text('Sex:', 110, 70);
-    doc.text(this.selectedLeave.sex || '', 120, 70);
+    doc.text(this.selectedLeave!.sex || '', 120, 70);
 
     doc.text('Address:', 15, 80);
-    doc.text(this.selectedLeave.address || '', 30, 80);
+    doc.text(this.selectedLeave!.address || '', 30, 80);
 
     doc.text('Examined on:', 15, 90);
-    doc.text(this.selectedLeave.examinedOn?.toLocaleDateString() || '', 40, 90);
+    doc.text(this.selectedLeave!.examinedOn?.toLocaleDateString() || '', 40, 90);
 
     doc.text('Diagnosis:', 15, 100);
-    doc.text(this.selectedLeave.diagnosis, 30, 100);
+    doc.text(this.selectedLeave!.diagnosis, 30, 100);
 
     doc.text("Doctor's Recommendation:", 15, 110);
-    doc.text(this.selectedLeave.recommendations || 'Rest and follow-up as needed', 40, 110);
+    doc.text(this.selectedLeave!.recommendations || 'Rest and follow-up as needed', 40, 110);
 
     doc.text('Rest Required:', 15, 120);
     doc.text(
-      `${this.selectedLeave.totalDays} days (${this.selectedLeave.startDate?.toLocaleDateString()} - ${this.selectedLeave.endDate?.toLocaleDateString()})`,
+      `${this.selectedLeave!.totalDays} days (${this.selectedLeave!.startDate?.toLocaleDateString() || ''} - ${this.selectedLeave!.endDate?.toLocaleDateString() || ''})`,
       40,
       120
     );
 
     doc.text("Doctor's Name:", 15, 130);
-    doc.text(this.selectedLeave.doctorName || '', 40, 130);
+    doc.text(this.selectedLeave!.doctorName || '', 40, 130);
     doc.text('Signature:', 15, 140);
-    if (this.selectedLeave.signature) {
-      doc.addImage(`data:image/png;base64,${this.selectedLeave.signature}`, 'PNG', 40, 135, 60, 20);
+    if (this.selectedLeave!.signature) {
+      doc.addImage(`data:image/png;base64,${this.selectedLeave!.signature}`, 'PNG', 40, 135, 60, 20);
     }
     doc.text('Date:', 15, 150);
-    doc.text(this.selectedLeave.issueDate?.toLocaleDateString() || '', 30, 150);
+    doc.text(this.selectedLeave!.issueDate?.toLocaleDateString() || '', 30, 150);
 
-    doc.save(`medical-certificate-${this.selectedLeave.certificateID}.pdf`);
+    doc.save(`medical-certificate-${this.selectedLeave!.certificateID}.pdf`);
   }
 
   printCertificate(): void {
     if (!this.selectedLeave) return;
 
+    // Load font async
+    this.fontService.loadFontBase64('fonts/AbyssinicaSIL-Regular.json').subscribe(fontBase64 => {
+      if (!fontBase64) {
+        console.error('Font loading failed; falling back to default font.');
+        this.generatePrintPDFWithoutCustomFont();
+        return;
+      }
+
+      const doc = new jsPDF();
+
+      // Add custom font for Amharic (Ethiopic script) support
+      const fontName = 'AbyssinicaSIL-Regular.ttf'; // Matches your font file name
+      const fontFamily = 'AbyssinicaSIL'; // Custom family name
+
+      doc.addFileToVFS(fontName, fontBase64);
+      doc.addFont(fontName, fontFamily, 'normal');
+      doc.setFont(fontFamily); // Set the custom font for the entire document to handle Amharic/Unicode
+
+      const logoUrl = 'assets/photo_2025-07-21_14-48-47.jpg';
+
+      doc.addImage(logoUrl, 'JPEG', 15, 10, 30, 30);
+
+      doc.setFontSize(16);
+      doc.text('FEDERAL HOUSING COOPERATION MEDIUM CLINIC', 60, 20);
+      doc.setFontSize(10);
+      doc.text('TEL. 011-855-3615', 60, 25);
+
+      doc.setFontSize(12);
+      doc.text('Medical Certificate', 85, 50, { align: 'center' });
+      doc.text(`Date: ${this.selectedLeave!.issueDate?.toLocaleDateString() || new Date().toLocaleDateString()}`, 15, 60);
+
+      doc.setFontSize(10);
+      doc.text('Name:', 15, 70);
+      doc.text(this.selectedLeave!.employeeName || '', 30, 70);
+      doc.text('Age:', 80, 70);
+      doc.text(this.selectedLeave!.age?.toString() || '', 90, 70);
+      doc.text('Sex:', 110, 70);
+      doc.text(this.selectedLeave!.sex || '', 120, 70);
+
+      doc.text('Address:', 15, 80);
+      doc.text(this.selectedLeave!.address || '', 30, 80);
+
+      doc.text('Examined on:', 15, 90);
+      doc.text(this.selectedLeave!.examinedOn?.toLocaleDateString() || '', 40, 90);
+
+      doc.text('Diagnosis:', 15, 100);
+      doc.text(this.selectedLeave!.diagnosis, 30, 100);
+
+      doc.text("Doctor's Recommendation:", 15, 110);
+      doc.text(this.selectedLeave!.recommendations || 'Rest and follow-up as needed', 40, 110);
+
+      doc.text('Rest Required:', 15, 120);
+      doc.text(
+        `${this.selectedLeave!.totalDays} days (${this.selectedLeave!.startDate?.toLocaleDateString() || ''} - ${this.selectedLeave!.endDate?.toLocaleDateString() || ''})`,
+        40,
+        120
+      );
+
+      doc.text("Doctor's Name:", 15, 130);
+      doc.text(this.selectedLeave!.doctorName || '', 40, 130);
+      doc.text('Signature:', 15, 140);
+      if (this.selectedLeave!.signature) {
+        doc.addImage(`data:image/png;base64,${this.selectedLeave!.signature}`, 'PNG', 40, 135, 60, 20);
+      }
+      doc.text('Date:', 15, 150);
+      doc.text(this.selectedLeave!.issueDate?.toLocaleDateString() || '', 30, 150);
+
+      doc.autoPrint();
+      window.open(doc.output('bloburl'), '_blank');
+    });
+  }
+
+  // Fallback print without custom font
+  private generatePrintPDFWithoutCustomFont(): void {
     const doc = new jsPDF();
     const logoUrl = 'assets/photo_2025-07-21_14-48-47.jpg';
 
@@ -347,43 +496,43 @@ handleSignatureError(event: any): void {
 
     doc.setFontSize(12);
     doc.text('Medical Certificate', 85, 50, { align: 'center' });
-    doc.text(`Date: ${this.selectedLeave.issueDate?.toLocaleDateString() || new Date().toLocaleDateString()}`, 15, 60);
+    doc.text(`Date: ${this.selectedLeave!.issueDate?.toLocaleDateString() || new Date().toLocaleDateString()}`, 15, 60);
 
     doc.setFontSize(10);
     doc.text('Name:', 15, 70);
-    doc.text(this.selectedLeave.employeeName || '', 30, 70);
+    doc.text(this.selectedLeave!.employeeName || '', 30, 70);
     doc.text('Age:', 80, 70);
-    doc.text(this.selectedLeave.age?.toString() || '', 90, 70);
+    doc.text(this.selectedLeave!.age?.toString() || '', 90, 70);
     doc.text('Sex:', 110, 70);
-    doc.text(this.selectedLeave.sex || '', 120, 70);
+    doc.text(this.selectedLeave!.sex || '', 120, 70);
 
     doc.text('Address:', 15, 80);
-    doc.text(this.selectedLeave.address || '', 30, 80);
+    doc.text(this.selectedLeave!.address || '', 30, 80);
 
     doc.text('Examined on:', 15, 90);
-    doc.text(this.selectedLeave.examinedOn?.toLocaleDateString() || '', 40, 90);
+    doc.text(this.selectedLeave!.examinedOn?.toLocaleDateString() || '', 40, 90);
 
     doc.text('Diagnosis:', 15, 100);
-    doc.text(this.selectedLeave.diagnosis, 30, 100);
+    doc.text(this.selectedLeave!.diagnosis, 30, 100);
 
     doc.text("Doctor's Recommendation:", 15, 110);
-    doc.text(this.selectedLeave.recommendations || 'Rest and follow-up as needed', 40, 110);
+    doc.text(this.selectedLeave!.recommendations || 'Rest and follow-up as needed', 40, 110);
 
     doc.text('Rest Required:', 15, 120);
     doc.text(
-      `${this.selectedLeave.totalDays} days (${this.selectedLeave.startDate?.toLocaleDateString()} - ${this.selectedLeave.endDate?.toLocaleDateString()})`,
+      `${this.selectedLeave!.totalDays} days (${this.selectedLeave!.startDate?.toLocaleDateString() || ''} - ${this.selectedLeave!.endDate?.toLocaleDateString() || ''})`,
       40,
       120
     );
 
     doc.text("Doctor's Name:", 15, 130);
-    doc.text(this.selectedLeave.doctorName || '', 40, 130);
+    doc.text(this.selectedLeave!.doctorName || '', 40, 130);
     doc.text('Signature:', 15, 140);
-    if (this.selectedLeave.signature) {
-      doc.addImage(`data:image/png;base64,${this.selectedLeave.signature}`, 'PNG', 40, 135, 60, 20);
+    if (this.selectedLeave!.signature) {
+      doc.addImage(`data:image/png;base64,${this.selectedLeave!.signature}`, 'PNG', 40, 135, 60, 20);
     }
     doc.text('Date:', 15, 150);
-    doc.text(this.selectedLeave.issueDate?.toLocaleDateString() || '', 30, 150);
+    doc.text(this.selectedLeave!.issueDate?.toLocaleDateString() || '', 30, 150);
 
     doc.autoPrint();
     window.open(doc.output('bloburl'), '_blank');

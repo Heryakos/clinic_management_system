@@ -96,6 +96,9 @@ export class MedicalService {
   private chmsSuturingBase = environment.rootPath2 + 'CHMS_Procedures/suturing/';
   private chmsEarIrrigationBase = environment.rootPath2 + 'CHMS_Procedures/ear-irrigation/';
   private chmsProceduresBase = environment.rootPath2 + 'CHMS_Procedures/';
+  private chmsFinanceBase = environment.rootPath2 + 'CHMS_Finance/';
+  private chmsCashierBase = environment.rootPath2 + 'CHMS_Cashier/';
+  private EmployeeProfile=environment.rootPath2+'EmployeeProfile';
   private userRoleIdsSubject = new BehaviorSubject<string[]>([]);
   userRoleIds$ = this.userRoleIdsSubject.asObservable();
 
@@ -136,6 +139,9 @@ export class MedicalService {
         return from([null]);
       })
     );
+  }
+  getMyProfiles(employeeid: string){
+    return this.http.get(this.EmployeeProfile+'/get/employee/my/Profiles/'+employeeid)
   }
 
   // Existing methods from original MedicalService
@@ -1811,13 +1817,102 @@ getPatientCardByPatientId(patientId: number): Observable<any> {
     );
   }
 
-//Reimbursement
-// uploadReimbursementDocument(formData: FormData): Observable<any> {
-//   return this.http.post<any>(`${this.chmsReimbursementDocumentsBase}upload`, formData).pipe(
-//     catchError(this.handleError)
-//   );
-// }
+  // =============================================
+  // Finance Services
+  // =============================================
+  getPendingFinanceApprovals(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.chmsFinanceBase}pending-approvals`).pipe(
+      catchError(this.handleError)
+    );
+  }
 
+  approveFinanceApproval(financeApprovalID: number, approvedBy: string): Observable<any> {
+    const payload = { approvedBy };
+    return this.http.post<any>(`${this.chmsFinanceBase}approve-approval/${financeApprovalID}`, payload, { headers: this.headers }).pipe(
+      catchError(this.handleError)
+    );
+  }
 
+  approveBatchFinanceApprovals(financeApprovalIDs: number[], approvedBy: string): Observable<any> {
+    const payload = { financeApprovalIDs, approvedBy };
+    return this.http.post<any>(`${this.chmsFinanceBase}approve-batch-approvals`, payload, { headers: this.headers }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  getFinanceApprovedReimbursements(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.chmsFinanceBase}approved-reimbursements`).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  createFinanceApproval(approvalData: any): Observable<any> {
+    return this.http.post<any>(`${this.chmsFinanceBase}create-approval`, approvalData, { headers: this.headers }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  createBatchFinanceApproval(batchData: any): Observable<any> {
+    return this.http.post<any>(`${this.chmsFinanceBase}create-batch-approval`, batchData, { headers: this.headers }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  getFinanceApprovalDetails(approvalId: number): Observable<any> {
+    return this.http.get<any>(`${this.chmsFinanceBase}approval-details/${approvalId}`).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  getFinanceApprovalsForCashier(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.chmsFinanceBase}approvals-for-cashier`).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  // =============================================
+  // Cashier Services
+  // =============================================
+
+  getCashierApprovalsForPayment(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.chmsCashierBase}approvals-for-payment`).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  createCashierPayment(paymentData: any): Observable<any> {
+    return this.http.post<any>(`${this.chmsCashierBase}create-payment`, paymentData, { headers: this.headers }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  createBatchCashierPayment(batchData: any): Observable<any> {
+    return this.http.post<any>(`${this.chmsCashierBase}create-batch-payment`, batchData, { headers: this.headers }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  getPaymentHistory(startDate?: Date, endDate?: Date, status?: string): Observable<any[]> {
+    let url = `${this.chmsCashierBase}payment-history`;
+    const params = new URLSearchParams();
+    
+    if (startDate) params.append('startDate', startDate.toISOString());
+    if (endDate) params.append('endDate', endDate.toISOString());
+    if (status) params.append('status', status);
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    
+    return this.http.get<any[]>(url).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  getPaymentSummary(): Observable<any> {
+    return this.http.get<any>(`${this.chmsCashierBase}payment-summary`).pipe(
+      catchError(this.handleError)
+    );
+  }
 
 }

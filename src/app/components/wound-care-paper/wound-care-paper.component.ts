@@ -5,6 +5,8 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { ASSETS } from '../../assets.config';
+import { FontService } from '../../services/FontService.service';
+
 
 @Component({
   selector: 'app-wound-care-paper',
@@ -28,7 +30,8 @@ export class WoundCarePaperComponent implements OnInit {
       woundCareID: number; 
       patientID: number;
       dialogTitle: string 
-    }
+    },
+    private fontService: FontService
   ) {}
 
   ngOnInit(): void {
@@ -144,6 +147,67 @@ export class WoundCarePaperComponent implements OnInit {
   printWoundCare(): void { window.print(); }
 
   exportToPDF(): void {
+    // Load font async
+    this.fontService.loadFontBase64('fonts/AbyssinicaSIL-Regular.json').subscribe(fontBase64 => {
+      if (!fontBase64) {
+        console.error('Font loading failed; falling back to default font.');
+        this.generatePDFWithoutCustomFont();
+        return;
+      }
+
+      const doc = new jsPDF();
+      const formValue = this.woundCareForm.getRawValue();
+
+      // Add custom font for Amharic (Ethiopic script) support
+      const fontName = 'AbyssinicaSIL-Regular.ttf'; // Matches your font file name
+      const fontFamily = 'AbyssinicaSIL'; // Custom family name
+
+      doc.addFileToVFS(fontName, fontBase64);
+      doc.addFont(fontName, fontFamily, 'normal');
+      doc.setFont(fontFamily); // Set the custom font for the entire document to handle Amharic/Unicode
+
+      // Header
+      doc.setFontSize(14);
+      doc.text('FEDERAL HOUSING CORPORATION MEDIUM CLINIC', 105, 20, { align: 'center' });
+      doc.setFontSize(10);
+      doc.text('TEL. 0118 553615', 105, 30, { align: 'center' });
+      doc.setFontSize(12);
+      doc.text(this.data.dialogTitle, 105, 40, { align: 'center' });
+
+      // Patient Info
+      doc.setFontSize(10);
+      let y = 50;
+      doc.text(`Patient: ${formValue.FullName || ''}`, 20, y);
+      doc.text(`Card No: ${formValue.CardNumber || ''}`, 20, y + 10);
+      doc.text(`Wound Care #: ${formValue.woundCareNumber || ''}`, 20, y + 20);
+
+      // Wound Care Details Table
+      y += 30;
+      autoTable(doc, {
+        startY: y,
+        head: [['Wound Care Details']],
+        body: [
+          [`Wound Type: ${formValue.woundType || ''}`],
+          [`Location: ${formValue.woundLocation || ''}`],
+          [`Size: ${formValue.woundSize || ''}`],
+          [`Depth: ${formValue.woundDepth || ''}`],
+          [`Condition: ${formValue.woundCondition || ''}`],
+          [`Treatment Plan: ${formValue.treatmentPlan || ''}`],
+          [`Dressing: ${formValue.dressingType || ''}`],
+          [`Cleaning Solution: ${formValue.cleaningSolution || ''}`],
+          [`Date: ${formValue.procedureDate || ''}`],
+          [`Status: ${formValue.status || ''}`]
+        ],
+        theme: 'grid',
+        styles: { fontSize: 10, font: fontFamily } // Apply custom font to the table
+      });
+
+      doc.save(`wound-care-${formValue.woundCareNumber}.pdf`);
+    });
+  }
+
+  // Fallback method without custom font
+  private generatePDFWithoutCustomFont(): void {
     const doc = new jsPDF();
     const formValue = this.woundCareForm.getRawValue();
 
@@ -156,10 +220,11 @@ export class WoundCarePaperComponent implements OnInit {
     doc.text(this.data.dialogTitle, 105, 40, { align: 'center' });
 
     // Patient Info
+    doc.setFontSize(10);
     let y = 50;
-    doc.text(`Patient: ${formValue.FullName}`, 20, y);
-    doc.text(`Card No: ${formValue.CardNumber}`, 20, y + 10);
-    doc.text(`Wound Care #: ${formValue.woundCareNumber}`, 20, y + 20);
+    doc.text(`Patient: ${formValue.FullName || ''}`, 20, y);
+    doc.text(`Card No: ${formValue.CardNumber || ''}`, 20, y + 10);
+    doc.text(`Wound Care #: ${formValue.woundCareNumber || ''}`, 20, y + 20);
 
     // Wound Care Details Table
     y += 30;
@@ -167,16 +232,16 @@ export class WoundCarePaperComponent implements OnInit {
       startY: y,
       head: [['Wound Care Details']],
       body: [
-        [`Wound Type: ${formValue.woundType}`],
-        [`Location: ${formValue.woundLocation}`],
-        [`Size: ${formValue.woundSize}`],
-        [`Depth: ${formValue.woundDepth}`],
-        [`Condition: ${formValue.woundCondition}`],
-        [`Treatment Plan: ${formValue.treatmentPlan}`],
-        [`Dressing: ${formValue.dressingType}`],
-        [`Cleaning Solution: ${formValue.cleaningSolution}`],
-        [`Date: ${formValue.procedureDate}`],
-        [`Status: ${formValue.status}`]
+        [`Wound Type: ${formValue.woundType || ''}`],
+        [`Location: ${formValue.woundLocation || ''}`],
+        [`Size: ${formValue.woundSize || ''}`],
+        [`Depth: ${formValue.woundDepth || ''}`],
+        [`Condition: ${formValue.woundCondition || ''}`],
+        [`Treatment Plan: ${formValue.treatmentPlan || ''}`],
+        [`Dressing: ${formValue.dressingType || ''}`],
+        [`Cleaning Solution: ${formValue.cleaningSolution || ''}`],
+        [`Date: ${formValue.procedureDate || ''}`],
+        [`Status: ${formValue.status || ''}`]
       ],
       theme: 'grid',
       styles: { fontSize: 10 }

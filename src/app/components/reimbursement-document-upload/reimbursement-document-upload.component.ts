@@ -31,7 +31,8 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
   showDocumentsModal = false;
   createdBy: string | null = null;
   employeeName: string | null = null;
-  payrollNumber: string | null = null;
+  payrollNo: string | null = null; // Changed from payrollNumber to match API
+  departmentName: string | null = null; // Added to store department_name from API
   formTypes = [
     { value: 'ClinicMedicalExpenseRefund', label: 'Clinic Medical Expense Refund' }
   ];
@@ -66,7 +67,7 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
       description: ['', Validators.required],
       files: [null],
       patientName: ['', Validators.required],
-      payrollNumber: ['', Validators.required],
+      payrollNo: ['', Validators.required], // Changed from payrollNumber
       department: ['', Validators.required],
       doneAt: [''],
       orderedFrom: ['']
@@ -78,7 +79,7 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
         this.uploadForm.get('description')?.disable();
         this.uploadForm.get('files')?.clearValidators();
         this.uploadForm.get('patientName')?.enable();
-        this.uploadForm.get('payrollNumber')?.enable();
+        this.uploadForm.get('payrollNo')?.enable();
         this.uploadForm.get('department')?.enable();
         this.uploadForm.get('doneAt')?.enable();
         this.uploadForm.get('orderedFrom')?.enable();
@@ -87,7 +88,7 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
         this.uploadForm.get('description')?.setValue('');
         this.uploadForm.get('files')?.setValidators([Validators.required]);
         this.uploadForm.get('patientName')?.disable();
-        this.uploadForm.get('payrollNumber')?.disable();
+        this.uploadForm.get('payrollNo')?.disable();
         this.uploadForm.get('department')?.disable();
         this.uploadForm.get('doneAt')?.disable();
         this.uploadForm.get('orderedFrom')?.disable();
@@ -99,19 +100,27 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
   }
 
   loadUserData(): void {
-    this.medicalService.getEmployeeById(environment.username).subscribe({
+    this.medicalService.getMyProfiles(environment.username).subscribe({
       next: (response: any) => {
-        const employee = response?.c_Employees?.[0];
+        console.log('responseof',response);
+        const employee = response?.[0];
         if (employee) {
           this.createdBy = employee.user_ID ?? null;
           this.employeeName = employee.en_name ?? 'Unknown';
-          this.payrollNumber = employee.employee_Id ?? null;
-          console.log('Loaded employee data:', { createdBy: this.createdBy, employeeName: this.employeeName, payrollNumber: this.payrollNumber });
-          this.uploadForm.patchValue({
-            payrollNumber: this.payrollNumber,
-            patientName: this.employeeName
+          this.payrollNo = employee.payrole_No ?? null; // Changed to payrole_No
+          this.departmentName = employee.department_name ?? null; // Added department_name
+          console.log('Loaded employee data:', {
+            createdBy: this.createdBy,
+            employeeName: this.employeeName,
+            payrollNo: this.payrollNo,
+            departmentName: this.departmentName
           });
-          if (this.payrollNumber) {
+          this.uploadForm.patchValue({
+            payrollNo: this.payrollNo,
+            patientName: this.employeeName,
+            department: this.departmentName // Patch department with department_name
+          });
+          if (this.payrollNo) {
             this.loadUserReimbursements(true);
           } else {
             console.error('No payroll number found for employee');
@@ -130,22 +139,22 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
   }
 
   loadUserReimbursements(autoSelectLatest: boolean = false): void {
-    if (!this.payrollNumber) {
+    if (!this.payrollNo) {
       console.error('Payroll number is not set');
       this.showErrorMessage('Payroll number not available. Please try again.');
       return;
     }
-  
-    this.medicalService.getExpenseReimbursementsByPayrollNumber(this.payrollNumber).subscribe({
+
+    this.medicalService.getExpenseReimbursementsByPayrollNumber(this.payrollNo).subscribe({
       next: (reimbursements) => {
         this.reimbursements = reimbursements.filter(r => r.reimbursementID && r.reimbursementID > 0);
         console.log('Reimbursements loaded:', this.reimbursements);
         if (this.reimbursements.length === 0) {
-          console.warn('No valid reimbursements found for payroll:', this.payrollNumber);
+          console.warn('No valid reimbursements found for payroll:', this.payrollNo);
           this.showErrorMessage('No reimbursement requests found.');
           return;
         }
-  
+
         if (autoSelectLatest) {
           const latest = [...this.reimbursements].sort((a, b) => (b.reimbursementID || 0) - (a.reimbursementID || 0))[0];
           this.selectedReimbursementId = latest.reimbursementID;
@@ -162,12 +171,11 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
 
   loadDocumentsForReimbursement(event: any): void {
     const reimbursementId = Number(event.target.value);
-    console.log('Selected reimbursement ID:', reimbursementId); // Debug log
+    console.log('Selected reimbursement ID:', reimbursementId);
     if (reimbursementId) {
       this.selectedReimbursementId = reimbursementId;
       this.fetchDocumentsForSelected();
     } else {
-      // Defer state updates to avoid change detection issues
       setTimeout(() => {
         this.uploadedDocuments = [];
         this.selectedReimbursementId = null;
@@ -188,17 +196,13 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
     console.log('Fetching documents for reimbursement ID:', this.selectedReimbursementId);
     this.medicalService.getDocumentsByReimbursementId(this.selectedReimbursementId).subscribe({
       next: (documents: ReimbursementDocument[]) => {
-        console.log('Documents loaded:', JSON.stringify(documents, null, 2)); // Log full object
-        
-        // Defer all state updates to avoid change detection issues
+        console.log('Documents loaded:', JSON.stringify(documents, null, 2));
         setTimeout(() => {
           this.uploadedDocuments = documents;
           this.pdfPreviewUrls = {};
           this.pdfLoadErrors = {};
           this.pdfLoading = {};
           this.pdfRetryCount = {};
-          
-          // Load PDF previews asynchronously
           documents.forEach(doc => {
             console.log(`Processing document ${doc.documentID}: ${doc.fileName} (${doc.fileType})`);
             if (this.getPreviewType(doc.fileType, doc.fileName) === 'pdf') {
@@ -206,11 +210,8 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
               this.pdfLoading[doc.documentID] = true;
               this.pdfRetryCount[doc.documentID] = 0;
               this.loadPdfPreview(doc);
-            } else {
-              console.log(`Document ${doc.documentID} is not a PDF, preview type: ${this.getPreviewType(doc.fileType, doc.fileName)}`);
             }
           });
-          
           this.cdr.detectChanges();
         }, 0);
       },
@@ -224,15 +225,11 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
   private async loadPdfPreview(doc: ReimbursementDocument): Promise<void> {
     try {
       const url = this.medicalService.getReimbursementDocumentDownloadUrl(doc.documentID);
-      console.log('Fetching PDF from:', url); // Debug log
-      
-      // Remove credentials to avoid CORS issues with wildcard Access-Control-Allow-Origin
+      console.log('Fetching PDF from:', url);
       const response = await fetch(url, {
         method: 'GET',
         headers: { 'Accept': 'application/pdf' }
-        // Removed credentials: 'include' to fix CORS issue
       });
-      
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error('Document not found');
@@ -244,29 +241,19 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
       }
-      
       const blob = await response.blob();
-      
-      // Check if blob is empty
       if (blob.size === 0) {
         throw new Error('Document is empty');
       }
-      
-      // More flexible content type checking
       if (!blob.type.includes('pdf') && !doc.fileName.toLowerCase().endsWith('.pdf')) {
         console.warn(`Unexpected content type: ${blob.type} for document ${doc.fileName}`);
-        // Don't throw error, just log warning as some servers might not set correct content type
       }
-      
       const blobUrl = window.URL.createObjectURL(blob);
       this.pdfPreviewUrls[doc.documentID] = this.sanitizer.bypassSecurityTrustResourceUrl(blobUrl + '#view=FitH&toolbar=0&navpanes=0');
       this.pdfLoadErrors[doc.documentID] = '';
-      
       console.log(`Successfully loaded PDF preview for document ${doc.documentID}`);
     } catch (error: any) {
       console.error(`Error loading PDF preview for document ${doc.documentID}:`, error);
-      
-      // Provide more user-friendly error messages
       let errorMessage = 'Failed to load PDF preview';
       if (error.message.includes('CORS')) {
         errorMessage = 'Unable to load PDF due to security restrictions';
@@ -281,10 +268,8 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
       } else {
         errorMessage = `Failed to load PDF: ${error.message}`;
       }
-      
       this.pdfLoadErrors[doc.documentID] = errorMessage;
     } finally {
-      // Use setTimeout to avoid ExpressionChangedAfterItHasBeenCheckedError
       setTimeout(() => {
         this.pdfLoading[doc.documentID] = false;
         this.cdr.detectChanges();
@@ -295,7 +280,6 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
   retryPdfLoad(doc: ReimbursementDocument): void {
     const retryCount = this.pdfRetryCount[doc.documentID] || 0;
     if (retryCount < 3) {
-      // Defer state updates to avoid change detection issues
       setTimeout(() => {
         this.pdfRetryCount[doc.documentID] = retryCount + 1;
         this.pdfLoading[doc.documentID] = true;
@@ -337,7 +321,7 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
       try {
         const formType = this.uploadForm.get('formType')?.value;
         const totalAmount = this.totalAmount;
-  
+
         if (formType === 'ClinicMedicalExpenseRefund') {
           if (this.hasDuplicateInvoiceNumbers()) {
             this.showErrorMessage('Duplicate invoice numbers are not allowed within the same request.');
@@ -353,15 +337,15 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
             return;
           }
         }
-  
+
         const reimbursementPayload: ExpenseReimbursement = {
           reimbursementID: 0,
           reimbursementNumber: `REIMB-${Date.now()}-${Math.floor(Math.random() * 1000)}`.substring(0, 50),
           patientName: this.uploadForm.get('patientName')?.value || this.employeeName || 'Unknown',
-          employeeID: this.payrollNumber || null,
-          payrollNumber: this.uploadForm.get('payrollNumber')?.value || this.payrollNumber || null,
-          payrollNo: this.uploadForm.get('payrollNumber')?.value || this.payrollNumber || null,
-          department: this.uploadForm.get('department')?.value || null,
+          employeeID: this.payrollNo || null,
+          payrollNo: this.uploadForm.get('payrollNo')?.value || this.payrollNo || null, // Changed to payrollNo
+          payrollNumber: this.uploadForm.get('payrollNo')?.value || this.payrollNo || null, // Keep for backward compatibility
+          department: this.uploadForm.get('department')?.value || this.departmentName || null,
           totalAmount: totalAmount,
           status: 'pending',
           submissionDate: new Date(),
@@ -374,14 +358,14 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
           formType: formType,
           approvedAmount: 0
         };
-  
+
         const created = await firstValueFrom(this.medicalService.createExpenseReimbursement(reimbursementPayload));
         this.reimbursementId = created.reimbursementID;
-  
+
         if (this.reimbursementId === null) {
           throw new Error('Failed to create reimbursement: reimbursement ID is null');
         }
-  
+
         if (formType === 'ClinicMedicalExpenseRefund' && this.investigations.length > 0) {
           for (const inv of this.investigations) {
             if (inv.investigation && inv.invoiceNumber && inv.amount > 0) {
@@ -397,13 +381,13 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
             }
           }
         }
-  
+
         const formData = new FormData();
         formData.append('reimbursementId', this.reimbursementId.toString());
         formData.append('description', this.uploadForm.get('description')?.value);
         formData.append('uploadedBy', this.employeeName || 'Unknown');
         formData.append('createdBy', this.createdBy || '');
-  
+
         if (formType === 'ClinicMedicalExpenseRefund') {
           this.pdfFile = await this.generatePDF();
           formData.append('file', this.pdfFile, this.pdfFile.name);
@@ -412,9 +396,9 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
             formData.append('file', file, file.name);
           });
         }
-  
+
         await firstValueFrom(this.medicalService.uploadReimbursementDocument(formData));
-  
+
         this.showSuccessMessage('Reimbursement request created successfully!');
         this.loadUserReimbursements(true);
         this.showDocumentsModal = true;
@@ -446,8 +430,9 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
     this.investigations = [{ investigation: '', invoiceNumber: '', amount: 0 }];
     this.reimbursementId = null;
     this.uploadForm.patchValue({
-      payrollNumber: this.payrollNumber,
+      payrollNo: this.payrollNo,
       patientName: this.employeeName,
+      department: this.departmentName,
       formType: 'ClinicMedicalExpenseRefund'
     });
   }
@@ -461,14 +446,11 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
     this.showDocumentsModal = false;
     this.uploadedDocuments = [];
     this.selectedReimbursementId = null;
-    
-    // Clean up blob URLs before clearing
     Object.values(this.pdfPreviewUrls).forEach(url => {
       if (typeof url === 'string') {
         window.URL.revokeObjectURL(url);
       }
     });
-    
     this.pdfPreviewUrls = {};
     this.pdfLoadErrors = {};
     this.pdfLoading = {};
@@ -492,7 +474,7 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
   }
 
   downloadDocument(doc: ReimbursementDocument): void {
-    console.log('Downloading document:', doc.documentID); // Debug log
+    console.log('Downloading document:', doc.documentID);
     this.medicalService.downloadReimbursementDocument(doc.documentID).subscribe(
       (blob: Blob) => {
         const url = window.URL.createObjectURL(blob);
@@ -531,8 +513,7 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
   }
 
   onPdfLoad(doc: ReimbursementDocument): void {
-    console.log(`PDF loaded for document ${doc.documentID}`); // Debug log
-    // Defer state updates to avoid change detection issues
+    console.log(`PDF loaded for document ${doc.documentID}`);
     setTimeout(() => {
       this.pdfLoadErrors[doc.documentID] = '';
       this.pdfLoading[doc.documentID] = false;
@@ -541,8 +522,7 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
   }
 
   onPdfError(doc: ReimbursementDocument, event: Event): void {
-    console.error(`Error loading PDF for document ${doc.documentID}:`, event); // Debug log
-    // Defer state updates to avoid change detection issues
+    console.error(`Error loading PDF for document ${doc.documentID}:`, event);
     setTimeout(() => {
       this.pdfLoadErrors[doc.documentID] = 'Unable to load PDF preview';
       this.pdfLoading[doc.documentID] = false;
@@ -592,11 +572,11 @@ export class ReimbursementDocumentUploadComponent implements OnInit {
   }
 
   onImageLoad(event: Event): void {
-    console.log('Image loaded successfully'); // Debug log
+    console.log('Image loaded successfully');
   }
 
   onImageError(event: Event): void {
-    console.error('Error loading image'); // Debug log
+    console.error('Error loading image');
     const img = event.target as HTMLImageElement;
     img.style.display = 'none';
     const container = img.parentElement;

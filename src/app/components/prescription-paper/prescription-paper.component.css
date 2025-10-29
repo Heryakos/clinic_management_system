@@ -559,43 +559,32 @@ font-weight: bold;
 }
 
 @media print {
-    .prescription-card {
-        width: 100%;
-        margin: 0;
-        padding: 0;
-        box-shadow: none;
-        border: none;
-    }
-
-    .headerelectron
-    .header {
-        border-bottom: 1px solid #000;
-    }
-
-    .medication-table {
-      font-size: 8pt;
+  body * {
+    visibility: hidden;
   }
-  
-  .medication-table th,
-  .medication-table td {
-      border: 1px solid #000 !important;
-      print-color-adjust: exact;
-      -webkit-print-color-adjust: exact;
+  .prescription-card,
+  .prescription-card * {
+    visibility: visible;
   }
-
-    .input-container {
-        border-bottom: 1px solid #000;
-    }
-
-    .underline-input {
-        border: none;
-    }
-
-    .table-input {
-        border: none;
-    }
-
-    .form-actions {
-        display: none;
-    }
+  .prescription-card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    box-shadow: none; /* Remove any shadows for clean print */
+  }
+  .dialog-title .close-btn,
+  .form-actions,
+  .error-message,
+  .loading {
+    display: none; /* Hide buttons, errors, loading for print */
+  }
+  /* Optional: Adjust table or other elements for better print fit */
+  .medication-table {
+    width: 100%;
+    font-size: 10pt;
+  }
 }

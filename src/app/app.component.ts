@@ -35,6 +35,8 @@ export class AppComponent implements OnInit {
     inventory: 'e0e5db04-7418-4cfb-8786-a72f70ccc557',
     inventory_extended: 'e0e5db04-7418-4cfb-8786-a72f70ccc557',
     notifications: '46dc8001-85ca-4e4f-921b-91d145f607a8',
+    financeApproval: '7263ca4e-76b2-489d-aa0a-0cf57892c7ae', // Replace with actual role ID
+    cashierPayment: '7263ca4e-76b2-489d-aa0a-0cf57892c7ae',
   };
 
   // Boolean flags for menu item visibility
@@ -58,6 +60,8 @@ export class AppComponent implements OnInit {
   showPatientAssignment = false;
   showSickLeave = false;
   showNotifications = false;
+  showFinanceApproval = false;
+  showCashierPayment = false;
 
   constructor(
     private medicalService: MedicalService,
@@ -183,6 +187,8 @@ export class AppComponent implements OnInit {
     this.showPatientAssignment = false;
     this.showSickLeave = false;
     this.showNotifications = false;
+    this.showFinanceApproval = false;
+    this.showCashierPayment = false;
     console.log('Default menu visibility set: Sidebar hidden, only Medical Requests route accessible');
   }
 
@@ -273,6 +279,12 @@ export class AppComponent implements OnInit {
         roleId === this.roles.injection
       ) {
         this.showInventoryRequest = true;
+      }
+      if (roleId === this.roles.financeApproval) {
+        this.showFinanceApproval = true;
+      }
+      if (roleId === this.roles.cashierPayment) {
+        this.showCashierPayment = true;
       }
     });
 

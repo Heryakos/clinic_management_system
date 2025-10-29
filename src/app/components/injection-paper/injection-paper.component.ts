@@ -5,6 +5,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { ASSETS } from '../../assets.config';
+import { FontService } from '../../services/FontService.service';
 
 @Component({
   selector: 'app-injection-paper',
@@ -29,7 +30,8 @@ export class InjectionPaperComponent implements OnInit {
       injectionID: number; 
       patientID: number;  // ✅ patientID is now required
       dialogTitle: string 
-    }
+    },
+    private fontService: FontService
   ) {}
 
   ngOnInit(): void {
@@ -123,51 +125,43 @@ export class InjectionPaperComponent implements OnInit {
     );
   }
 
-  private processInjectionResponse(response: any): void {
-    let data: any;
-
-    if (Array.isArray(response)) {
-        data = response[0] || {};
-    } else {
-        data = response || {};
-    }
-
-    console.log('Raw API Response:', data); // Debug log
-
+  private processInjectionResponse(data: any): void {
     const formData = {
-        FullName: data.PatientName || data.FullName || '', // ✅ Fixed: PatientName → FullName
-        gender: data.gender || '', // This might not be in the API response
-        age: data.age || null, // This might not be in the API response
-        Weight: data.Weight || null, // This might not be in the API response
-        CardNumber: data.CardNumber || '',
-        woreda: data.woreda || '', // This might not be in the API response
-        houseNo: data.houseNo || data.HouseNumber || '', // This might not be in the API response
-        phone: data.phone || data.Phone || '', // This might not be in the API response
-        MedicalHistory: data.MedicalHistory || '', // This might not be in the API response
-        injectionNumber: data.InjectionNumber || data.injectionNumber || '', // ✅ Fixed: InjectionNumber
-        injectionDate: data.InjectionDate ? new Date(data.InjectionDate).toISOString().split('T')[0] : '', // ✅ Fixed: InjectionDate
-        status: data.Status || data.status || '',
-        orderingPhysicianName: data.OrderingPhysicianName || data.orderingPhysicianName || '',
-        medicationName: data.MedicationName || data.medicationName || '',
-        strength: data.Strength || data.strength || '',
-        dosageForm: data.DosageForm || data.dosageForm || '',
-        dose: data.Dose || data.dose || '',
-        route: data.Route || data.route || '',
-        site: data.Site || data.site || '',
-        frequency: data.Frequency || data.frequency || '',
-        duration: data.Duration || data.duration || '',
-        instructions: data.Instructions || data.instructions || '',
-        administeredByName: data.AdministeredByName || data.administeredByName || '',
-        administeredDate: data.AdministeredDate ? new Date(data.AdministeredDate).toISOString().split('T')[0] : '',
-        notes: data.Notes || data.notes || ''
+      FullName: data.PatientName || '',
+      gender: data.Sex || '',
+      age: data.Age || null,
+      Weight: data.Weight || null,
+      CardNumber: data.CardNumber || '',
+      woreda: data.Woreda || '',
+      houseNo: data.KebeleHouseNo || '',
+      phone: data.TelNo || '',
+      MedicalHistory: data.Diagnosis || '',
+  
+      injectionNumber: data.InjectionNumber || '',
+      injectionDate: data.InjectionDate ? new Date(data.InjectionDate).toISOString().split('T')[0] : '',
+      status: data.Status || '',
+      orderingPhysicianName: data.OrderingPhysicianName || '',
+  
+      medicationName: data.MedicationName || '',
+      strength: data.Strength || '',
+      dosageForm: data.DosageForm || '',
+      dose: data.Dose || '',
+      route: data.Route || '',
+      site: data.Site || '',
+      frequency: data.Frequency || '',
+      duration: data.Duration || '',
+      instructions: data.Instructions || '',
+      notes: data.Notes || '',
+  
+      administeredByName: data.AdministeredByName || '',
+      administeredDate: data.AdministeredDate ? new Date(data.AdministeredDate).toISOString().split('T')[0] : ''
     };
-
-    console.log('Form Data to Patch:', formData); // Debug log
-
+  
     this.injectionForm.patchValue(formData);
     this.isLoading = false;
     this.cdr.detectChanges();
-}
+  }
+  
 
   toggleEditMode(): void {
     this.isEditing = !this.isEditing;
@@ -223,60 +217,80 @@ export class InjectionPaperComponent implements OnInit {
   }
 
   exportToPDF(): void {
-    const doc = new jsPDF();
-    const formValue = this.injectionForm.getRawValue();
+    // Load font async
+    this.fontService.loadFontBase64('fonts/AbyssinicaSIL-Regular.json').subscribe(fontBase64 => {
+      if (!fontBase64) {
+        console.error('Font loading failed; falling back to default font.');
+        // You could generate PDF without custom font here if needed
+        return;
+      }
 
-    doc.setFontSize(14);
-    doc.text('FEDERAL HOUSING CORPORATION MEDIUM CLINIC', 105, 20, { align: 'center' });
-    doc.setFontSize(10);
-    doc.text('TEL. 0118 553615', 105, 30, { align: 'center' });
-    doc.setFontSize(12);
-    doc.text(this.data.dialogTitle, 105, 40, { align: 'center' });
+      const doc = new jsPDF();
 
-    doc.setFontSize(10);
-    let y = 50;
-    doc.text(`Patient's Full Name: ${formValue.FullName || ''}`, 20, y);
-    doc.text(`Town/Region: ${formValue.woreda || ''}`, 20, y + 10);
-    doc.text(`Woreda: ${formValue.woreda || ''}`, 20, y + 10);
-    doc.text(`Kebele/House No: ${formValue.houseNo || ''}`, 20, y + 20);
-    doc.text(`Tel No: ${formValue.phone || ''}`, 20, y + 20);
-    doc.text(`Sex: ${formValue.gender || ''}`, 20, y + 30);
-    doc.text(`Age: ${formValue.age || ''}`, 60, y + 30);
-    doc.text(`Weight: ${formValue.Weight || ''}`, 90, y + 30);
-    doc.text(`Card No: ${formValue.CardNumber || ''}`, 130, y + 30);
-    doc.text(`Diagnosis: ${formValue.MedicalHistory || ''}`, 20, y + 40);
+      // Add custom font for Amharic (Ethiopic script) support
+      const fontName = 'AbyssinicaSIL-Regular.ttf'; // Matches your font file name
+      const fontFamily = 'AbyssinicaSIL'; // Custom family name
 
-    y += 50;
-    autoTable(doc, {
-      startY: y,
-      head: [['Injection Details']],
-      body: [
-        [`Injection Number: ${formValue.injectionNumber || ''}`],
-        [`Date: ${formValue.injectionDate || ''}`],
-        [`Status: ${formValue.status || ''}`],
-        [`Physician: ${formValue.orderingPhysicianName || ''}`],
-        [`Medication: ${formValue.medicationName || ''} (${formValue.strength || ''} ${formValue.dosageForm || ''})`],
-        [`Dose: ${formValue.dose || ''}`],
-        [`Route: ${formValue.route || ''}`],
-        [`Site: ${formValue.site || ''}`],
-        [`Frequency: ${formValue.frequency || ''}`],
-        [`Duration: ${formValue.duration || ''}`],
-        [`Instructions: ${formValue.instructions || ''}`],
-        [`Notes: ${formValue.notes || ''}`],
-        [`Administered By: ${formValue.administeredByName || 'N/A'}`],
-        [`Administered Date: ${formValue.administeredDate || 'N/A'}`]
-      ],
-      theme: 'grid',
-      styles: { fontSize: 10 }
+      doc.addFileToVFS(fontName, fontBase64);
+      doc.addFont(fontName, fontFamily, 'normal');
+      doc.setFont(fontFamily); // Set the custom font for the entire document to handle Amharic/Unicode
+
+      // ... (rest of the PDF generation code remains unchanged: get formValue, add text, autoTable, signatures, doc.save)
+      
+      const formValue = this.injectionForm.getRawValue();
+
+      doc.setFontSize(14);
+      doc.text('FEDERAL HOUSING CORPORATION MEDIUM CLINIC', 105, 20, { align: 'center' });
+      doc.setFontSize(10);
+      doc.text('TEL. 0118 553615', 105, 30, { align: 'center' });
+      doc.setFontSize(12);
+      doc.text(this.data.dialogTitle, 105, 40, { align: 'center' });
+
+      doc.setFontSize(10);
+      let y = 50;
+      doc.text(`Patient's Full Name: ${formValue.FullName || ''}`, 20, y);
+      doc.text(`Town/Region: ${formValue.woreda || ''}`, 20, y + 10);
+      doc.text(`Woreda: ${formValue.woreda || ''}`, 20, y + 20);
+      doc.text(`Kebele/House No: ${formValue.houseNo || ''}`, 20, y + 30);
+      doc.text(`Tel No: ${formValue.phone || ''}`, 20, y + 40);
+      doc.text(`Sex: ${formValue.gender || ''}`, 20, y + 50);
+      doc.text(`Age: ${formValue.age || ''}`, 60, y + 50);
+      doc.text(`Weight: ${formValue.Weight || ''}`, 90, y + 50);
+      doc.text(`Card No: ${formValue.CardNumber || ''}`, 130, y + 50);
+      doc.text(`Diagnosis: ${formValue.MedicalHistory || ''}`, 20, y + 60);
+
+      y += 70;
+      autoTable(doc, {
+        startY: y,
+        head: [['Injection Details']],
+        body: [
+          [`Injection Number: ${formValue.injectionNumber || ''}`],
+          [`Date: ${formValue.injectionDate || ''}`],
+          [`Status: ${formValue.status || ''}`],
+          [`Physician: ${formValue.orderingPhysicianName || ''}`],
+          [`Medication: ${formValue.medicationName || ''} (${formValue.strength || ''} ${formValue.dosageForm || ''})`],
+          [`Dose: ${formValue.dose || ''}`],
+          [`Route: ${formValue.route || ''}`],
+          [`Site: ${formValue.site || ''}`],
+          [`Frequency: ${formValue.frequency || ''}`],
+          [`Duration: ${formValue.duration || ''}`],
+          [`Instructions: ${formValue.instructions || ''}`],
+          [`Notes: ${formValue.notes || ''}`],
+          [`Administered By: ${formValue.administeredByName || 'N/A'}`],
+          [`Administered Date: ${formValue.administeredDate || 'N/A'}`]
+        ],
+        theme: 'grid',
+        styles: { fontSize: 10, font: fontFamily } // Apply custom font to the table
+      });
+
+      y = (doc as any).lastAutoTable.finalY + 10;
+      doc.text("Physician's Signature: ____________________", 20, y);
+      doc.text(`Date: ${formValue.injectionDate || ''}`, 20, y + 10);
+
+      doc.text("Administered By: ____________________", 110, y);
+      doc.text(`Date: ${formValue.administeredDate || ''}`, 110, y + 10);
+
+      doc.save(`injection-${formValue.injectionNumber}.pdf`);
     });
-
-    y = (doc as any).lastAutoTable.finalY + 10;
-    doc.text("Physician's Signature: ____________________", 20, y);
-    doc.text(`Date: ${formValue.injectionDate || ''}`, 20, y + 10);
-
-    doc.text("Administered By: ____________________", 110, y);
-    doc.text(`Date: ${formValue.administeredDate || ''}`, 110, y + 10);
-
-    doc.save(`injection-${formValue.injectionNumber}.pdf`);
   }
 }
