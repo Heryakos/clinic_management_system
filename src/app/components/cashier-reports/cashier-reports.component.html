@@ -1,0 +1,155 @@
+<div class="reports-container">
+    <!-- Language Toggle -->
+    <div class="language-toggle no-print">
+        <button type="button" class="lang-btn" (click)="toggleLanguage()">
+            {{ reportLang === 'en' ? 'አማ' : 'EN' }}
+        </button>
+    </div>
+
+    <!-- Report Header -->
+    <div class="report-header">
+        <h1>{{ getText('title') }}</h1>
+
+        <div class="report-controls">
+            <div class="control-group">
+                <label>{{ getText('dateRange') }} - Start</label>
+                <input type="date" [(ngModel)]="startDate" class="form-control">
+            </div>
+
+            <div class="control-group">
+                <label>{{ getText('dateRange') }} - End</label>
+                <input type="date" [(ngModel)]="endDate" class="form-control">
+            </div>
+
+            <div class="action-buttons">
+                <button type="button" class="btn btn-primary" (click)="generateReport()" [disabled]="isLoading">
+                    <span class="btn-icon">📊</span>
+                    {{ getText('generate') }}
+                </button>
+                <button type="button" class="btn btn-success" (click)="exportToPDF()" [disabled]="isLoading">
+                    <span class="btn-icon">📄</span>
+                    {{ getText('exportPdf') }}
+                </button>
+                <button type="button" class="btn btn-secondary" (click)="printReport()" [disabled]="isLoading">
+                    <span class="btn-icon">🖨️</span>
+                    {{ getText('print') }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="loading-state">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Generating report...</div>
+    </div>
+
+    <!-- Report Content -->
+    <div *ngIf="!isLoading" #reportContent class="report-content">
+        <!-- Summary Cards -->
+        <div class="summary-cards">
+            <div class="summary-card">
+                <h3>{{ getText('totalPayments') }}</h3>
+                <div class="summary-value">{{ paymentSummary.totalPayments || 0 }}</div>
+                <div class="summary-label">{{ getText('count') }}</div>
+            </div>
+
+            <div class="summary-card">
+                <h3>{{ getText('totalAmount') }}</h3>
+                <div class="summary-value">{{ formatCurrency(paymentSummary.totalAmount || 0) }}</div>
+                <div class="summary-label">{{ getText('birr') }}</div>
+            </div>
+
+            <div class="summary-card">
+                <h3>{{ getText('averagePayment') }}</h3>
+                <div class="summary-value">{{ formatCurrency(paymentSummary.averagePayment || 0) }}</div>
+                <div class="summary-label">{{ getText('birr') }}</div>
+            </div>
+        </div>
+
+        <!-- Data Period Info -->
+        <div class="period-info" *ngIf="paymentTrends.length > 0">
+            <div class="period-badge">
+                📅 Data Period: {{ paymentTrends[0]?.date }} - {{ paymentTrends[paymentTrends.length - 1]?.date }}
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <!-- Trends Chart -->
+            <div class="chart-row full-width">
+                <div class="chart-container">
+                    <div class="chart-title">{{ getText('trends') }}</div>
+                    <div id="trendsChart" class="chart"></div>
+                </div>
+            </div>
+
+            <div class="chart-row">
+                <!-- Department Chart -->
+                <div class="chart-container">
+                    <div class="chart-title">{{ getText('departmentBreakdown') }}</div>
+                    <div id="departmentChart" class="chart"></div>
+                </div>
+
+                <!-- Method Chart -->
+                <div class="chart-container">
+                    <div class="chart-title">{{ getText('methods') }}</div>
+                    <div id="methodChart" class="chart"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Tables -->
+        <div class="data-tables">
+            <!-- Department Breakdown Table -->
+            <div class="data-table">
+                <h3>{{ getText('departmentBreakdown') }}</h3>
+                <div class="table-container">
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>{{ getText('department') }}</th>
+                                <th>{{ getText('count') }}</th>
+                                <th>{{ getText('amount') }}</th>
+                                <th>Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let dept of departmentBreakdown">
+                                <td>{{ dept.department }}</td>
+                                <td>{{ dept.count }}</td>
+                                <td>{{ formatCurrency(dept.amount) }}</td>
+                                <td>{{ getPercentage(dept.amount, paymentSummary.totalAmount) }}%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Payment Method Table -->
+            <div class="data-table">
+                <h3>{{ getText('methods') }}</h3>
+                <div class="table-container">
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>{{ getText('paymentMethod') }}</th>
+                                <th>{{ getText('count') }}</th>
+                                <th>{{ getText('amount') }}</th>
+                                <th>Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let method of paymentMethodStats">
+                                <td>{{ method.method === 'Cash' ? getText('cash') : getText('check') }}</td>
+                                <td>{{ method.count }}</td>
+                                <td>{{ formatCurrency(method.amount) }}</td>
+                                <td>{{ getPercentage(method.amount, paymentSummary.totalAmount) }}%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { BehaviorSubject, from, Observable, throwError } from 'rxjs';
+import { BehaviorSubject, from, Observable, of, throwError } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { MedicalRequest, MedicalRequestView, SickLeave, InventoryItem, InventoryRequest, ExpenseReimbursement, ExpenseReimbursementDetail } from './models/medical.model';
 import { environment } from '../environments/environment';
@@ -98,13 +98,13 @@ export class MedicalService {
   private chmsProceduresBase = environment.rootPath2 + 'CHMS_Procedures/';
   private chmsFinanceBase = environment.rootPath2 + 'CHMS_Finance/';
   private chmsCashierBase = environment.rootPath2 + 'CHMS_Cashier/';
-  private EmployeeProfile=environment.rootPath2+'EmployeeProfile';
+  private EmployeeProfile = environment.rootPath2 + 'EmployeeProfile';
   private userRoleIdsSubject = new BehaviorSubject<string[]>([]);
   userRoleIds$ = this.userRoleIdsSubject.asObservable();
 
   private headers = new HttpHeaders({ 'Content-Type': 'application/json' });
 
-  
+
 
   constructor(private http: HttpClient) { }
 
@@ -140,8 +140,27 @@ export class MedicalService {
       })
     );
   }
-  getMyProfiles(employeeid: string){
-    return this.http.get(this.EmployeeProfile+'/get/employee/my/Profiles/'+employeeid)
+
+  // Helper method for mock data (add this private method to MedicalService)
+  private generateMockTrends(): any[] {
+    const trends = [];
+    const today = new Date();
+
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(today.getDate() - i);
+
+      trends.push({
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        amount: Math.floor(Math.random() * 8000) + 2000
+      });
+    }
+
+    return trends;
+  }
+
+  getMyProfiles(employeeid: string) {
+    return this.http.get(this.EmployeeProfile + '/get/employee/my/Profiles/' + employeeid)
   }
 
   // Existing methods from original MedicalService
@@ -183,7 +202,7 @@ export class MedicalService {
       catchError(this.handleError)
     );
   }
-    administerInjectionSchedules(request: AdministerInjectionRequest): Observable<any> {
+  administerInjectionSchedules(request: AdministerInjectionRequest): Observable<any> {
     return this.http.put(
       `${this.CHMSInjectionBase}schedules/${request.scheduleID}/administer`,
       request,
@@ -193,17 +212,17 @@ export class MedicalService {
     );
   }
   // Add to MedicalService
-// getInjectionDetails(injectionID: number): Observable<any> {
-//   return this.http.get(`${this.CHMSInjectionBase}injections/${injectionID}`).pipe(
-//     catchError(this.handleError)
-//   );
-// }
+  // getInjectionDetails(injectionID: number): Observable<any> {
+  //   return this.http.get(`${this.CHMSInjectionBase}injections/${injectionID}`).pipe(
+  //     catchError(this.handleError)
+  //   );
+  // }
 
-updateInjection(data: any): Observable<any> {
-  return this.http.put(`${this.CHMSInjectionBase}injections/${data.injectionID}`, data).pipe(
-    catchError(this.handleError)
-  );
-}
+  updateInjection(data: any): Observable<any> {
+    return this.http.put(`${this.CHMSInjectionBase}injections/${data.injectionID}`, data).pipe(
+      catchError(this.handleError)
+    );
+  }
 
   administerInjection(injectionID: number, nurseID: string): Observable<any> {
     return this.http.put(`${this.CHMSInjectionBase}injections/${injectionID}/administer`, { nurseID }).pipe(
@@ -387,8 +406,8 @@ updateInjection(data: any): Observable<any> {
   }
   addReimbursementDetail(reimbursementId: number, detail: any): Observable<any> {
     return this.http.post<any>(
-      `${this.chmsExpenseReimbursementBase}${reimbursementId}/details`, 
-      detail, 
+      `${this.chmsExpenseReimbursementBase}${reimbursementId}/details`,
+      detail,
       { headers: this.headers }
     ).pipe(
       catchError(this.handleError)
@@ -397,7 +416,7 @@ updateInjection(data: any): Observable<any> {
 
   uploadReimbursementDocument(formData: FormData): Observable<any> {
     return this.http.post<any>(
-      `${this.chmsReimbursementDocumentsBase}upload`, 
+      `${this.chmsReimbursementDocumentsBase}upload`,
       formData
     ).pipe(
       catchError(this.handleError)
@@ -867,11 +886,11 @@ updateInjection(data: any): Observable<any> {
   }
 
   // Add this method to your medical.service.ts
-getPatientCardByPatientId(patientId: number): Observable<any> {
-  return this.http.get<any>(`${this.chmsPatientsBase}cards/patient/${patientId}`).pipe(
-    catchError(this.handleError)
-  );
-}
+  getPatientCardByPatientId(patientId: number): Observable<any> {
+    return this.http.get<any>(`${this.chmsPatientsBase}cards/patient/${patientId}`).pipe(
+      catchError(this.handleError)
+    );
+  }
 
   getPatientCardsByPatient(patientId: number): Observable<any> {
     return this.http.get<any[]>(`${this.chmsPatientsBase}cards/patient/${patientId}`).pipe(
@@ -1393,7 +1412,7 @@ getPatientCardByPatientId(patientId: number): Observable<any> {
 
         // Handle the grouped API response structure
         let items: any[] = [];
-        
+
         if (Array.isArray(response)) {
           // If response is an array of category objects
           response.forEach(category => {
@@ -1569,7 +1588,7 @@ getPatientCardByPatientId(patientId: number): Observable<any> {
   // }
 
 
-  
+
   getRequestDetails(requestId: number): Observable<InventoryRequestDetail[]> {
     return this.http.get<InventoryRequestDetail[]>(`${this.chmsInventoryBase}requests/${requestId}/details`).pipe(
       catchError(this.handleError)
@@ -1586,19 +1605,19 @@ getPatientCardByPatientId(patientId: number): Observable<any> {
       catchError(this.handleError)
     );
   }
-  
+
   getPatientWoundCare(patientID: number): Observable<WoundCare[]> {
     return this.http.get<WoundCare[]>(`${this.chmsWoundCareBase}patient/${patientID}`).pipe(
       catchError(this.handleError)
     );
   }
-  
+
   getWoundCareDetails(woundCareID: number): Observable<WoundCare> {
     return this.http.get<WoundCare>(`${this.chmsWoundCareBase}${woundCareID}`).pipe(
       catchError(this.handleError)
     );
   }
-  
+
   updateWoundCareStatus(woundCareID: number, statusUpdate: ProcedureStatusUpdate): Observable<any> {
     return this.http.put<any>(`${this.chmsWoundCareBase}${woundCareID}/status`, statusUpdate, { headers: this.headers }).pipe(
       catchError(this.handleError)
@@ -1611,19 +1630,19 @@ getPatientCardByPatientId(patientId: number): Observable<any> {
       catchError(this.handleError)
     );
   }
-  
+
   getPatientSuturing(patientID: number): Observable<Suturing[]> {
     return this.http.get<Suturing[]>(`${this.chmsSuturingBase}patient/${patientID}`).pipe(
       catchError(this.handleError)
     );
   }
-  
+
   getSuturingDetails(suturingID: number): Observable<Suturing> {
     return this.http.get<Suturing>(`${this.chmsSuturingBase}${suturingID}`).pipe(
       catchError(this.handleError)
     );
   }
-  
+
   updateSuturingStatus(suturingID: number, statusUpdate: ProcedureStatusUpdate): Observable<any> {
     return this.http.put<any>(`${this.chmsSuturingBase}${suturingID}/status`, statusUpdate, { headers: this.headers }).pipe(
       catchError(this.handleError)
@@ -1636,19 +1655,19 @@ getPatientCardByPatientId(patientId: number): Observable<any> {
       catchError(this.handleError)
     );
   }
-  
+
   getPatientEarIrrigation(patientID: number): Observable<EarIrrigation[]> {
     return this.http.get<EarIrrigation[]>(`${this.chmsEarIrrigationBase}patient/${patientID}`).pipe(
       catchError(this.handleError)
     );
   }
-  
+
   getEarIrrigationDetails(earIrrigationID: number): Observable<EarIrrigation> {
     return this.http.get<EarIrrigation>(`${this.chmsEarIrrigationBase}${earIrrigationID}`).pipe(
       catchError(this.handleError)
     );
   }
-  
+
   updateEarIrrigationStatus(earIrrigationID: number, statusUpdate: ProcedureStatusUpdate): Observable<any> {
     return this.http.put<any>(`${this.chmsEarIrrigationBase}${earIrrigationID}/status`, statusUpdate, { headers: this.headers }).pipe(
       catchError(this.handleError)
@@ -1804,13 +1823,13 @@ getPatientCardByPatientId(patientId: number): Observable<any> {
       catchError(this.handleError)
     );
   }
-  
+
   createInventoryItem(item: InventoryItemenhanced): Observable<any> {
     return this.http.post<any>(`${this.chmsInventoryBase}items`, item, { headers: this.headers }).pipe(
       catchError(this.handleError)
     );
   }
-  
+
   addRoomCategory(roomCategory: RoomCategory): Observable<any> {
     return this.http.post<any>(`${this.chmsInventoryBase}room-categories`, roomCategory, { headers: this.headers }).pipe(
       catchError(this.handleError)
@@ -1895,23 +1914,53 @@ getPatientCardByPatientId(patientId: number): Observable<any> {
   getPaymentHistory(startDate?: Date, endDate?: Date, status?: string): Observable<any[]> {
     let url = `${this.chmsCashierBase}payment-history`;
     const params = new URLSearchParams();
-    
+
     if (startDate) params.append('startDate', startDate.toISOString());
     if (endDate) params.append('endDate', endDate.toISOString());
     if (status) params.append('status', status);
-    
+
     if (params.toString()) {
       url += `?${params.toString()}`;
     }
-    
+
     return this.http.get<any[]>(url).pipe(
       catchError(this.handleError)
     );
   }
 
   getPaymentSummary(): Observable<any> {
-    return this.http.get<any>(`${this.chmsCashierBase}payment-summary`).pipe(
-      catchError(this.handleError)
+    return this.http.get(`${this.chmsCashierBase}enhanced-payment-summary`).pipe(
+      catchError(error => {
+        console.error('Error fetching enhanced payment summary:', error);
+        return of({
+          pendingPayments: { count: 0, amount: 0 },
+          todayPayments: { count: 0, amount: 0 },
+          monthlySummary: []
+        });
+      })
+    );
+  }
+  getPaymentReports(startDate?: Date, endDate?: Date): Observable<any> {
+    const params: any = {};
+
+    if (startDate) {
+      params.startDate = startDate.toISOString().split('T')[0];
+    }
+    if (endDate) {
+      params.endDate = endDate.toISOString().split('T')[0];
+    }
+
+    return this.http.get(`${this.chmsCashierBase}reports`, { params }).pipe(
+      catchError(error => {
+        console.error('Error fetching payment reports:', error);
+        // Return empty structure if API fails
+        return of({
+          summary: { totalPayments: 0, totalAmount: 0, averagePayment: 0 },
+          trends: [],
+          departmentBreakdown: [],
+          paymentMethodStats: []
+        });
+      })
     );
   }
 

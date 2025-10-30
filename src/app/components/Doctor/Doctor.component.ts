@@ -1,3 +1,4 @@
+
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
@@ -123,10 +124,10 @@ export class DoctorComponent implements OnInit {
     // Switch between tabs
     selectTab(tab: string): void {
         console.log('Selected tab:', tab, 'patientID:', this.patient?.cardNumber, 'createdBy:', this.createdBy);
-        if (tab === 'prescriptions' && this.hasPendingLabs) {
-            this.showSnackBar('Please complete pending laboratory tests before accessing pharmacy.', 'OK', 5000);
-            return;
-        }
+        // if (tab === 'prescriptions' && this.hasPendingLabs) {
+        //     this.showSnackBar('Please complete pending laboratory tests before accessing pharmacy.', 'OK', 5000);
+        //     return;
+        // }
         this.selectedTab = tab;
         if (tab === 'prescriptions') {
             if (this.patient?.CardNumber) {
@@ -324,6 +325,11 @@ export class DoctorComponent implements OnInit {
             }
         );
     }
+    getRoomName(roomId: number): string {
+        const room = this.rooms.find(r => r.roomID === roomId);
+        return room ? `${room.roomNumber} - ${room.roomName}` : 'Unknown Room';
+    }
+
     loadActivePatients(doctorID: string): void {
         this.isSearching = true;
         this.medicalService.getAllDoctorActivePatients(doctorID).subscribe(
@@ -602,9 +608,12 @@ export class DoctorComponent implements OnInit {
         });
     }
 
-    getRoomName(roomId: number): string {
-        const room = this.rooms.find(r => r.roomID === roomId);
-        return room ? `${room.roomNumber} - ${room.roomName}` : 'Unknown Room';
+    get testsFormArray(): FormArray {
+        return this.labRequestForm.get('tests') as FormArray;
+    }
+
+    get medicationsFormArray(): FormArray {
+        return this.prescriptionForm.get('medications') as FormArray;
     }
 
     onTestCategoryChange(): void {
@@ -682,14 +691,6 @@ export class DoctorComponent implements OnInit {
             // unitPrice: ['', [Validators.required, Validators.min(0)]],
             instructions: ['']
         });
-    }
-
-    get testsFormArray(): FormArray {
-        return this.labRequestForm.get('tests') as FormArray;
-    }
-
-    get medicationsFormArray(): FormArray {
-        return this.prescriptionForm.get('medications') as FormArray;
     }
 
     addTest(): void {

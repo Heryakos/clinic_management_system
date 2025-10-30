@@ -24,6 +24,7 @@ import { SupervisorInventoryComponent } from './components/supervisor-inventory/
 import { ReimbursementDocumentUploadComponent } from './components/reimbursement-document-upload/reimbursement-document-upload.component';
 import { FinanceApprovalComponent } from './components/finance-approval/finance-approval.component';
 import { CashierPaymentComponent } from './components/cashier-payment/cashier-payment.component';
+import { CashierReportsComponent } from './components/cashier-reports/cashier-reports.component';
 
 export const routes: Routes = [
   // ✅ 1. EMPTY PATH
@@ -180,6 +181,12 @@ export const routes: Routes = [
   component: CashierPaymentComponent,
   canActivate: [RoleGuard],
   data: { expectedRole: '7263ca4e-76b2-489d-aa0a-0cf57892c7ae' }, // Replace with actual role ID
+},
+{
+  path: 'xokaerp/en-us/cashier-reports',
+  component: CashierReportsComponent,
+  canActivate: [RoleGuard],
+  data: { expectedRole: '7263ca4e-76b2-489d-aa0a-0cf57892c7ae' }, // Same as cashier-payment
 },
 
   // ✅ 4. WILDCARD LAST

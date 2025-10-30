@@ -4,6 +4,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { Router } from '@angular/router';
 
 export interface CashierApproval {
   FinanceApprovalID: number;
@@ -52,17 +53,17 @@ export interface PaymentSummary {
 })
 export class CashierPaymentComponent implements OnInit {
   // Voucher language
-voucherLang: 'en' | 'am' = 'en';
+  voucherLang: 'en' | 'am' = 'en';
 
-// Company info (from DB or config)
-companyInfo = {
-  nameEn: 'Federal Housing Corporation',
-  nameAm: 'ፌደራል ቤቶች ኮርፖሬሽን',
-  addressEn: 'Addis Ababa, Ethiopia',
-  addressAm: 'አዲስ አበባ፣ ኢትዮጵያ',
-  phone: '+251 11 551 2345',
-  logoUrl: '/assets/images/logo.png'
-};
+  // Company info (from DB or config)
+  companyInfo = {
+    nameEn: 'Federal Housing Corporation',
+    nameAm: 'ፌደራል ቤቶች ኮርፖሬሽን',
+    addressEn: 'Addis Ababa, Ethiopia',
+    addressAm: 'አዲስ አበባ፣ ኢትዮጵያ',
+    phone: '+251 11 551 2345',
+    logoUrl: '/assets/images/logo.png'
+  };
   voucherType: 'petty' | 'check' = 'petty';
   approvalsForPayment: CashierApproval[] = [];
   filteredApprovals: CashierApproval[] = [];
@@ -78,7 +79,7 @@ companyInfo = {
   selectedApproval: CashierApproval | null = null;
   selectedApprovals: CashierApproval[] = [];
   isLoading: boolean = true;
-  activeTab: 'pending' | 'history' = 'pending';
+  activeTab: 'pending' | 'history' | 'reports' = 'pending';
 
   // User data
   currentUserId: string | null = null;
@@ -91,7 +92,7 @@ companyInfo = {
   individualPaymentMethod: string = 'Cash';
   individualReferenceNumber: string = '';
   individualComments: string = '';
-  
+
   // Cash payment specific fields
   individualAmountTendered: number = 0;
   individualChangeGiven: number = 0;
@@ -100,7 +101,7 @@ companyInfo = {
   batchPaidBy: string = '';
   batchPaymentMethod: string = 'Cash';
   batchComments: string = '';
-  
+
   // Batch cash payment specific fields
   batchAmountTendered: number = 0;
   batchChangeGiven: number = 0;
@@ -131,8 +132,9 @@ companyInfo = {
     public medicalService: MedicalService,
     private sanitizer: DomSanitizer,
     private snackBar: MatSnackBar,
-    private cdr: ChangeDetectorRef
-  ) {}
+    private cdr: ChangeDetectorRef,
+    private router: Router
+  ) { }
 
   ngOnInit(): void {
     this.loadUserData();
@@ -148,10 +150,10 @@ companyInfo = {
           this.currentUserId = employee.user_ID ?? null;
           this.employeeName = employee.en_name ?? 'Unknown';
           this.payrollNumber = employee.employee_Id ?? null;
-          console.log('Loaded employee data:', { 
-            currentUserId: this.currentUserId, 
-            employeeName: this.employeeName, 
-            payrollNumber: this.payrollNumber 
+          console.log('Loaded employee data:', {
+            currentUserId: this.currentUserId,
+            employeeName: this.employeeName,
+            payrollNumber: this.payrollNumber
           });
           // Set default values for form fields
           this.individualPaidBy = this.employeeName;
@@ -173,7 +175,7 @@ companyInfo = {
     this.medicalService.getCashierApprovalsForPayment().subscribe(
       (approvals) => {
         console.log('Raw approvals from API:', approvals);
-        
+
         // Better mapping with fallbacks
         this.approvalsForPayment = (approvals as any[]).map((a: any) => {
           const mappedApproval: CashierApproval = {
@@ -192,14 +194,14 @@ companyInfo = {
             Comments: a.comments ?? a.Comments,
             selected: false
           };
-          
+
           console.log('Mapped approval:', mappedApproval);
           return mappedApproval;
         });
-        
+
         this.filteredApprovals = [...this.approvalsForPayment];
         console.log('All mapped approvals:', this.filteredApprovals);
-  
+
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -243,7 +245,7 @@ companyInfo = {
   trackByApproval(index: number, approval: CashierApproval): number {
     return approval.FinanceApprovalID;
   }
-  
+
   trackByPayment(index: number, payment: PaymentHistory): number {
     return payment.PaymentID;
   }
@@ -256,7 +258,7 @@ companyInfo = {
     ).subscribe(
       (history) => {
         console.log('Payment History:', history);
-        
+
         this.paymentHistory = (history as any[]).map((h: any) => ({
           PaymentID: h.paymentID || h.PaymentID,
           ReimbursementID: h.reimbursementID || h.ReimbursementID,
@@ -274,7 +276,7 @@ companyInfo = {
           PreparedBy: h.preparedBy || h.PreparedBy || this.employeeName,
           CheckedBy: h.checkedBy || h.CheckedBy || this.employeeName
         }));
-        
+
         console.log('Mapped payment history:', this.paymentHistory);
         this.cdr.detectChanges();
       },
@@ -327,15 +329,15 @@ companyInfo = {
     this.selectedApproval = approval;
     this.individualPaymentAmount = approval.ApprovedAmount;
     this.individualPaidBy = this.employeeName;
-  
+
     // Auto-select correct method
     const allowed = this.getAllowedPaymentMethods(this.individualPaymentAmount);
     this.individualPaymentMethod = allowed[0].value;
-  
+
     // Reset cash fields
     this.individualAmountTendered = this.individualPaymentAmount;
     this.individualChangeGiven = 0;
-  
+
     this.individualReferenceNumber = '';
     this.individualComments = '';
     this.showPaymentDialog = true;
@@ -346,10 +348,10 @@ companyInfo = {
       this.showErrorMessage('Please select at least one approval for batch payment.');
       return;
     }
-  
+
     const total = this.getSelectedTotalAmount();
     const allowed = this.getAllowedPaymentMethods(total);
-    
+
     this.batchPaidBy = this.employeeName;
     this.batchPaymentMethod = allowed[0].value;
     this.batchAmountTendered = total;
@@ -359,25 +361,25 @@ companyInfo = {
   }
 
   openVoucherForm(): void {
-    const total = this.selectedApproval 
-      ? this.selectedApproval.ApprovedAmount 
+    const total = this.selectedApproval
+      ? this.selectedApproval.ApprovedAmount
       : this.getSelectedTotalAmount();
-  
+
     this.voucherType = total <= 3000 ? 'petty' : 'check';
-  
+
     // Auto-fill from DB (you can expand this later)
-    const payeeName = this.selectedApproval?.PatientName || 
-                      (this.selectedApprovals.length === 1 
-                        ? this.selectedApprovals[0].PatientName 
-                        : 'Multiple Payees');
-  
+    const payeeName = this.selectedApproval?.PatientName ||
+      (this.selectedApprovals.length === 1
+        ? this.selectedApprovals[0].PatientName
+        : 'Multiple Payees');
+
     this.voucherFormData = {
       voucherNo: this.generateVoucherNumber(),
       date: new Date().toLocaleDateString('en-GB'),
       payee: payeeName,
       amountWords: this.convertAmountToWords(total),
       amountFigure: total,
-      reason: this.selectedApproval 
+      reason: this.selectedApproval
         ? `Medical Reimbursement - ${this.selectedApproval.ReimbursementNumber}`
         : `Batch Medical Reimbursement (${this.getSelectedCount()} items)`,
       account: 'MED-EXP-001',
@@ -388,7 +390,7 @@ companyInfo = {
       cashier: this.employeeName,
       accountant: ''
     };
-  
+
     this.showVoucherForm = true;
   }
 
@@ -400,16 +402,16 @@ companyInfo = {
 
   convertAmountToWords(amount: number): string {
     if (amount === 0) return 'Zero Birr Only';
-  
+
     const units = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
     const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
     const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
     const scales = ['', 'Thousand', 'Million', 'Billion'];
-  
+
     let words = '';
     let num = Math.floor(amount); // Work with whole number only
     let scaleIndex = 0;
-  
+
     // Handle up to billions
     do {
       const chunk = num % 1000;
@@ -420,25 +422,25 @@ companyInfo = {
       num = Math.floor(num / 1000);
       scaleIndex++;
     } while (num > 0);
-  
+
     // Add decimal part (cents)
     const decimalPart = Math.round((amount - Math.floor(amount)) * 100);
     if (decimalPart > 0) {
       words += ' and ' + this.convertChunkToWords(decimalPart, units, teens, tens) + ' Cents';
     }
-  
+
     return words.trim() + ' Birr Only';
   }
-  
+
   // Helper: Convert numbers 1–999 to words
   private convertChunkToWords(num: number, units: string[], teens: string[], tens: string[]): string {
     let words = '';
-  
+
     if (num >= 100) {
       words += units[Math.floor(num / 100)] + ' Hundred ';
       num %= 100;
     }
-  
+
     if (num >= 20) {
       words += tens[Math.floor(num / 10)] + ' ';
       num %= 10;
@@ -446,11 +448,11 @@ companyInfo = {
       words += teens[num - 10] + ' ';
       return words;
     }
-  
+
     if (num > 0) {
       words += units[num] + ' ';
     }
-  
+
     return words;
   }
   updateAmountWords(): void {
@@ -467,13 +469,13 @@ companyInfo = {
     }
   }
   onPaymentMethodChange(type: 'individual' | 'batch'): void {
-    const amount = type === 'individual' 
-      ? this.individualPaymentAmount 
+    const amount = type === 'individual'
+      ? this.individualPaymentAmount
       : this.getSelectedTotalAmount();
-  
+
     const allowed = this.getAllowedPaymentMethods(amount);
     const current = type === 'individual' ? this.individualPaymentMethod : this.batchPaymentMethod;
-  
+
     // If current method is not allowed, auto-switch to the only valid one
     if (!allowed.some(m => m.value === current)) {
       const newMethod = allowed[0].value;
@@ -488,15 +490,17 @@ companyInfo = {
       }
     }
   }
-
+  openReports(): void {
+    this.router.navigate(['/xokaerp/en-us/cashier-reports']);
+  }
   printVoucherForm(type: 'petty' | 'check'): void {
     const printId = type === 'petty' ? 'voucher-petty-print' : 'voucher-check-print';
     const element = document.getElementById(printId);
     if (!element) return;
-  
+
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
-  
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -516,18 +520,18 @@ companyInfo = {
     printWindow.document.close();
     setTimeout(() => printWindow.print(), 500);
   }
-  
+
   saveAsPDF(type: 'petty' | 'check'): void {
     const printId = type === 'petty' ? 'voucher-petty-print' : 'voucher-check-print';
     const element = document.getElementById(printId);
     if (!element) return;
-  
+
     import('html2canvas').then(html2canvas => {
       import('jspdf').then(jsPDF => {
         const doc = new jsPDF.jsPDF('p', 'mm', 'a4');
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
-  
+
         // Add logo
         const logo = new Image();
         logo.src = this.companyInfo.logoUrl;
@@ -535,18 +539,18 @@ companyInfo = {
           const logoWidth = 40;
           const logoHeight = 15;
           doc.addImage(logo, 'PNG', 10, 8, logoWidth, logoHeight);
-  
+
           // Add company name (Amharic or English)
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(14);
           const companyName = this.voucherLang === 'am' ? this.companyInfo.nameAm : this.companyInfo.nameEn;
           doc.text(companyName, pageWidth / 2, 15, { align: 'center' });
-  
+
           doc.setFontSize(10);
           const address = this.voucherLang === 'am' ? this.companyInfo.addressAm : this.companyInfo.addressEn;
           doc.text(address, pageWidth / 2, 20, { align: 'center' });
           doc.text(this.companyInfo.phone, pageWidth / 2, 25, { align: 'center' });
-  
+
           // Convert HTML to canvas
           html2canvas.default(element as HTMLElement, {
             scale: 2,
@@ -556,27 +560,27 @@ companyInfo = {
             const imgData = canvas.toDataURL('image/png');
             const imgWidth = pageWidth - 20;
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
-  
+
             let heightLeft = imgHeight;
             let position = 35;
-  
+
             doc.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
             heightLeft -= pageHeight - 45;
-  
+
             while (heightLeft > 0) {
               position = heightLeft - imgHeight + 35;
               doc.addPage();
               doc.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
               heightLeft -= pageHeight - 45;
             }
-  
+
             doc.save(`${this.voucherFormData.voucherNo}_${type === 'petty' ? 'PettyCash' : 'Check'}.pdf`);
           });
         };
       });
     });
   }
-  
+
 
   closePaymentDialog(): void {
     this.showPaymentDialog = false;
@@ -691,7 +695,7 @@ companyInfo = {
     );
   }
 
-  switchTab(tab: 'pending' | 'history'): void {
+  switchTab(tab: 'pending' | 'history' | 'reports'): void {
     this.activeTab = tab;
     if (tab === 'history') {
       this.loadPaymentHistory();
@@ -742,7 +746,7 @@ companyInfo = {
   }
 
   private showSuccessMessage(message: string): void {
-    this.snackBar.open(message, 'Close', {  
+    this.snackBar.open(message, 'Close', {
       duration: 5000,
       panelClass: ['success-snackbar']
     });

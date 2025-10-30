@@ -76,6 +76,7 @@ import { SuturingPaperComponent } from './components/suturing-paper/suturing-pap
 import { EarIrrigationPaperComponent } from './components/ear-irrigation-paper/ear-irrigation-paper.component';
 import { FinanceApprovalComponent } from './components/finance-approval/finance-approval.component';
 import { CashierPaymentComponent } from './components/cashier-payment/cashier-payment.component';
+import { CashierReportsComponent } from './components/cashier-reports/cashier-reports.component';
 
 
 @NgModule({
@@ -127,6 +128,7 @@ import { CashierPaymentComponent } from './components/cashier-payment/cashier-pa
     EarIrrigationPaperComponent,
     FinanceApprovalComponent,
     CashierPaymentComponent,
+    CashierReportsComponent,
     // EthiopianDatePickerComponent,
     // StockRequestFormComponent
     // PatientMedicalHistoryComponent
