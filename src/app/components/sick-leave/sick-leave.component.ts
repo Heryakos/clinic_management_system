@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, ChangeDetectorRef  } from '@angular/core';
+import { Component, OnInit, Input, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MedicalService } from 'src/app/medical.service';
 import { SickLeave } from 'src/app/models/medical.model';
@@ -25,6 +25,7 @@ export class SickLeaveComponent implements OnInit {
   showPrintModal = false;
   selectedLeave: SickLeave | null = null;
   currentTab: 'pending' | 'completed' = 'pending';
+  selectedType: 'sickLeave' | 'fitToWork' = 'sickLeave';
 
   constructor(
     private fb: FormBuilder,
@@ -32,7 +33,7 @@ export class SickLeaveComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private snackBar: MatSnackBar,
     private fontService: FontService  // ✅ Inject the new service
-  ) {}
+  ) { }
   ngOnInit(): void {
     console.log('SickLeaveComponent initialized with patientID:', this.patientID, 'createdBy:', this.createdBy);
     this.initializeForm();
@@ -47,7 +48,7 @@ export class SickLeaveComponent implements OnInit {
     this.sickLeaveForm.get('startDate')?.valueChanges.subscribe(() => {
       this.calculateTotalDays();
     });
-    
+
     this.sickLeaveForm.get('endDate')?.valueChanges.subscribe(() => {
       this.calculateTotalDays();
     });
@@ -77,25 +78,54 @@ export class SickLeaveComponent implements OnInit {
     this.sickLeaveForm.get('endDate')?.valueChanges.subscribe(() => this.calculateTotalDays());
   }
 
-  calculateTotalDays(): void {
-    const startDate = this.sickLeaveForm.get('startDate')?.value;
-    const endDate = this.sickLeaveForm.get('endDate')?.value;
+  onTypeChange(type: 'sickLeave' | 'fitToWork'): void {
+    this.selectedType = type;
+    if (type === 'fitToWork') {
+      // For FitToWork, set defaults
+      this.sickLeaveForm.patchValue({
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: new Date().toISOString().split('T')[0],
+        diagnosis: 'Patient is fit to work. No sick leave required.',
+        recommendations: 'Resume normal work duties immediately.'
+      });
+      // Disable dates
+      this.sickLeaveForm.get('startDate')?.disable();
+      this.sickLeaveForm.get('endDate')?.disable();
+    } else {
+      // Reset for sick leave
+      this.sickLeaveForm.patchValue({
+        startDate: '',
+        endDate: '',
+        diagnosis: this.sickLeaveForm.getRawValue().diagnosis, // Keep original diagnosis
+        recommendations: ''
+      });
+      this.sickLeaveForm.get('startDate')?.enable();
+      this.sickLeaveForm.get('endDate')?.enable();
+    }
+    this.calculateTotalDays();
+  }
+calculateTotalDays(): void {
+  if (this.selectedType === 'fitToWork') {
+    this.sickLeaveForm.get('totalDays')?.setValue(0);
+    return;
+  }
 
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      const timeDiff = end.getTime() - start.getTime();
-      const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
+  const startDate = this.sickLeaveForm.get('startDate')?.value;
+  const endDate = this.sickLeaveForm.get('endDate')?.value;
 
-      if (daysDiff > 0) {
-        this.sickLeaveForm.get('totalDays')?.setValue(daysDiff);
-      } else {
-        this.sickLeaveForm.get('totalDays')?.setValue('');
-        this.cdr.detectChanges();
+  if (startDate && endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const timeDiff = end.getTime() - start.getTime();
+    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
 
-      }
+    if (daysDiff > 0) {
+      this.sickLeaveForm.get('totalDays')?.setValue(daysDiff);
+    } else {
+      this.sickLeaveForm.get('totalDays')?.setValue('');
     }
   }
+}
 
   prefillForm(): void {
     if (this.patientID) {
@@ -111,19 +141,19 @@ export class SickLeaveComponent implements OnInit {
             sex: patient.Gender === 'ወንድ / Male' ? 'Male' : patient.Gender === 'ሴት / Female' ? 'Female' : patient.Gender || null,
             examinedOn: patient.LastVisitDate ? patient.LastVisitDate.split('T')[0] : null
           });
-  
+
           if (this.patientID) {
             this.medicalService.getPatientByCardNumberHistory(this.patientID).subscribe(
               (history: any[]) => {
                 console.log('Patient history:', history);
                 const latestRecord = history.length > 0 ? history[0] : null;
-                
+
                 if (latestRecord && latestRecord.Doctor_Name) {
                   // Create a patch value object
                   const patchValues: any = {
                     doctorName: latestRecord.Doctor_Name
                   };
-                  
+
                   // Add signature text if it exists
                   if (latestRecord.SignatureText) {
                     console.log('SignatureText found:', latestRecord.SignatureText.substring(0, 50) + '...');
@@ -132,10 +162,10 @@ export class SickLeaveComponent implements OnInit {
                     console.warn('No SignatureText found in patient history');
                     patchValues.SignatureText = '';
                   }
-                  
+
                   // Patch the values
                   this.sickLeaveForm.patchValue(patchValues);
-                  
+
                   // Verify the values were set correctly
                   setTimeout(() => {
                     console.log('Form doctorName value:', this.sickLeaveForm.get('doctorName')?.value);
@@ -170,31 +200,31 @@ export class SickLeaveComponent implements OnInit {
       this.showErrorMessage(`No Patient ID provided.`)
     }
   }
-  
-// Method to get the signature image source
-getSignatureImageSrc(): string {
-  const signature = this.sickLeaveForm.get('SignatureText')?.value;
-  if (!signature) return '';
-  
-  // Try different approaches
-  console.log('Getting signature image source');
-  console.log('Signature value type:', typeof signature);
-  console.log('Signature value length:', signature.length);
-  
-  // Return the data URI
-  return `data:image/png;base64,${signature}`;
-}
 
-// Method to handle signature image errors
-handleSignatureError(event: any): void {
-  console.error('Signature image error:', event);
-  const img = event.target;
-  console.log('Image src length:', img.src.length);
-  console.log('Image src starts with data:image/png;base64:', img.src.startsWith('data:image/png;base64,'));
-}
+  // Method to get the signature image source
+  getSignatureImageSrc(): string {
+    const signature = this.sickLeaveForm.get('SignatureText')?.value;
+    if (!signature) return '';
+
+    // Try different approaches
+    console.log('Getting signature image source');
+    console.log('Signature value type:', typeof signature);
+    console.log('Signature value length:', signature.length);
+
+    // Return the data URI
+    return `data:image/png;base64,${signature}`;
+  }
+
+  // Method to handle signature image errors
+  handleSignatureError(event: any): void {
+    console.error('Signature image error:', event);
+    const img = event.target;
+    console.log('Image src length:', img.src.length);
+    console.log('Image src starts with data:image/png;base64:', img.src.startsWith('data:image/png;base64,'));
+  }
 
 
-  
+
   onSubmit(): void {
     if (this.sickLeaveForm.valid && this.createdBy) {
       this.isSubmitting = true;
@@ -210,7 +240,7 @@ handleSignatureError(event: any): void {
         endDate: new Date(formValue.endDate),
         totalDays: formValue.totalDays,
         doctorName: formValue.doctorName,
-        status: 'Active',
+        status: this.selectedType === 'fitToWork' ? 'FitToWork' : 'Active',
         issueDate: new Date(),
         doctorID: this.createdBy,
         createdBy: this.createdBy,
@@ -244,7 +274,7 @@ handleSignatureError(event: any): void {
 
   loadSickLeaves(): void {
     if (this.patientID) {
-      console.log('asde',this.patientID);
+      console.log('asde', this.patientID);
       this.medicalService.getSickLeaveCertificatebyemployee(this.patientID).subscribe(
         (leaves: SickLeave[]) => {
           console.log('asdeedc', leaves);
@@ -259,9 +289,9 @@ handleSignatureError(event: any): void {
       );
     }
   }
-  
 
-  updateLeaveStatus(certificateID: number, status: 'Active' | 'Completed' | 'Cancelled'): void {
+
+  updateLeaveStatus(certificateID: number, status: 'Active' | 'Completed' | 'Cancelled' | 'FitToWork'): void {
     this.medicalService.updateSickLeaveCertificateStatus(certificateID, { status }).subscribe(
       () => this.loadSickLeaves(),
       error => console.error('Error updating status:', error)

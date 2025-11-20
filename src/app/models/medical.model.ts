@@ -273,7 +273,7 @@ export interface SickLeave {
   endDate: Date;
   totalDays: number;
   doctorName: string | null;
-  status: 'Active' | 'Completed' | 'Cancelled';
+  status: 'Active' | 'Completed' | 'Cancelled' | 'FitToWork';
   issueDate: Date | null;
   doctorID: string;
   createdBy: string | null;

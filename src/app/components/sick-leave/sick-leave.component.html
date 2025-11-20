@@ -1,5 +1,21 @@
 <div class="sick-leave-container">
-  <h2>Sick Leave Certificate</h2>
+  <h2>Sick Leave / Fit to Work Certificate</h2>
+
+  <!-- Type Selection -->
+  <div class="procedure-type-selection">
+    <div class="procedure-type-tabs">
+      <button type="button" class="procedure-type-btn" 
+          [class.active]="selectedType === 'sickLeave'"
+          (click)="onTypeChange('sickLeave')">
+          Sick Leave
+      </button>
+      <button type="button" class="procedure-type-btn" 
+          [class.active]="selectedType === 'fitToWork'"
+          (click)="onTypeChange('fitToWork')">
+          Fit to Work
+      </button>
+    </div>
+  </div>
 
   <form [formGroup]="sickLeaveForm" (ngSubmit)="onSubmit()" class="sick-leave-form">
     <div class="employee-info">
@@ -50,14 +66,14 @@
       <h3>Medical Information</h3>
       <div class="form-group">
         <label for="diagnosis">Diagnosis:</label>
-        <textarea id="diagnosis" formControlName="diagnosis" class="form-control" rows="3" readonly></textarea>
+        <textarea id="diagnosis" formControlName="diagnosis" class="form-control" rows="3" [readonly]="selectedType === 'fitToWork'"></textarea>
         <div class="error-message"
           *ngIf="sickLeaveForm.get('diagnosis')?.invalid && sickLeaveForm.get('diagnosis')?.touched">
           Diagnosis is required
         </div>
       </div>
 
-      <div class="form-row">
+      <div class="form-row" *ngIf="selectedType === 'sickLeave'">
         <div class="form-group">
           <label for="startDate">Start Date:</label>
           <input type="date" id="startDate" formControlName="startDate" class="form-control">
@@ -85,7 +101,7 @@
       <div class="form-group">
         <label for="recommendations">Recommendations:</label>
         <textarea id="recommendations" formControlName="recommendations" class="form-control" rows="3"
-          placeholder="Enter medical recommendations (optional)"></textarea>
+          placeholder="Enter medical recommendations (optional)" [readonly]="selectedType === 'fitToWork'"></textarea>
       </div>
 
       <div class="form-group">
@@ -120,7 +136,7 @@
     </div>
 
     <button type="submit" class="submit-btn" [disabled]="sickLeaveForm.invalid || isSubmitting">
-      {{ isSubmitting ? 'Issuing...' : 'Issue Sick Leave Certificate' }}
+      {{ isSubmitting ? 'Issuing...' : (selectedType === 'fitToWork' ? 'Issue Fit to Work Certificate' : 'Issue Sick Leave Certificate') }}
     </button>
   </form>
 
@@ -169,6 +185,10 @@
                   (click)="updateLeaveStatus(leave.certificateID, 'Cancelled')">
                   Cancel
                 </button>
+                <button type="button" *ngIf="leave.status === 'Active'" class="action-btn fit"
+                  (click)="updateLeaveStatus(leave.certificateID, 'FitToWork')">
+                  Fit to Work
+                </button>
                 <button type="button" class="action-btn print" (click)="openPrintModal(leave)">Print</button>
               </td>
             </tr>
@@ -211,14 +231,6 @@
                 </span>
               </td>
               <td>
-                <button type="button" *ngIf="leave.status === 'Active'" class="action-btn complete"
-                  (click)="updateLeaveStatus(leave.certificateID, 'Completed')">
-                  Mark Complete
-                </button>
-                <button type="button" *ngIf="leave.status === 'Active'" class="action-btn cancel"
-                  (click)="updateLeaveStatus(leave.certificateID, 'Cancelled')">
-                  Cancel
-                </button>
                 <button type="button" class="action-btn print" (click)="openPrintModal(leave)">Print</button>
               </td>
             </tr>
