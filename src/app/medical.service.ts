@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { BehaviorSubject, from, Observable, of, throwError } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { MedicalRequest, MedicalRequestView, SickLeave, InventoryItem, InventoryRequest, ExpenseReimbursement, ExpenseReimbursementDetail } from './models/medical.model';
@@ -831,8 +831,13 @@ export class MedicalService {
     );
   }
 
+  // getPatient(cardNumber: string): Observable<any> {
+  //   return this.http.get<any>(`${this.chmsPatientsBase}${cardNumber}`).pipe(
+  //     catchError(this.handleError)
+  //   );
+  // }
   getPatient(cardNumber: string): Observable<any> {
-    return this.http.get<any>(`${this.chmsPatientsBase}${cardNumber}`).pipe(
+    return this.http.get<any>(`${this.chmsPatientsBase}card/${cardNumber}`).pipe(
       catchError(this.handleError)
     );
   }

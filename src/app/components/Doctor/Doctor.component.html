@@ -63,8 +63,8 @@
         (click)="selectTab('laboratory-tests')">
         Laboratory
       </button>
-      <button type="button" class="tab-button" [class.active]="selectedTab === 'prescriptions'" [class.disabled]="hasPendingLabs"
-        (click)="selectTab('prescriptions')">
+      <button type="button" class="tab-button" [class.active]="selectedTab === 'prescriptions'"
+        [class.disabled]="hasPendingLabs" (click)="selectTab('prescriptions')">
         Pharmacy
       </button>
       <button type="button" class="tab-button" [class.active]="selectedTab === 'referrals'"
@@ -452,13 +452,15 @@
         <!-- Prescriptions List -->
         <div class="prescriptions-list">
           <h3>Patient Prescriptions</h3>
-          <div class="table-container">
+
+          <!-- Show table only if prescriptions exist -->
+          <div class="table-container" *ngIf="prescriptions && prescriptions.length > 0; else noPrescriptions">
             <table class="prescriptions-table">
               <thead>
                 <tr>
                   <th>Prescription Number</th>
-                  <th>Prescription Date</th>
-                  <th>Total Amount</th>
+                  <th>Date</th>
+                  <th>Amount</th>
                   <th>Status</th>
                   <th>Prescriber</th>
                   <th>Pharmacist</th>
@@ -467,27 +469,41 @@
               </thead>
               <tbody>
                 <tr *ngFor="let prescription of prescriptions">
-                  <td>{{ prescription.prescriptionNumber }}</td>
-                  <td>{{ prescription.prescriptionDate | date:'short' }}</td>
-                  <td>{{ prescription.totalAmount | currency:'ETB':'symbol':'1.2-2' }}</td>
-                  <td>{{ prescription.status }}</td>
-                  <td>{{ prescription.prescriberName }}</td>
-                  <td>{{ prescription.pharmacistName || 'N/A' }}</td>
+                  <td><strong>{{ prescription.PrescriptionNumber || prescription.prescriptionNumber }}</strong></td>
+                  <td>{{ (prescription.PrescriptionDate || prescription.prescriptionDate) | date:'mediumDate' }}</td>
+                  <td>{{ (prescription.TotalAmount || prescription.totalAmount || 0) | currency:'ETB':'symbol':'1.2-2'
+                    }}</td>
+                  <td>
+                    <span [class]="'status-' + (prescription.Status || prescription.status | lowercase)">
+                      {{ prescription.Status || prescription.status }}
+                    </span>
+                  </td>
+                  <td>{{ prescription.PrescriberName || prescription.prescriberName }}</td>
+                  <td>{{ (prescription.PharmacistName || prescription.pharmacistName) || 'Not Dispensed' }}</td>
                   <td>
                     <button type="button" class="action-btn view"
-                      (click)="viewPrescriptionDetails(prescription.prescriptionID)">View Details</button>
+                      (click)="viewPrescriptionDetails(prescription.PrescriptionID || prescription.prescriptionID)">
+                      View Details
+                    </button>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <!-- Prescription Paper Component - Replace the inline dialog with this -->
-          <app-prescription-paper *ngIf="showPrescriptionDetailsDialog" [cardNumber]="selectedCardNumber"
+          <!-- No prescriptions message -->
+          <ng-template #noPrescriptions>
+            <div class="empty-state">
+              <p>No prescriptions found for this patient.</p>
+            </div>
+          </ng-template>
+
+          <!-- Prescription Paper Dialog -->
+          <app-prescription-paper *ngIf="showPrescriptionDetailsDialog" [cardNumber]="patient?.CardNumber || cardNumber"
             (close)="closePrescriptionDetailsDialog()">
           </app-prescription-paper>
         </div>
-       
+
         <div class="prescription-details-dialog" *ngIf="showPrescriptionDetailsDialog">
           <div class="dialog-backdrop" (click)="closePrescriptionDetailsDialog()"></div>
           <div class="dialog-content">
@@ -506,25 +522,21 @@
         <div class="procedure-type-selection">
           <h3>💉 Procedure Room Request</h3>
           <div class="procedure-type-tabs">
-            <button type="button" class="procedure-type-btn" 
-                [class.active]="selectedProcedureType === 'injection'"
-                (click)="selectProcedureType('injection')">
-                💉 Injection
+            <button type="button" class="procedure-type-btn" [class.active]="selectedProcedureType === 'injection'"
+              (click)="selectProcedureType('injection')">
+              💉 Injection
             </button>
-            <button type="button" class="procedure-type-btn" 
-                [class.active]="selectedProcedureType === 'wound-care'"
-                (click)="selectProcedureType('wound-care')">
-                🩹 Wound Care
+            <button type="button" class="procedure-type-btn" [class.active]="selectedProcedureType === 'wound-care'"
+              (click)="selectProcedureType('wound-care')">
+              🩹 Wound Care
             </button>
-            <button type="button" class="procedure-type-btn" 
-                [class.active]="selectedProcedureType === 'suturing'"
-                (click)="selectProcedureType('suturing')">
-                🪡 Suturing
+            <button type="button" class="procedure-type-btn" [class.active]="selectedProcedureType === 'suturing'"
+              (click)="selectProcedureType('suturing')">
+              🪡 Suturing
             </button>
-            <button type="button" class="procedure-type-btn" 
-                [class.active]="selectedProcedureType === 'ear-irrigation'"
-                (click)="selectProcedureType('ear-irrigation')">
-                👂 Ear Irrigation
+            <button type="button" class="procedure-type-btn" [class.active]="selectedProcedureType === 'ear-irrigation'"
+              (click)="selectProcedureType('ear-irrigation')">
+              👂 Ear Irrigation
             </button>
           </div>
         </div>
@@ -631,7 +643,8 @@
             <div class="form-row">
               <div class="form-group">
                 <label for="startDate">Start Date:</label>
-                <app-ethiopian-date-picker formControlName="startDate" placeholder="Select start date"></app-ethiopian-date-picker>
+                <app-ethiopian-date-picker formControlName="startDate"
+                  placeholder="Select start date"></app-ethiopian-date-picker>
               </div>
               <div class="form-group">
                 <label for="startTime">Start Time:</label>
@@ -689,12 +702,12 @@
             <div class="form-row">
               <div class="form-group">
                 <label for="woundLocation">Wound Location:</label>
-                <input type="text" id="woundLocation" formControlName="woundLocation" class="form-control" 
+                <input type="text" id="woundLocation" formControlName="woundLocation" class="form-control"
                   placeholder="e.g., Left arm, Right leg">
               </div>
               <div class="form-group">
                 <label for="woundSize">Wound Size:</label>
-                <input type="text" id="woundSize" formControlName="woundSize" class="form-control" 
+                <input type="text" id="woundSize" formControlName="woundSize" class="form-control"
                   placeholder="e.g., 2cm x 3cm">
               </div>
             </div>
@@ -755,8 +768,9 @@
               <div class="form-group">
                 <label for="isRecurring">Recurring Treatment:</label>
                 <input type="checkbox" id="isRecurring" formControlName="isRecurring" class="form-checkbox">
-                <label for="frequency" class="frequency-label" *ngIf="woundCareForm.get('isRecurring')?.value">Frequency:</label>
-                <select id="frequency" formControlName="frequency" class="form-control" 
+                <label for="frequency" class="frequency-label"
+                  *ngIf="woundCareForm.get('isRecurring')?.value">Frequency:</label>
+                <select id="frequency" formControlName="frequency" class="form-control"
                   *ngIf="woundCareForm.get('isRecurring')?.value">
                   <option value="">Select frequency</option>
                   <option value="Daily">Daily</option>
@@ -808,12 +822,12 @@
             <div class="form-row">
               <div class="form-group">
                 <label for="woundLocation">Wound Location:</label>
-                <input type="text" id="woundLocation" formControlName="woundLocation" class="form-control" 
+                <input type="text" id="woundLocation" formControlName="woundLocation" class="form-control"
                   placeholder="e.g., Left arm, Right leg">
               </div>
               <div class="form-group">
                 <label for="woundSize">Wound Size:</label>
-                <input type="text" id="woundSize" formControlName="woundSize" class="form-control" 
+                <input type="text" id="woundSize" formControlName="woundSize" class="form-control"
                   placeholder="e.g., 3cm x 1cm">
               </div>
             </div>
@@ -869,8 +883,8 @@
               </div>
               <div class="form-group">
                 <label for="numStitches">Number of Stitches:</label>
-                <input type="number" id="numStitches" formControlName="numStitches" class="form-control" 
-                  min="1" placeholder="1">
+                <input type="number" id="numStitches" formControlName="numStitches" class="form-control" min="1"
+                  placeholder="1">
               </div>
             </div>
 
@@ -888,8 +902,9 @@
               <div class="form-group">
                 <label for="followUpRequired">Follow-up Required:</label>
                 <input type="checkbox" id="followUpRequired" formControlName="followUpRequired" class="form-checkbox">
-                <label for="followUpDate" class="followup-label" *ngIf="suturingForm.get('followUpRequired')?.value">Follow-up Date:</label>
-                <input type="date" id="followUpDate" formControlName="followUpDate" class="form-control" 
+                <label for="followUpDate" class="followup-label"
+                  *ngIf="suturingForm.get('followUpRequired')?.value">Follow-up Date:</label>
+                <input type="date" id="followUpDate" formControlName="followUpDate" class="form-control"
                   *ngIf="suturingForm.get('followUpRequired')?.value">
               </div>
             </div>
@@ -966,7 +981,7 @@
               </div>
               <div class="form-group">
                 <label for="procedureDuration">Procedure Duration (minutes):</label>
-                <input type="number" id="procedureDuration" formControlName="procedureDuration" class="form-control" 
+                <input type="number" id="procedureDuration" formControlName="procedureDuration" class="form-control"
                   min="1" placeholder="30">
               </div>
             </div>
@@ -988,8 +1003,9 @@
               <div class="form-group">
                 <label for="followUpRequired">Follow-up Required:</label>
                 <input type="checkbox" id="followUpRequired" formControlName="followUpRequired" class="form-checkbox">
-                <label for="followUpDate" class="followup-label" *ngIf="earIrrigationForm.get('followUpRequired')?.value">Follow-up Date:</label>
-                <input type="date" id="followUpDate" formControlName="followUpDate" class="form-control" 
+                <label for="followUpDate" class="followup-label"
+                  *ngIf="earIrrigationForm.get('followUpRequired')?.value">Follow-up Date:</label>
+                <input type="date" id="followUpDate" formControlName="followUpDate" class="form-control"
                   *ngIf="earIrrigationForm.get('followUpRequired')?.value">
               </div>
             </div>
@@ -1005,7 +1021,8 @@
               <textarea id="notes" formControlName="notes" class="form-control" rows="4"></textarea>
             </div>
 
-            <button type="submit" class="submit-btn" [disabled]="earIrrigationForm.invalid || isRequestingEarIrrigation">
+            <button type="submit" class="submit-btn"
+              [disabled]="earIrrigationForm.invalid || isRequestingEarIrrigation">
               {{ isRequestingEarIrrigation ? 'Requesting...' : 'Request Ear Irrigation' }}
             </button>
           </form>
@@ -1014,7 +1031,7 @@
         <!-- Procedures List -->
         <div class="procedures-list">
           <h3>Patient Procedures</h3>
-          
+
           <!-- Injection Procedures Table -->
           <div *ngIf="selectedProcedureType === 'injection'" class="table-container">
             <table class="procedures-table">
@@ -1067,10 +1084,10 @@
                 </tr>
               </tbody>
             </table>
-          <div class="no-results" *ngIf="injections.length === 0">
+            <div class="no-results" *ngIf="injections.length === 0">
               No injection procedures found for this patient.
-        </div>
-      </div>
+            </div>
+          </div>
 
           <!-- Wound Care Procedures Table -->
           <div *ngIf="selectedProcedureType === 'wound-care'" class="table-container">
@@ -1103,7 +1120,8 @@
                   </td>
                   <td>{{ procedure.OrderingPhysicianName }}</td>
                   <td>
-                    <button type="button" class="action-btn view" (click)="viewWoundCareDetails(procedure.WoundCareID || procedure.ProcedureID)">
+                    <button type="button" class="action-btn view"
+                      (click)="viewWoundCareDetails(procedure.WoundCareID || procedure.ProcedureID)">
                       View Details
                     </button>
                   </td>
@@ -1112,8 +1130,8 @@
             </table>
             <div class="no-results" *ngIf="woundCareProcedures.length === 0">
               No wound care procedures found for this patient.
-                </div>
-              </div>
+            </div>
+          </div>
 
           <!-- Suturing Procedures Table -->
           <div *ngIf="selectedProcedureType === 'suturing'" class="table-container">
@@ -1138,7 +1156,7 @@
                   <td>{{ procedure.WoundType }}</td>
                   <td>{{ procedure.WoundLocation }}</td>
                   <td>{{ procedure.SutureType }}</td>
-                  <td>{{ procedure.NumberOfStitches }}</td>
+                  <td>{{ procedure.NumStitches }}</td>
                   <td>
                     <span class="status-badge" [class]="procedure.Status?.toLowerCase()">
                       {{ procedure.Status }}
@@ -1146,7 +1164,8 @@
                   </td>
                   <td>{{ procedure.OrderingPhysicianName }}</td>
                   <td>
-                    <button type="button" class="action-btn view" (click)="viewSuturingDetails(procedure.SuturingID || procedure.ProcedureID)">
+                    <button type="button" class="action-btn view"
+                      (click)="viewSuturingDetails(procedure.SuturingID || procedure.ProcedureID)">
                       View Details
                     </button>
                   </td>
@@ -1155,8 +1174,8 @@
             </table>
             <div class="no-results" *ngIf="suturingProcedures.length === 0">
               No suturing procedures found for this patient.
-              </div>
             </div>
+          </div>
 
           <!-- Ear Irrigation Procedures Table -->
           <div *ngIf="selectedProcedureType === 'ear-irrigation'" class="table-container">
@@ -1189,7 +1208,8 @@
                   </td>
                   <td>{{ procedure.OrderingPhysicianName }}</td>
                   <td>
-                    <button type="button" class="action-btn view" (click)="viewEarIrrigationDetails(procedure.EarIrrigationID || procedure.ProcedureID)">
+                    <button type="button" class="action-btn view"
+                      (click)="viewEarIrrigationDetails(procedure.EarIrrigationID || procedure.ProcedureID)">
                       View Details
                     </button>
                   </td>
@@ -1198,8 +1218,8 @@
             </table>
             <div class="no-results" *ngIf="earIrrigationProcedures.length === 0">
               No ear irrigation procedures found for this patient.
+            </div>
           </div>
-        </div>
         </div>
       </div>
 

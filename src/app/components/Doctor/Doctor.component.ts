@@ -387,7 +387,9 @@ export class DoctorComponent implements OnInit {
         this.isSearching = true;
         this.medicalService.getPatient(patient.CardNumber).subscribe(
             (response: any) => {
+                
                 const fullPatientData = Array.isArray(response) ? response[0] : response;
+                console.log('anyresponse',response);
                 if (fullPatientData && fullPatientData.PatientID) {
                     this.patient = fullPatientData;
                     const formattedPatient = {
@@ -805,40 +807,23 @@ export class DoctorComponent implements OnInit {
     }
 
     loadPatientPrescriptions(cardNumber: string): void {
-        console.log('Loading prescriptions for cardNumber:', cardNumber);
-        this.prescriptions = [];
-
-        this.medicalService.getPrescriptions().subscribe({
-            next: (all: any[]) => {
-                const list = Array.isArray(all) ? all : [];
-                const filtered = list.filter(p =>
-                    (p.CardNumber || p.cardNumber) === cardNumber
-                );
-
-                this.prescriptions = filtered.map(p => ({
-                    ...p,
-                    prescriptionID: p.prescriptionID || p.PrescriptionID,
-                    prescriptionNumber: p.prescriptionNumber || p.PrescriptionNumber,
-                    prescriptionDate: p.prescriptionDate || p.PrescriptionDate,
-                    totalAmount: p.totalAmount ?? p.TotalAmount ?? 0,
-                    status: p.status || p.Status,
-                    prescriberName: p.prescriberName || p.PrescriberName,
-                    pharmacistName: p.pharmacistName || p.PharmacistName,
-                    CardNumber: p.CardNumber || p.cardNumber
-                }));
-
-                this.prescriptions.sort((a, b) => new Date(b.prescriptionDate).getTime() - new Date(a.prescriptionDate).getTime());
-                console.log('Loaded prescriptions:', this.prescriptions);
-                this.cdr.detectChanges();
-            },
-            error: (error) => {
-                console.error('Error loading prescriptions:', error);
-                this.prescriptions = [];
-                this.showSnackBar('Error loading prescriptions.', 'Close', 5000, 'error-snackbar');
-                this.cdr.detectChanges();
-            }
+        this.medicalService.getPrescriptions().subscribe((list: any[]) => {
+          this.prescriptions = (list || [])
+            .filter(p => p) // keep all
+            .map(p => ({
+              ...p,
+              PharmacistName: (p.PharmacistName || '').trim() || 'Not Dispensed',
+              PrescriptionID: p.PrescriptionID,
+              PrescriptionNumber: p.PrescriptionNumber,
+              PrescriptionDate: p.PrescriptionDate,
+              TotalAmount: p.TotalAmount || 0,
+              Status: p.Status,
+              PrescriberName: p.PrescriberName,
+            }));
+          console.log('Prescriptions (all loaded):', this.prescriptions);
+          this.cdr.detectChanges();
         });
-    }
+      }
 
 
     // loadPatientPrescriptions(cardNumber: string): void {
@@ -953,31 +938,51 @@ export class DoctorComponent implements OnInit {
 
     viewPrescriptionDetails(prescriptionID: number | string): void {
         console.log('viewPrescriptionDetails called for prescriptionID:', prescriptionID);
+      
         if (!prescriptionID) {
-            this.showSnackBar('Invalid prescription ID.', 'Close', 5000, 'error-snackbar');
-            return;
+          this.showSnackBar('Invalid prescription ID.', 'Close', 5000, 'error-snackbar');
+          return;
         }
-
-        const prescription = this.prescriptions.find(p => p.prescriptionID === prescriptionID);
+      
+        // FIX: Try both PascalCase and camelCase
+        const id = Number(prescriptionID);
+        const prescription = this.prescriptions.find(p =>
+          p.PrescriptionID === id ||
+          p.prescriptionID === id ||
+          p.id === id
+        );
+      
         if (!prescription) {
-            this.showSnackBar('Prescription not found.', 'Close', 5000, 'error-snackbar');
-            return;
+          console.warn('Prescription not found in local list:', this.prescriptions);
+          this.showSnackBar('Prescription not found.', 'Close', 5000, 'error-snackbar');
+          return;
         }
-
-        // Open as a dialog, passing cardNumber as data
+      
+        // Extract cardNumber safely
+        const cardNumber = prescription.CardNumber ||
+                           prescription.cardNumber ||
+                           this.patient?.CardNumber ||
+                           this.cardNumber;
+      
+        if (!cardNumber) {
+          this.showSnackBar('Patient card number not available.', 'Close', 5000, 'error-snackbar');
+          return;
+        }
+      
+        console.log('Opening prescription paper for cardNumber:', cardNumber);
+      
+        // Open the dialog with correct cardNumber
         const dialogRef = this.dialog.open(PrescriptionPaperComponent, {
-            width: '800px',  // Adjust as needed
-            height: 'auto',
-            maxHeight: '90vh',
-            data: { cardNumber: prescription.CardNumber || this.cardNumber }  // Pass cardNumber via data
+          width: '900px',
+          maxWidth: '95vw',
+          height: '90vh',
+          data: { cardNumber: cardNumber }
         });
-
-        // Optional: Handle dialog close
-        dialogRef.afterClosed().subscribe(result => {
-            console.log('Prescription dialog closed', result);
-            // Handle any result if needed (e.g., refresh data)
+      
+        dialogRef.afterClosed().subscribe(() => {
+          console.log('Prescription dialog closed');
         });
-    }
+      }
 
     closePrescriptionDetailsDialog(): void {
         this.showPrescriptionDetailsDialog = false;
