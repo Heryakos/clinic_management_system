@@ -491,7 +491,7 @@ export class CashierPaymentComponent implements OnInit {
     }
   }
   openReports(): void {
-    this.router.navigate(['/xokaerp/en-us/cashier-reports']);
+    this.router.navigate(['/fhcerp/en-us/cashier-reports']);
   }
   printVoucherForm(type: 'petty' | 'check'): void {
     const printId = type === 'petty' ? 'voucher-petty-print' : 'voucher-check-print';

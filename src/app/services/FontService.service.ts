@@ -17,8 +17,8 @@ export class FontService {
     if (!this.fontCache[cacheKey]) {
       const candidatePaths = [
         `assets/${fontJsonPath}`,  // Local dev build
-        `xokaerp/DesktopModules/MVC/XOKA_DNN_Case/Views/Item/assets/assets/${fontJsonPath}`, // Deployed path
-        `/xokaerp/DesktopModules/MVC/XOKA_DNN_Case/Views/Item/assets/assets/${fontJsonPath}` // Absolute fallback
+        `fhcerp/DesktopModules/MVC/XOKA_DNN_Case/Views/Item/assets/assets/${fontJsonPath}`, // Deployed path
+        `/fhcerp/DesktopModules/MVC/XOKA_DNN_Case/Views/Item/assets/assets/${fontJsonPath}` // Absolute fallback
       ];
   
       this.fontCache[cacheKey] = from(candidatePaths).pipe(

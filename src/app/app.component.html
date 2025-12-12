@@ -1,6 +1,6 @@
 <div class="app-container">
   <!-- Top Header -->
-  <header class="top-header" *ngIf="showSidebar">
+  <!-- <header class="top-header" *ngIf="showSidebar">
     <div class="header-center">
       <h1>FHC Clinic Management System</h1>
       <p *ngIf="employeeName" class="employee-welcome">Welcome, {{ employeeName }}</p>
@@ -9,7 +9,7 @@
     <div class="header-right">
       <app-notification-bell></app-notification-bell>
     </div>
-  </header>
+  </header> -->
   
 
   <nav class="sidebar" *ngIf="showSidebar">
@@ -25,133 +25,133 @@
     <div class="sidebar-content">
       <ul class="nav-menu">
         <li *ngIf="showEmployeeRegistered">
-          <a routerLink="/xokaerp/en-us/users" routerLinkActive="active">
+          <a routerLink="/fhcerp/en-us/users" routerLinkActive="active">
             <span class="icon">💼</span>
             <span class="text">Employee Registered</span>
           </a>
         </li>
         
         <li *ngIf="showSupervisor">
-          <a routerLink="/xokaerp/en-us/supervisor-medical-requests" routerLinkActive="active">
+          <a routerLink="/fhcerp/en-us/supervisor-medical-requests" routerLinkActive="active">
             <span class="icon">👥</span>
             <span class="text">Supervisor</span>
           </a>
         </li>
         
         <li *ngIf="showMedicalRequests">
-          <a routerLink="/xokaerp/en-us/medical-request" routerLinkActive="active">
+          <a routerLink="/fhcerp/en-us/medical-request" routerLinkActive="active">
             <span class="icon">📝</span>
             <span class="text">Medical Requests</span>
           </a>
         </li>
         
         <li *ngIf="showMedicalRequests">
-          <a routerLink="/xokaerp/en-us/reimbursement-document-upload" routerLinkActive="active">
+          <a routerLink="/fhcerp/en-us/reimbursement-document-upload" routerLinkActive="active">
             <span class="icon">📤</span>
             <span class="text">Medical File Upload</span>
           </a>
         </li>
         
         <li *ngIf="showPatientCards">
-          <a routerLink="/xokaerp/en-us/patient-history-card" routerLinkActive="active">
+          <a routerLink="/fhcerp/en-us/patient-history-card" routerLinkActive="active">
             <span class="icon">💳</span>
             <span class="text">Patient Cards</span>
           </a>
         </li>
         
         <li *ngIf="showDoctorRegistration">
-          <a routerLink="/xokaerp/en-us/doctor" routerLinkActive="active">
+          <a routerLink="/fhcerp/en-us/doctor" routerLinkActive="active">
             <span class="icon">👤</span>
             <span class="text">Doctor Registration</span>
           </a>
         </li>
         
         <li *ngIf="showLaboratory">
-          <a routerLink="/xokaerp/en-us/laboratory" routerLinkActive="active">
+          <a routerLink="/fhcerp/en-us/laboratory" routerLinkActive="active">
             <span class="icon">🔬</span>
             <span class="text">Laboratory</span>
           </a>
         </li>
         
         <li *ngIf="showPharmacy">
-          <a routerLink="/xokaerp/en-us/pharmacy" routerLinkActive="active">
+          <a routerLink="/fhcerp/en-us/pharmacy" routerLinkActive="active">
             <span class="icon">💊</span>
             <span class="text">Pharmacy</span>
           </a>
         </li>
         
         <li *ngIf="showInjection">
-          <a routerLink="/xokaerp/en-us/injection" routerLinkActive="active">
+          <a routerLink="/fhcerp/en-us/injection" routerLinkActive="active">
             <span class="icon">💉</span>
             <span class="text">Procedure Room</span>
           </a>
         </li>
         
         <li *ngIf="showPatientAssignment">
-          <a routerLink="/xokaerp/en-us/patient-assignment" routerLinkActive="active">
+          <a routerLink="/fhcerp/en-us/patient-assignment" routerLinkActive="active">
             <span class="icon">👥</span>
             <span class="text">Patient Assignment</span>
           </a>
         </li>
         
         <li *ngIf="showSickLeave">
-          <a routerLink="/xokaerp/en-us/sick-leave" routerLinkActive="active">
+          <a routerLink="/fhcerp/en-us/sick-leave" routerLinkActive="active">
             <span class="icon">🏥</span>
             <span class="text">Sick Leave</span>
           </a>
         </li>
         
         <li *ngIf="showExpenses">
-          <a routerLink="/xokaerp/en-us/expense-reimbursement" routerLinkActive="active">
+          <a routerLink="/fhcerp/en-us/expense-reimbursement" routerLinkActive="active">
             <span class="icon">💰</span>
             <span class="text">Expenses</span>
           </a>
         </li>
 
         <li *ngIf="showFinanceApproval">
-          <a routerLink="/xokaerp/en-us/finance-approval" routerLinkActive="active">
+          <a routerLink="/fhcerp/en-us/finance-approval" routerLinkActive="active">
             <span class="icon">✅</span>
             <span class="text">Finance Approval</span>
           </a>
         </li>
         
         <li *ngIf="showCashierPayment">
-          <a routerLink="/xokaerp/en-us/cashier-payment" routerLinkActive="active">
+          <a routerLink="/fhcerp/en-us/cashier-payment" routerLinkActive="active">
             <span class="icon">💳</span>
             <span class="text">Cashier Payment</span>
           </a>
         </li>
         
         <li *ngIf="showInventoryRequest">
-          <a routerLink="/xokaerp/en-us/inventory-request" routerLinkActive="active">
+          <a routerLink="/fhcerp/en-us/inventory-request" routerLinkActive="active">
             <span class="icon">📋</span>
             <span class="text">Inventory Request</span>
           </a>
         </li>
         
         <li *ngIf="showInventoryManagement">
-          <a routerLink="/xokaerp/en-us/inventory-management" routerLinkActive="active">
+          <a routerLink="/fhcerp/en-us/inventory-management" routerLinkActive="active">
             <span class="icon">🛠️</span>
             <span class="text">Inventory Management</span>
           </a>
         </li>
         
         <li *ngIf="showItemReceiving">
-          <a routerLink="/xokaerp/en-us/item-receiving" routerLinkActive="active">
+          <a routerLink="/fhcerp/en-us/item-receiving" routerLinkActive="active">
             <span class="icon">📥</span>
             <span class="text">Item Receiving</span>
           </a>
         </li>
         
         <li *ngIf="showReports">
-          <a routerLink="/xokaerp/en-us/reports" routerLinkActive="active">
+          <a routerLink="/fhcerp/en-us/reports" routerLinkActive="active">
             <span class="icon">📑</span>
             <span class="text">Reports</span>
           </a>
         </li>
         
         <li *ngIf="showSupervisorDashboard">
-          <a routerLink="/xokaerp/en-us/supervisor-dashboard" routerLinkActive="active">
+          <a routerLink="/fhcerp/en-us/supervisor-dashboard" routerLinkActive="active">
             <span class="icon">📋</span>
             <span class="text">Supervisor Dashboard</span>
           </a>

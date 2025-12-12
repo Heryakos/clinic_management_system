@@ -124,19 +124,21 @@
         
         <div class="form-group">
           <label for="signature">Signature:</label>
-          <ng-container *ngIf="sickLeaveForm.get('SignatureText')?.value">
-            <img [src]="getSignatureImageSrc()" 
-                 class="signature-image" 
-                 alt="Doctor's Signature"
-                 (error)="handleSignatureError($event)" />
+          <ng-container *ngIf="sickLeaveForm.get('SignatureText')?.value as signature">
+            <img *ngIf="signature" [src]="getSignatureImageSrc()" class="signature-image" alt="Doctor's Signature" (error)="handleSignatureError($event)" />
           </ng-container>
-          <span *ngIf="!sickLeaveForm.get('SignatureText')?.value" class="field-line medium"></span>
+          <span *ngIf="!sickLeaveForm.get('SignatureText')?.value" class="field-line medium">No signature</span>
         </div>
       </div>
     </div>
 
-    <button type="submit" class="submit-btn" [disabled]="sickLeaveForm.invalid || isSubmitting">
-      {{ isSubmitting ? 'Issuing...' : (selectedType === 'fitToWork' ? 'Issue Fit to Work Certificate' : 'Issue Sick Leave Certificate') }}
+    <button type="submit" class="submit-btn" [disabled]="isSubmitting">
+      {{ isSubmitting 
+        ? 'Issuing...' 
+        : (selectedType === 'fitToWork' 
+           ? 'Issue Fit to Work Certificate' 
+           : 'Issue Sick Leave Certificate') 
+      }}
     </button>
   </form>
 
@@ -177,18 +179,18 @@
                 </span>
               </td>
               <td>
-                <button type="button" *ngIf="leave.status === 'Active'" class="action-btn complete"
+                <!-- <button type="button" *ngIf="leave.status === 'Active'" class="action-btn complete"
                   (click)="updateLeaveStatus(leave.certificateID, 'Completed')">
                   Mark Complete
-                </button>
+                </button> -->
                 <button type="button" *ngIf="leave.status === 'Active'" class="action-btn cancel"
                   (click)="updateLeaveStatus(leave.certificateID, 'Cancelled')">
                   Cancel
                 </button>
-                <button type="button" *ngIf="leave.status === 'Active'" class="action-btn fit"
+                <!-- <button type="button" *ngIf="leave.status === 'Active'" class="action-btn fit"
                   (click)="updateLeaveStatus(leave.certificateID, 'FitToWork')">
                   Fit to Work
-                </button>
+                </button> -->
                 <button type="button" class="action-btn print" (click)="openPrintModal(leave)">Print</button>
               </td>
             </tr>
@@ -264,6 +266,7 @@
           
           <div class="header-center">
             <div class="clinic-title">FEDERAL HOUSING COOPERATION MEDIUM CLINIC</div>
+           
             <div class="clinic-phone">TEL. 011-855-3615</div>
           </div>
           
@@ -341,13 +344,24 @@
             </div>
           </div>
 
-          <div class="form-row-cert single">
+          <div class="form-row-cert single" *ngIf="selectedLeave?.status !== 'FitToWork'">
             <div class="field-group full">
               <span class="amharic-label">የሚያስፈልገው ዕረፍት</span>
               <span class="field-separator">/</span>
               <span class="english-label">Rest required</span>
               <span class="field-line long">
                 {{ selectedLeave?.totalDays }} days ({{ selectedLeave?.startDate | date:'MM/dd/yyyy' }} - {{ selectedLeave?.endDate | date:'MM/dd/yyyy' }})
+              </span>
+            </div>
+          </div>
+
+          <div class="form-row-cert single" *ngIf="selectedLeave?.status === 'FitToWork'">
+            <div class="field-group full">
+              <span class="amharic-label">የሚያስፈልገው ዕረፍት</span>
+              <span class="field-separator">/</span>
+              <span class="english-label">Rest required</span>
+              <span class="field-line long">
+                No rest required - Patient is fit to work
               </span>
             </div>
           </div>

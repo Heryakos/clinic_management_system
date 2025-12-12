@@ -376,60 +376,73 @@ export class DoctorComponent implements OnInit {
     }
 
     onPatientRowClick(patient: PatientSummary): void {
-        this.resetPatientData(); // Clear old data immediately
+        this.resetPatientData();
         this.isSearchMode = false;
         this.searched = true;
         this.cardNumber = patient.CardNumber;
-        console.log('Patient clicked:', patient.CardNumber, patient.FullName);
-
-        // Instead of using the limited data from the active patients list,
-        // let's fetch the complete patient data using the card number
+      
         this.isSearching = true;
         this.medicalService.getPatient(patient.CardNumber).subscribe(
-            (response: any) => {
-                
-                const fullPatientData = Array.isArray(response) ? response[0] : response;
-                console.log('anyresponse',response);
-                if (fullPatientData && fullPatientData.PatientID) {
-                    this.patient = fullPatientData;
-                    const formattedPatient = {
-                        ...fullPatientData,
-                        RegistrationDate: this.formatDate(fullPatientData.RegistrationDate)
-                    };
-                    this.editForm.patchValue(formattedPatient);
-
-                    // Fetch medical history
-                    this.medicalService.getPatientByCardNumberHistory(patient.CardNumber).subscribe(
-                        (historyResponse: PatientMedicalHistory[]) => {
-                            this.medicalHistories = Array.isArray(historyResponse) ? historyResponse : [];
-                            this.loadPatientLaboratory(Number(fullPatientData.PatientID));
-                            this.loadPatientPrescriptions(fullPatientData.CardNumber);
-                            this.loadPatientInjections(fullPatientData.PatientID);
-                            // If Pharmacy tab is active, reload prescriptions for this specific patient
-                            if (this.selectedTab === 'prescriptions') {
-                                this.loadPatientPrescriptions(fullPatientData.CardNumber);
-                            }
-                        },
-
-                        error => {
-                            this.medicalHistories = [];
-                            // this.showSnackBar(`Error fetching medical history: ${error.message}`, 'Close', 5000, 'error-snackbar');
-                        }
-                    );
-                } else {
-                    this.resetPatientData();
-                    // this.showSnackBar('No patient found with this card number.', 'Close', 5000, 'error-snackbar');
+          (response: any) => {
+            const rawPatient = Array.isArray(response) ? response[0] : response;
+      
+            if (rawPatient && rawPatient.PatientID) {
+              // FORCE CORRECT GENDER MAPPING FROM THE VIEW
+              this.patient = {
+                ...rawPatient,
+                Gender: this.mapGender(rawPatient.Gender || rawPatient.gender || ''),
+                gender: this.mapGender(rawPatient.Gender || rawPatient.gender || '') // cover both cases
+              };
+      
+              const formattedPatient = {
+                ...this.patient,
+                RegistrationDate: this.formatDate(this.patient.RegistrationDate)
+              };
+      
+              this.editForm.patchValue(formattedPatient);
+      
+              // Load medical history and other data
+              this.medicalService.getPatientByCardNumberHistory(patient.CardNumber).subscribe(
+                (historyResponse: PatientMedicalHistory[]) => {
+                  this.medicalHistories = Array.isArray(historyResponse) ? historyResponse : [];
+                  this.loadPatientLaboratory(Number(this.patient.PatientID));
+                  this.loadPatientPrescriptions(this.patient.CardNumber);
+                  this.loadPatientInjections(this.patient.PatientID);
+      
+                  if (this.selectedTab === 'prescriptions') {
+                    this.loadPatientPrescriptions(this.patient.CardNumber);
+                  }
+                },
+                error => {
+                  this.medicalHistories = [];
                 }
-                this.isSearching = false;
-            },
-            error => {
-                this.resetPatientData();
-                this.isSearching = false;
-                // this.showSnackBar(`No record found or error occurred: ${error.message}`, 'Close', 5000, 'error-snackbar');
+              );
+            } else {
+              this.resetPatientData();
             }
+            this.isSearching = false;
+          },
+          error => {
+            this.resetPatientData();
+            this.isSearching = false;
+            this.showSnackBar(`No record found: ${error.message}`, 'Close', 5000, 'error-snackbar');
+          }
         );
-    }
-
+      }
+      private mapGender(genderText: string): 'M' | 'F' {
+        if (!genderText) return 'M'; // default to M for safety (or 'U' if you prefer)
+      
+        const lower = genderText.toLowerCase().trim();
+      
+        if (lower.includes('ወንድ') || lower.includes('male') || lower === 'm') {
+          return 'M';
+        }
+        if (lower.includes('ሴት') || lower.includes('female') || lower === 'f') {
+          return 'F';
+        }
+      
+        return 'M'; // fallback — most of your users are male employees
+      }
 
     initializeSearchForm(): void {
         this.searchForm = this.fb.group({
@@ -779,7 +792,11 @@ export class DoctorComponent implements OnInit {
             );
         }
     }
-
+    onSignatureError(event: any): void {
+        console.warn('Failed to load doctor signature image');
+        // Optional: replace with placeholder
+        event.target.src = 'assets/images/signature-placeholder.png';
+      }
     private resetPatientData(): void {
         this.patient = null;
         this.editForm.reset();
@@ -1093,7 +1110,8 @@ export class DoctorComponent implements OnInit {
                 grandFatherName: this.patient.GrandFatherName ?? '',
                 dateOfBirth: this.patient.DateOfBirth || '1900-01-01',
                 age: this.patient.Age || 0,
-                gender: this.patient.Gender || 'U',
+                // gender: this.patient.Gender || 'U',
+                gender: this.mapGender(this.patient.Gender || this.patient.gender || ''),
                 phone: this.patient.Phone ?? '',
                 address: this.patient.Address ?? '',
                 region: this.patient.Region ?? '',
@@ -1146,6 +1164,13 @@ export class DoctorComponent implements OnInit {
             this.showSnackBar('Cannot update patient: Missing user ID or invalid form data.', 'Close', 5000, 'error-snackbar');
         }
     }
+    // private extractGender(genderText: string): 'M' | 'F' | 'U' {
+    //     if (!genderText) return 'U';
+    //     const lower = genderText.toLowerCase();
+    //     if (lower.includes('male') || lower.includes('ወንድ')) return 'M';
+    //     if (lower.includes('female') || lower.includes('ሴት')) return 'F';
+    //     return 'U';
+    // }
 
     onLabRequestSubmit(): void {
         if (this.labRequestForm.valid && this.patient && this.patient.PatientID && this.patient.CardNumber) {

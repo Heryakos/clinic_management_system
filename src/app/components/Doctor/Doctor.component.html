@@ -104,17 +104,55 @@
               <label for="allergies">Allergies:</label>
               <textarea id="allergies" formControlName="allergies" class="form-control" rows="4"></textarea>
             </div>
-            <!-- Medical History Toggleable Panel -->
+            <!-- Medical History Records -->
             <div class="medical-history-panel">
-              <h4>Medical History Records</h4>
+              <h4>Medical History Records ({{ medicalHistories.length }})</h4>
+
               <div class="history-item" *ngFor="let history of medicalHistories; let i = index">
                 <div class="history-header" (click)="toggleHistory(i)">
-                  <span>{{ history.CreatedDate | date:'medium' }}</span>
-                  <span class="toggle-icon">{{ showHistoryIndex === i ? '▼' : '▶' }}</span>
+                  <div class="header-left">
+                    <strong>{{ history.CreatedDate | date:'medium' }}</strong>
+                    <span class="doctor">by Dr. {{ history.DoctorName || 'Unknown Doctor' }}</span>
+                    <span class="age-gender">Age: {{ history.Age }} • {{ history.Gender === 'M' ? 'Male' : 'Female'
+                      }}</span>
+                  </div>
+                  <span class="toggle-icon">{{ showHistoryIndex === i ? 'Hide' : 'Show' }}</span>
                 </div>
+
                 <div class="history-content" *ngIf="showHistoryIndex === i">
-                  <p>{{ history.MedicalHistory || 'No medical history recorded' }}</p>
+                  <div class="history-grid">
+                    <div><strong>Allergies:</strong> {{ history.Allergies || 'None recorded' }}</div>
+                    <div><strong>Medical History:</strong> {{ history.MedicalHistory || 'None recorded' }}</div>
+                    <div><strong>Chief Complaint:</strong> {{ history.ChiefComplaint || '—' }}</div>
+                    <div><strong>Treatment Plan:</strong> {{ history.TreatmentPlan || '—' }}</div>
+                    <div><strong>Blood Pressure:</strong> {{ history.BloodPressure || '—' }}</div>
+                    <div><strong>Pulse Rate:</strong> {{ history.PulseRate || '—' }} bpm</div>
+                    <div><strong>Temperature:</strong> {{ history.Temperature || '—' }} °C</div>
+                    <div><strong>Weight:</strong> {{ history.Weight || '—' }} kg</div>
+                    <div><strong>Height:</strong> {{ history.Height || '—' }} cm</div>
+                    <div><strong>BMI:</strong> {{ history.BMI ? (history.BMI | number:'1.2-2') : '—' }}</div>
+                    <div><strong>Next Appointment:</strong> {{ history.NextAppointment | date:'shortDate' || '—' }}
+                    </div>
+                    <div><strong>Room:</strong> {{ history.RoomName || 'Not assigned' }}</div>
+                  </div>
+
+                  <!-- Inside the history-content div -->
+                  <div class="signature-section" *ngIf="history.SignatureText">
+                    <strong>Doctor's Signature:</strong>
+                    <div class="signature-image-container">
+                      <img [src]="'data:image/png;base64,' + history.SignatureText" alt="Doctor Signature"
+                        class="doctor-signature-img" (error)="onSignatureError($event)" />
+                    </div>
+                  </div>
+                  <div class="signature-section" *ngIf="!history.SignatureText">
+                    <strong>Doctor's Signature:</strong>
+                    <span class="no-signature">Not available</span>
+                  </div>
                 </div>
+              </div>
+
+              <div class="no-history" *ngIf="medicalHistories.length === 0">
+                No medical history recorded yet.
               </div>
             </div>
             <div class="form-group">

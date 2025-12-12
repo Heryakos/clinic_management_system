@@ -608,8 +608,23 @@ loadRoomSpecificData(): void {
             return this.medicalService.getPrescriptionIDDetails(prescription.prescriptionID).toPromise()
                 .then(details => {
                     console.log(`Details for prescription ${prescription.prescriptionID}:`, details);
-                    this.prescriptionDetailsMap[prescription.prescriptionID] = details || null;
-                    return details;
+                    // Aggregate medication names from array response
+                    if (Array.isArray(details) && details.length > 0) {
+                        const medicationNames = details
+                            .map((d: any) => d.MedicationName || d.MedicationDetails || '')
+                            .filter((name: string) => name)
+                            .join(', ');
+                        this.prescriptionDetailsMap[prescription.prescriptionID] = {
+                            MedicationName: medicationNames,
+                            Details: details
+                        };
+                    } else if (details && details.MedicationName) {
+                        // Handle single object response (backward compatibility)
+                        this.prescriptionDetailsMap[prescription.prescriptionID] = details;
+                    } else {
+                        this.prescriptionDetailsMap[prescription.prescriptionID] = null;
+                    }
+                    return this.prescriptionDetailsMap[prescription.prescriptionID];
                 })
                 .catch(error => {
                     console.error(`Error loading details for prescription ${prescription.prescriptionID}:`, error);
@@ -623,8 +638,26 @@ loadRoomSpecificData(): void {
             this.resolveMissingPrescriptionIds().then(() => {
             const allMedications: Set<string> = new Set();
             Object.values(this.prescriptionDetailsMap).forEach(details => {
-                if (details && details.MedicationName) {
-                    this.extractMedicationNames(details.MedicationName).forEach(name => allMedications.add(name));
+                if (details) {
+                    // Handle both array and string formats
+                    if (Array.isArray(details)) {
+                        details.forEach((d: any) => {
+                            const medName = d.MedicationName || d.MedicationDetails || '';
+                            if (medName) {
+                                this.extractMedicationNames(medName).forEach(name => allMedications.add(name));
+                            }
+                        });
+                    } else if (details.MedicationName) {
+                        this.extractMedicationNames(details.MedicationName).forEach(name => allMedications.add(name));
+                    } else if (details.Details && Array.isArray(details.Details)) {
+                        // Handle aggregated format
+                        details.Details.forEach((d: any) => {
+                            const medName = d.MedicationName || d.MedicationDetails || '';
+                            if (medName) {
+                                this.extractMedicationNames(medName).forEach(name => allMedications.add(name));
+                            }
+                        });
+                    }
                 }
             });
             this.medicationDetailsWithStock = Array.from(allMedications).map(name => ({
@@ -1084,7 +1117,7 @@ loadRoomSpecificData(): void {
     if (this.pharmacistId) {
       this.medicalService.dispensePrescription(prescriptionID, this.pharmacistId).subscribe(
         () => {
-          this.showErrorMessage(`Prescription dispensed successfully!`)
+          this.showSuccessMessage(`Prescription dispensed successfully!`)
           if (this.isActivePrescriptions) {
             this.loadPrescriptionQueue();
           } else {

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { BehaviorSubject, from, Observable, of, throwError } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
-import { MedicalRequest, MedicalRequestView, SickLeave, InventoryItem, InventoryRequest, ExpenseReimbursement, ExpenseReimbursementDetail } from './models/medical.model';
+import { MedicalRequest, MedicalRequestView, SickLeave, InventoryItem, InventoryRequest, ExpenseReimbursement, ExpenseReimbursementDetail, PatientMedicalHistory } from './models/medical.model';
 import { environment } from '../environments/environment';
 import { MedicationCategory, MedicationSelection } from './components/medication-tree-dropdown/medication-tree-dropdown.component';
 import { ReasonCategory, ReasonSelection } from './components/reason-tree-dropdown/reason-tree-dropdown.component';
@@ -1160,9 +1160,20 @@ export class MedicalService {
     );
   }
 
-  getPatientByCardNumberHistory(cardNumber: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.chmsCHMSPatientMedicalHistoryBase}${cardNumber}`).pipe(
-      catchError(this.handleError)
+  // getPatientByCardNumberHistory(cardNumber: string): Observable<any[]> {
+  //   return this.http.get<any[]>(`${this.chmsCHMSPatientMedicalHistoryBase}${cardNumber}`).pipe(
+  //     catchError(this.handleError)
+  //   );
+  // }
+  getPatientByCardNumberHistory(cardNumber: string): Observable<PatientMedicalHistory[]> {
+    if (!cardNumber) return of([]);
+    return this.http.get<PatientMedicalHistory[]>(
+      `${this.chmsCHMSPatientMedicalHistoryBase}${cardNumber}`
+    ).pipe(
+      catchError(err => {
+        console.error('History load error:', err);
+        return of([]); // return empty array on error
+      })
     );
   }
 

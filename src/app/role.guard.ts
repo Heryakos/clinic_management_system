@@ -14,7 +14,7 @@ export class RoleGuard implements CanActivate {
     const page = route.queryParams['page'];
     
     // Public pages - no role required
-    if (!page || page === 'medical-request' || page === 'reimbursement-document-upload') {
+    if (!page || page === 'clinic_request' || page === 'reimbursement-document-upload') {
       return true;
     }
 
@@ -60,12 +60,12 @@ export class RoleGuard implements CanActivate {
         return true;
       }
       
-      console.log(`Unauthorized access to ${page}, redirecting to medical-request`);
-      this.router.navigate(['/xokaerp/en-us'], { queryParams: { page: 'medical-request' } });
+      console.log(`Unauthorized access to ${page}, redirecting to clinic-request`);
+      this.router.navigate(['/fhcerp/en-us'], { queryParams: { page: 'clinic_request' } });
       return false;
     } catch (error) {
       console.error('RoleGuard: Error fetching roleIds', error);
-      this.router.navigate(['/xokaerp/en-us'], { queryParams: { page: 'medical-request' } });
+      this.router.navigate(['/fhcerp/en-us'], { queryParams: { page: 'clinic_request' } });
       return false;
     }
   }

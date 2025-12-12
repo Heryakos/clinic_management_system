@@ -7,6 +7,7 @@ import autoTable from 'jspdf-autotable';
 import { ASSETS } from '../../assets.config';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { FontService } from '../../services/FontService.service';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-sick-leave',
@@ -58,14 +59,16 @@ export class SickLeaveComponent implements OnInit {
 
   initializeForm(): void {
     this.sickLeaveForm = this.fb.group({
-      employeeId: [{ value: '', disabled: true }, [Validators.required, Validators.pattern('^[A-Za-z0-9]+$')]],
-      employeeName: [{ value: '', disabled: true }, Validators.required],
-      address: [{ value: '', disabled: true }, Validators.required],
-      diagnosis: [{ value: '', disabled: true }, Validators.required],
+      // Disabled fields don't need validators - they're auto-filled
+      employeeId: [{ value: '', disabled: true }],
+      employeeName: [{ value: '', disabled: true }],
+      address: [{ value: '', disabled: true }],
+      diagnosis: [{ value: '', disabled: true }],
+      // Only validate startDate and endDate for sick leave (not fitToWork)
       startDate: ['', Validators.required],
       endDate: ['', Validators.required],
       totalDays: [{ value: '', disabled: true }],
-      doctorName: [{ value: '', disabled: true }, Validators.required],
+      doctorName: [{ value: '', disabled: true }],
       recommendations: [''],
       age: [{ value: '', disabled: true }],
       sex: [{ value: '', disabled: true }],
@@ -79,140 +82,176 @@ export class SickLeaveComponent implements OnInit {
   }
 
   onTypeChange(type: 'sickLeave' | 'fitToWork'): void {
+    const previousType = this.selectedType;
     this.selectedType = type;
+
     if (type === 'fitToWork') {
-      // For FitToWork, set defaults
+      const today = new Date().toISOString().split('T')[0];
+
       this.sickLeaveForm.patchValue({
-        startDate: new Date().toISOString().split('T')[0],
-        endDate: new Date().toISOString().split('T')[0],
-        diagnosis: 'Patient is fit to work. No sick leave required.',
-        recommendations: 'Resume normal work duties immediately.'
+        startDate: today,
+        endDate: today,
+        totalDays: 0,
+        diagnosis: 'Patient is clinically stable and fit to resume regular work duties with no restrictions.',
+        recommendations: 'Resume normal work duties immediately. No sick leave required.'
       });
-      // Disable dates
+
+      // Disable and remove required validators for fitToWork
       this.sickLeaveForm.get('startDate')?.disable();
       this.sickLeaveForm.get('endDate')?.disable();
-    } else {
-      // Reset for sick leave
-      this.sickLeaveForm.patchValue({
-        startDate: '',
-        endDate: '',
-        diagnosis: this.sickLeaveForm.getRawValue().diagnosis, // Keep original diagnosis
-        recommendations: ''
-      });
+      this.sickLeaveForm.get('recommendations')?.disable();
+      this.sickLeaveForm.get('startDate')?.clearValidators();
+      this.sickLeaveForm.get('endDate')?.clearValidators();
+      this.sickLeaveForm.get('startDate')?.updateValueAndValidity();
+      this.sickLeaveForm.get('endDate')?.updateValueAndValidity();
+    }
+    else {
+      // SWITCHING BACK TO SICK LEAVE — RE-FETCH LATEST HISTORY
       this.sickLeaveForm.get('startDate')?.enable();
       this.sickLeaveForm.get('endDate')?.enable();
-    }
-    this.calculateTotalDays();
-  }
-calculateTotalDays(): void {
-  if (this.selectedType === 'fitToWork') {
-    this.sickLeaveForm.get('totalDays')?.setValue(0);
-    return;
-  }
+      this.sickLeaveForm.get('recommendations')?.enable();
+      // Re-add required validators for sick leave
+      this.sickLeaveForm.get('startDate')?.setValidators([Validators.required]);
+      this.sickLeaveForm.get('endDate')?.setValidators([Validators.required]);
+      this.sickLeaveForm.get('startDate')?.updateValueAndValidity();
+      this.sickLeaveForm.get('endDate')?.updateValueAndValidity();
 
-  const startDate = this.sickLeaveForm.get('startDate')?.value;
-  const endDate = this.sickLeaveForm.get('endDate')?.value;
+      // Show loading state
+      this.isSubmitting = true;
 
-  if (startDate && endDate) {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const timeDiff = end.getTime() - start.getTime();
-    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
+      // RE-FETCH LATEST MEDICAL HISTORY TO GET FRESH DIAGNOSIS
+      this.medicalService.getPatientByCardNumberHistory(this.patientID!).subscribe({
+        next: (historyResponse: any[]) => {
+          const latestHistory = historyResponse.length > 0 ? historyResponse[0] : null;
 
-    if (daysDiff > 0) {
-      this.sickLeaveForm.get('totalDays')?.setValue(daysDiff);
-    } else {
-      this.sickLeaveForm.get('totalDays')?.setValue('');
-    }
-  }
-}
-
-  prefillForm(): void {
-    if (this.patientID) {
-      this.medicalService.getPatient(this.patientID).subscribe(
-        (patient: any) => {
-          console.log('Patient data:', patient);
           this.sickLeaveForm.patchValue({
-            employeeId: patient.EmployeeID || '',
-            employeeName: patient.FullName || '',
-            address: patient.Address || '',
-            diagnosis: patient.MedicalHistory || 'To be determined',
-            age: patient.Age || null,
-            sex: patient.Gender === 'ወንድ / Male' ? 'Male' : patient.Gender === 'ሴት / Female' ? 'Female' : patient.Gender || null,
-            examinedOn: patient.LastVisitDate ? patient.LastVisitDate.split('T')[0] : null
+            diagnosis: latestHistory?.MedicalHistory ||
+              this.sickLeaveForm.getRawValue().diagnosis ||
+              'To be examined',
+            recommendations: '',
+            startDate: '',
+            endDate: '',
+            totalDays: null
           });
 
-          if (this.patientID) {
-            this.medicalService.getPatientByCardNumberHistory(this.patientID).subscribe(
-              (history: any[]) => {
-                console.log('Patient history:', history);
-                const latestRecord = history.length > 0 ? history[0] : null;
-
-                if (latestRecord && latestRecord.Doctor_Name) {
-                  // Create a patch value object
-                  const patchValues: any = {
-                    doctorName: latestRecord.Doctor_Name
-                  };
-
-                  // Add signature text if it exists
-                  if (latestRecord.SignatureText) {
-                    console.log('SignatureText found:', latestRecord.SignatureText.substring(0, 50) + '...');
-                    patchValues.SignatureText = latestRecord.SignatureText;
-                  } else {
-                    console.warn('No SignatureText found in patient history');
-                    patchValues.SignatureText = '';
-                  }
-
-                  // Patch the values
-                  this.sickLeaveForm.patchValue(patchValues);
-
-                  // Verify the values were set correctly
-                  setTimeout(() => {
-                    console.log('Form doctorName value:', this.sickLeaveForm.get('doctorName')?.value);
-                    console.log('Form SignatureText value:', this.sickLeaveForm.get('SignatureText')?.value);
-                    console.log('Form SignatureText exists:', !!this.sickLeaveForm.get('SignatureText')?.value);
-                  }, 100);
-                } else {
-                  console.warn('No Doctor_Name found in patient history for cardNumber:', this.patientID);
-                  this.sickLeaveForm.patchValue({
-                    doctorName: 'Unknown Doctor',
-                    SignatureText: ''
-                  });
-                }
-              },
-              (error: any) => {
-                console.error('Error fetching patient history for cardNumber:', this.patientID, error);
-                this.sickLeaveForm.patchValue({
-                  doctorName: 'Unknown Doctor',
-                  SignatureText: ''
-                });
-              }
-            );
-          }
+          this.isSubmitting = false;
+          this.cdr.detectChanges();
         },
-        (error: any) => {
-          console.error('Error fetching patient:', error);
-          this.showErrorMessage(`Error fetching patient: ${error}`)
+        error: (err) => {
+          console.error('Failed to reload medical history:', err);
+          this.sickLeaveForm.patchValue({
+            diagnosis: 'To be examined',
+            recommendations: '',
+            startDate: '',
+            endDate: '',
+            totalDays: null
+          });
+          this.isSubmitting = false;
         }
-      );
-    } else {
-      console.warn('No Patient ID provided.');
-      this.showErrorMessage(`No Patient ID provided.`)
+      });
     }
+
+    this.calculateTotalDays();
+  }
+  calculateTotalDays(): void {
+    if (this.selectedType === 'fitToWork') {
+      this.sickLeaveForm.get('totalDays')?.setValue(0);
+      return;
+    }
+
+    const startDate = this.sickLeaveForm.get('startDate')?.value;
+    const endDate = this.sickLeaveForm.get('endDate')?.value;
+
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const timeDiff = end.getTime() - start.getTime();
+      const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
+
+      if (daysDiff > 0) {
+        this.sickLeaveForm.get('totalDays')?.setValue(daysDiff);
+      } else {
+        this.sickLeaveForm.get('totalDays')?.setValue('');
+      }
+    }
+  }
+
+  prefillForm(): void {
+    if (!this.patientID) {
+      console.warn('No patientID provided for prefill');
+      return;
+    }
+
+    // Wait for BOTH patient data AND medical history
+    forkJoin({
+      patient: this.medicalService.getPatient(this.patientID),
+      history: this.medicalService.getPatientByCardNumberHistory(this.patientID)
+    }).subscribe({
+      next: ({ patient, history }) => {
+        // Handle patient response (array or object)
+        const p = Array.isArray(patient) ? patient[0] : patient;
+        if (!p) {
+          this.showErrorMessage('Patient not found.');
+          return;
+        }
+
+        // Get latest medical history
+        const latestHistory = history && history.length > 0 ? history[0] : null;
+
+        // AUTO-FILL EVERYTHING
+        this.sickLeaveForm.patchValue({
+          // EMPLOYEE INFO
+          employeeId: p.CardNumber || p.EmployeeID || '',
+          employeeName: p.FullName || '',
+          address: p.Address || 'Addis Ababa',
+
+          // DEMOGRAPHICS
+          age: p.Age || null,
+          sex: p.Gender === 'M' ? 'Male' : p.Gender === 'F' ? 'Female' : 'Unknown',
+
+          // EXAM DATE
+          examinedOn: p.LastVisitDate
+            ? new Date(p.LastVisitDate).toISOString().split('T')[0]
+            : new Date().toISOString().split('T')[0],
+
+          // MEDICAL INFO — FROM LAST VISIT
+          diagnosis: latestHistory?.MedicalHistory
+            || p.MedicalHistory
+            || 'Patient examined and stable',
+
+          // DOCTOR INFO
+          doctorName: latestHistory?.DoctorName || 'Dr. Unknown Doctor',
+
+          // SIGNATURE — FROM HISTORY (IT WORKS!)
+          SignatureText: latestHistory?.SignatureText || '',
+
+          // HIDDEN - PatientID should be a GUID string or null
+          patientId: p.PatientID ? (typeof p.PatientID === 'string' ? p.PatientID : null) : null
+        });
+
+        console.log('SICK LEAVE FORM AUTO-FILLED PERFECTLY:', this.sickLeaveForm.value);
+
+        // Force UI update
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading data for sick leave form:', err);
+        this.showErrorMessage('Failed to load patient information.');
+      }
+    });
   }
 
   // Method to get the signature image source
   getSignatureImageSrc(): string {
     const signature = this.sickLeaveForm.get('SignatureText')?.value;
-    if (!signature) return '';
+    if (!signature || signature === '' || typeof signature !== 'string') {
+      return ''; // Return empty = no image
+    }
 
-    // Try different approaches
-    console.log('Getting signature image source');
-    console.log('Signature value type:', typeof signature);
-    console.log('Signature value length:', signature.length);
+    // Clean any possible prefix
+    const cleanSig = signature.startsWith('data:') ? signature.split(',')[1] : signature;
 
-    // Return the data URI
-    return `data:image/png;base64,${signature}`;
+    return `data:image/png;base64,${cleanSig}`;
   }
 
   // Method to handle signature image errors
@@ -226,52 +265,153 @@ calculateTotalDays(): void {
 
 
   onSubmit(): void {
-    if (this.sickLeaveForm.valid && this.createdBy) {
-      this.isSubmitting = true;
-      const formValue = this.sickLeaveForm.getRawValue();
-
-      const newSickLeave: SickLeave = {
-        certificateID: 0,
-        employeeID: formValue.employeeId,
-        employeeName: formValue.employeeName,
-        address: formValue.address,
-        diagnosis: formValue.diagnosis,
-        startDate: new Date(formValue.startDate),
-        endDate: new Date(formValue.endDate),
-        totalDays: formValue.totalDays,
-        doctorName: formValue.doctorName,
-        status: this.selectedType === 'fitToWork' ? 'FitToWork' : 'Active',
-        issueDate: new Date(),
-        doctorID: this.createdBy,
-        createdBy: this.createdBy,
-        recommendations: formValue.recommendations || null,
-        age: formValue.age || null,
-        sex: formValue.sex || null,
-        examinedOn: formValue.examinedOn ? new Date(formValue.examinedOn) : null,
-        signature: formValue.SignatureText || null,
-        patientID: formValue.patientId || null
-      };
-
-      this.medicalService.createSickLeaveCertificate(newSickLeave).subscribe(
-        (response: any) => {
-          this.isSubmitting = false;
-          this.sickLeaveForm.reset();
-          this.initializeForm();
-          this.prefillForm();
-          this.loadSickLeaves();
-          this.showSuccessMessage(`Sick leave certificate issued successfully!`)
-        },
-        error => {
-          this.isSubmitting = false;
-          console.error('Error issuing sick leave:', error);
-          this.showErrorMessage(`Error issuing sick leave: ${(error.error?.message || 'Please try again.')}`)
-        }
-      );
-    } else {
-      this.showErrorMessage('Please fill all required fields and ensure a valid Created By ID is provided.')
+    // Validate required fields manually since disabled fields don't affect form.valid
+    const formValue = this.sickLeaveForm.getRawValue();
+    
+    // Check if createdBy is set
+    if (!this.createdBy) {
+      console.error('createdBy is not set!');
+      this.showErrorMessage('Doctor information is missing. Please refresh the page.');
+      return;
     }
+
+    // Validate required fields based on type
+    if (this.selectedType === 'sickLeave') {
+      if (!formValue.startDate || !formValue.endDate) {
+        this.showErrorMessage('Start date and end date are required for sick leave.');
+        return;
+      }
+      
+      // Validate date range
+      const start = new Date(formValue.startDate);
+      const end = new Date(formValue.endDate);
+      if (end < start) {
+        this.showErrorMessage('End date must be on or after start date.');
+        return;
+      }
+    } else if (this.selectedType === 'fitToWork') {
+      // For FitToWork, ensure dates are set to today
+      const today = new Date().toISOString().split('T')[0];
+      if (!formValue.startDate) {
+        formValue.startDate = today;
+      }
+      if (!formValue.endDate) {
+        formValue.endDate = today;
+      }
+    }
+
+    // Validate required auto-filled fields
+    if (!formValue.employeeId || !formValue.employeeName) {
+      console.error('Missing required fields:', {
+        employeeId: formValue.employeeId,
+        employeeName: formValue.employeeName
+      });
+      this.showErrorMessage('Please wait for patient information to load, or refresh the page.');
+      return;
+    }
+
+    // For FitToWork, diagnosis and doctorName can have defaults
+    if (!formValue.diagnosis) {
+      formValue.diagnosis = this.selectedType === 'fitToWork' 
+        ? 'Patient is clinically stable and fit to resume regular work duties with no restrictions.'
+        : 'To be examined';
+    }
+    if (!formValue.doctorName) {
+      formValue.doctorName = 'Dr. Unknown';
+    }
+
+    this.isSubmitting = true;
+
+    const status = this.selectedType === 'fitToWork' ? 'FitToWork' : 'Active';
+    const today = new Date();
+
+    // SAFE DATE HANDLING — Convert to Date objects for the service
+    const getSafeDate = (value: any): Date => {
+      if (!value || value === '') {
+        return today;
+      }
+      // If it's already a Date object, return it
+      if (value instanceof Date) {
+        return isNaN(value.getTime()) ? today : value;
+      }
+      // If it's a string, parse it
+      if (typeof value === 'string') {
+        const d = new Date(value + 'T00:00:00.000Z');
+        return isNaN(d.getTime()) ? today : d;
+      }
+      return today;
+    };
+
+    // Convert createdBy to GUID string
+    const doctorIDGuid = this.createdBy;
+
+    // For FitToWork, ensure startDate and endDate are the same (today)
+    let startDate = getSafeDate(formValue.startDate);
+    let endDate = getSafeDate(formValue.endDate);
+    
+    if (this.selectedType === 'fitToWork') {
+      // For FitToWork, both dates should be today
+      startDate = today;
+      endDate = today;
+    }
+
+    // Create payload matching SickLeave interface (with Date objects)
+    const payload: any = {
+      employeeID: formValue.employeeId || '',
+      employeeName: formValue.employeeName || '',
+      address: formValue.address || 'Addis Ababa',
+      startDate: startDate,
+      endDate: endDate,
+      diagnosis: formValue.diagnosis || 'To be examined',
+      recommendations: formValue.recommendations || null,
+      doctorID: doctorIDGuid,
+      doctorName: formValue.doctorName || 'Dr. Unknown',
+      status: status,
+      issueDate: today,
+      createdBy: doctorIDGuid,
+      age: formValue.age ? parseInt(formValue.age.toString()) : null,
+      sex: formValue.sex || 'Unknown',
+      examinedOn: formValue.examinedOn ? getSafeDate(formValue.examinedOn) : null,
+      signature: formValue.SignatureText || null,
+      // PatientID should be a GUID string or null, not an integer
+      patientID: formValue.patientId ? (typeof formValue.patientId === 'string' ? formValue.patientId : null) : null
+    };
+
+    console.log('FINAL BULLETPROOF PAYLOAD:', payload);
+    console.log('Form valid:', this.sickLeaveForm.valid);
+    console.log('Form errors:', this.getFormValidationErrors());
+
+    this.medicalService.createSickLeaveCertificate(payload as any).subscribe({
+      next: () => {
+        this.isSubmitting = false;
+        this.showSuccessMessage(
+          this.selectedType === 'fitToWork'
+            ? 'Fit to Work certificate issued!'
+            : 'Sick leave certificate issued!'
+        );
+        this.loadSickLeaves();
+        this.sickLeaveForm.markAsPristine();
+      },
+      error: (error) => {
+        this.isSubmitting = false;
+        console.error('API ERROR:', error);
+        console.error('Error details:', error.error);
+        this.showErrorMessage('Failed: ' + (error.error?.message || error.message || 'Server error'));
+      }
+    });
   }
 
+  // Helper method to get form validation errors for debugging
+  private getFormValidationErrors(): any {
+    const errors: any = {};
+    Object.keys(this.sickLeaveForm.controls).forEach(key => {
+      const control = this.sickLeaveForm.get(key);
+      if (control && control.errors) {
+        errors[key] = control.errors;
+      }
+    });
+    return errors;
+  }
   loadSickLeaves(): void {
     if (this.patientID) {
       console.log('asde', this.patientID);
@@ -362,12 +502,17 @@ calculateTotalDays(): void {
       doc.text("Doctor's Recommendation:", 15, 110);
       doc.text(this.selectedLeave!.recommendations || 'Rest and follow-up as needed', 40, 110);
 
-      doc.text('Rest Required:', 15, 120);
-      doc.text(
-        `${this.selectedLeave!.totalDays} days (${this.selectedLeave!.startDate?.toLocaleDateString() || ''} - ${this.selectedLeave!.endDate?.toLocaleDateString() || ''})`,
-        40,
-        120
-      );
+      if (this.selectedLeave!.status === 'FitToWork') {
+        doc.text('Rest Required:', 15, 120);
+        doc.text('No rest required - Patient is fit to work', 40, 120);
+      } else {
+        doc.text('Rest Required:', 15, 120);
+        doc.text(
+          `${this.selectedLeave!.totalDays} days (${this.selectedLeave!.startDate?.toLocaleDateString() || ''} - ${this.selectedLeave!.endDate?.toLocaleDateString() || ''})`,
+          40,
+          120
+        );
+      }
 
       doc.text("Doctor's Name:", 15, 130);
       doc.text(this.selectedLeave!.doctorName || '', 40, 130);
@@ -418,12 +563,17 @@ calculateTotalDays(): void {
     doc.text("Doctor's Recommendation:", 15, 110);
     doc.text(this.selectedLeave!.recommendations || 'Rest and follow-up as needed', 40, 110);
 
-    doc.text('Rest Required:', 15, 120);
-    doc.text(
-      `${this.selectedLeave!.totalDays} days (${this.selectedLeave!.startDate?.toLocaleDateString() || ''} - ${this.selectedLeave!.endDate?.toLocaleDateString() || ''})`,
-      40,
-      120
-    );
+    if (this.selectedLeave!.status === 'FitToWork') {
+      doc.text('Rest Required:', 15, 120);
+      doc.text('No rest required - Patient is fit to work', 40, 120);
+    } else {
+      doc.text('Rest Required:', 15, 120);
+      doc.text(
+        `${this.selectedLeave!.totalDays} days (${this.selectedLeave!.startDate?.toLocaleDateString() || ''} - ${this.selectedLeave!.endDate?.toLocaleDateString() || ''})`,
+        40,
+        120
+      );
+    }
 
     doc.text("Doctor's Name:", 15, 130);
     doc.text(this.selectedLeave!.doctorName || '', 40, 130);
@@ -491,12 +641,17 @@ calculateTotalDays(): void {
       doc.text("Doctor's Recommendation:", 15, 110);
       doc.text(this.selectedLeave!.recommendations || 'Rest and follow-up as needed', 40, 110);
 
-      doc.text('Rest Required:', 15, 120);
-      doc.text(
-        `${this.selectedLeave!.totalDays} days (${this.selectedLeave!.startDate?.toLocaleDateString() || ''} - ${this.selectedLeave!.endDate?.toLocaleDateString() || ''})`,
-        40,
-        120
-      );
+      if (this.selectedLeave!.status === 'FitToWork') {
+        doc.text('Rest Required:', 15, 120);
+        doc.text('No rest required - Patient is fit to work', 40, 120);
+      } else {
+        doc.text('Rest Required:', 15, 120);
+        doc.text(
+          `${this.selectedLeave!.totalDays} days (${this.selectedLeave!.startDate?.toLocaleDateString() || ''} - ${this.selectedLeave!.endDate?.toLocaleDateString() || ''})`,
+          40,
+          120
+        );
+      }
 
       doc.text("Doctor's Name:", 15, 130);
       doc.text(this.selectedLeave!.doctorName || '', 40, 130);
@@ -548,12 +703,17 @@ calculateTotalDays(): void {
     doc.text("Doctor's Recommendation:", 15, 110);
     doc.text(this.selectedLeave!.recommendations || 'Rest and follow-up as needed', 40, 110);
 
-    doc.text('Rest Required:', 15, 120);
-    doc.text(
-      `${this.selectedLeave!.totalDays} days (${this.selectedLeave!.startDate?.toLocaleDateString() || ''} - ${this.selectedLeave!.endDate?.toLocaleDateString() || ''})`,
-      40,
-      120
-    );
+    if (this.selectedLeave!.status === 'FitToWork') {
+      doc.text('Rest Required:', 15, 120);
+      doc.text('No rest required - Patient is fit to work', 40, 120);
+    } else {
+      doc.text('Rest Required:', 15, 120);
+      doc.text(
+        `${this.selectedLeave!.totalDays} days (${this.selectedLeave!.startDate?.toLocaleDateString() || ''} - ${this.selectedLeave!.endDate?.toLocaleDateString() || ''})`,
+        40,
+        120
+      );
+    }
 
     doc.text("Doctor's Name:", 15, 130);
     doc.text(this.selectedLeave!.doctorName || '', 40, 130);

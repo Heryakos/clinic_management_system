@@ -88,6 +88,11 @@ export interface PatientMedicalHistory {
   PatientID?: number;
   Patient_Name?: string;
   CreatedDate?:string;
+  Gender?: 'M' | 'F';
+  DoctorName?: string;
+  LastVisitDate?: string | Date;
+  RoomName?: string;
+  SignatureText?: string;
 }
 // export interface PatientCard {
 //   patientID: number;

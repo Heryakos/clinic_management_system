@@ -507,6 +507,67 @@ textarea.form-control {
   color: #666;
 }
 
+/* BEAUTIFUL TABS — REPLACE YOUR OLD .tabs STYLES */
+.procedure-type-selection {
+  margin-bottom: 30px;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.procedure-type-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: -2px;
+}
+
+.procedure-type-btn {
+  padding: 14px 32px;
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  min-width: 180px;
+}
+
+.procedure-type-btn:hover {
+  background: #e9ecef;
+  color: #495057;
+}
+
+.procedure-type-btn.active {
+  background: white;
+  color: #667eea;
+  border-color: #667eea;
+  border-bottom: 3px solid white;
+  z-index: 10;
+  box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+  transform: translateY(-2px);
+}
+
+/* Active tab indicator */
+.procedure-type-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #667eea;
+  border-radius: 2px 2px 0 0;
+}
+
+/* Status badges in list */
+.status-badge.status-fit {
+  background-color: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
 /* Print Media Queries */
 @media print {
   body {

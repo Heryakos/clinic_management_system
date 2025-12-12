@@ -1,89 +1,156 @@
 <div class="pharmacy-container">
-  <h2>Prescription Management</h2>
-
-  <!-- Notification Button -->
-  <!-- <div class="notification-btn-container">
-    <button type="button" class="notification-btn" (click)="openNotificationDialog()">Send Notification</button>
-  </div> -->
+  <!-- Header Section -->
+  <div class="header-section">
+    <h1 class="page-title">
+      <span class="icon">💊</span>
+      Pharmacy Management
+    </h1>
+    <p class="page-subtitle">Manage prescriptions and medication dispensing</p>
+  </div>
 
   <!-- Search Section -->
-  <div class="search-container">
+  <div class="search-card">
+    <div class="search-header">
+      <h2>🔍 Search Patient</h2>
+      <p>Enter patient ID to view their prescriptions</p>
+    </div>
     <form (ngSubmit)="onSearch()" class="search-form">
-      <div class="form-group">
-        <label for="searchPatientID">Search by Patient ID:</label>
-        <input type="text" id="searchPatientID" [(ngModel)]="searchPatientID" name="searchPatientID" class="form-control" placeholder="Enter patient ID">
-        <div class="error-message" *ngIf="searchError">{{ searchError }}</div>
+      <div class="search-input-group">
+        <input 
+          type="text" 
+          id="searchPatientID" 
+          [(ngModel)]="searchPatientID" 
+          name="searchPatientID" 
+          class="search-input" 
+          placeholder="Enter Patient ID"
+          [disabled]="isSearching"
+        >
+        <button type="submit" class="search-button" [disabled]="isSearching">
+          <span *ngIf="!isSearching">Search</span>
+          <span *ngIf="isSearching" class="loading-spinner">⏳ Searching...</span>
+        </button>
       </div>
-      <button type="submit" class="search-btn" [disabled]="isSearching">{{ isSearching ? 'Searching...' : 'Search' }}</button>
+      <div class="error-message" *ngIf="searchError">{{ searchError }}</div>
     </form>
   </div>
 
-  <!-- Medication Stock Selection Section -->
-  <div class="medication-stock-container" *ngIf="medicationDetailsWithStock.length > 0">
-    <h3>Medication Stock Status</h3>
-    <p class="stock-instruction">Check the medications that are currently in stock:</p>
-    <div class="medication-stock-list">
-<!-- Keep the labels and remove (change) handler -->
-<div class="medication-item" *ngFor="let item of medicationDetailsWithStock; let i = index">
-  <label>
-      <input 
-          type="checkbox" 
-          [(ngModel)]="item.isInStock" 
-          class="stock-checkbox" 
-      />
-      <span class="medication-name">{{ item.medication }}</span>
-      <span class="stock-status" [class.in-stock]="item.isInStock" [class.out-of-stock]="!item.isInStock">
-          {{ item.isInStock ? '(In Stock)' : '(Out of Stock)' }}
-      </span>
-  </label>
-</div>
+  <!-- Medication Stock Status (only shown when searching) -->
+  <div class="stock-card" *ngIf="medicationDetailsWithStock.length > 0">
+    <div class="card-header">
+      <h2>📦 Medication Stock Status</h2>
+      <p>Mark medications that are available in stock</p>
+    </div>
+    <div class="medication-grid">
+      <div class="medication-card" *ngFor="let item of medicationDetailsWithStock; let i = index">
+        <label class="medication-label">
+          <input 
+            type="checkbox" 
+            [(ngModel)]="item.isInStock" 
+            class="stock-checkbox"
+          />
+          <div class="medication-content">
+            <span class="medication-name">{{ item.medication }}</span>
+            <span class="stock-badge" [class.in-stock]="item.isInStock" [class.out-of-stock]="!item.isInStock">
+              {{ item.isInStock ? '✓ In Stock' : '✗ Out of Stock' }}
+            </span>
+          </div>
+        </label>
+      </div>
     </div>
   </div>
 
-  <!-- Only show form and table if showFormAndTable is true -->
+  <!-- Prescriptions Section -->
   <ng-container *ngIf="showFormAndTable">
-    <!-- Medicine and Equipment Request Section -->
-    <!-- Prescriptions List -->
-    <div class="prescriptions-list">
-      <h3>{{ isActivePrescriptions ? 'Active Prescriptions' : 'Recent Prescriptions' }}</h3>
-      <div class="table-container">
-        <table class="prescriptions-table">
-          <thead>
-            <tr>
-              <th>Card Number</th>
-              <th>Patient Name</th>
-              <th>Prescription Date</th>
-              <th>Status</th>
-              <th>Prescriber</th>
-              <th>Pharmacist</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let prescription of prescriptions" (click)="onPrescriptionRowClick(prescription)">
-              <td>{{ prescription.CardNumber }}</td>
-              <td>{{ prescription.FullName }}</td>
-              <td>{{ prescription.PrescriptionDate | date:'short' }}</td>
-              <td>{{ prescription.Status }}</td>
-              <td>{{ prescription.PrescriberName }}</td>
-              <td>{{ prescription.PharmacistName || 'N/A' }}</td>
-              <td>
-                <button type="button" class="action-btn view" (click)="viewPrescriptionDetails(prescription.prescriptionID, $event)">View</button>
-                <button type="button" class="action-btn dispense" (click)="onDispenseClick(prescription, $event)" *ngIf="prescription.Status === 'Active'" [disabled]="!(getValidPrescriptionId(prescription) || prescription.PrescriptionNumber || prescription.prescriptionNumber || (prescription.CardNumber && (prescription.PrescriptionDate || prescription.prescriptionDate)))">Dispense</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+    <div class="prescriptions-section">
+      <div class="section-header">
+        <h2>
+          <span class="section-icon">📋</span>
+          {{ isActivePrescriptions ? 'Active Prescriptions Queue' : 'Patient Prescriptions' }}
+        </h2>
+        <div class="prescription-count" *ngIf="prescriptions.length > 0">
+          {{ prescriptions.length }} {{ prescriptions.length === 1 ? 'prescription' : 'prescriptions' }}
+        </div>
       </div>
-    </div>
 
-    <!-- Prescription Details Dialog -->
-    <div class="prescription-details-dialog" *ngIf="showPrescriptionDetailsDialog">
-      <div class="dialog-backdrop" (click)="closePrescriptionDetailsDialog()"></div>
-      <div class="dialog-content">
-        <app-prescription-paper [cardNumber]="cardNumber"></app-prescription-paper>
-        <button type="button" class="close-btn" (click)="closePrescriptionDetailsDialog()">Close</button>
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="prescriptions.length === 0 && !isSearching">
+        <div class="empty-icon">📭</div>
+        <h3>No prescriptions found</h3>
+        <p *ngIf="isActivePrescriptions">There are no active prescriptions in the queue.</p>
+        <p *ngIf="!isActivePrescriptions">No prescriptions found for this patient.</p>
+      </div>
+
+      <!-- Prescriptions Grid -->
+      <div class="prescriptions-grid" *ngIf="prescriptions.length > 0">
+        <div 
+          class="prescription-card" 
+          *ngFor="let prescription of prescriptions"
+          [class.active]="prescription.Status === 'Active'"
+          (click)="onPrescriptionRowClick(prescription)"
+        >
+          <div class="prescription-header">
+            <div class="prescription-status-badge" [class]="'status-' + (prescription.Status || 'unknown').toLowerCase()">
+              {{ prescription.Status || 'Unknown' }}
+            </div>
+            <div class="prescription-date">
+              {{ prescription.PrescriptionDate | date:'MMM d, y' }}
+            </div>
+          </div>
+
+          <div class="prescription-body">
+            <div class="patient-info-row">
+              <div class="info-item">
+                <span class="info-label">Patient:</span>
+                <span class="info-value">{{ prescription.FullName }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Card #:</span>
+                <span class="info-value">{{ prescription.CardNumber }}</span>
+              </div>
+            </div>
+
+            <div class="prescriber-info">
+              <span class="info-label">Prescribed by:</span>
+              <span class="info-value">{{ prescription.PrescriberName }}</span>
+            </div>
+
+            <div class="pharmacist-info" *ngIf="prescription.PharmacistName && prescription.PharmacistName !== 'N/A'">
+              <span class="info-label">Dispensed by:</span>
+              <span class="info-value">{{ prescription.PharmacistName }}</span>
+            </div>
+          </div>
+
+          <div class="prescription-actions">
+            <button 
+              type="button" 
+              class="action-button view-button" 
+              (click)="viewPrescriptionDetails(prescription.prescriptionID, $event)"
+              title="View prescription details"
+            >
+              👁️ View Details
+            </button>
+            <button 
+              type="button" 
+              class="action-button dispense-button" 
+              (click)="onDispenseClick(prescription, $event)" 
+              *ngIf="prescription.Status === 'Active'"
+              [disabled]="!(getValidPrescriptionId(prescription) || prescription.PrescriptionNumber || prescription.prescriptionNumber || (prescription.CardNumber && (prescription.PrescriptionDate || prescription.prescriptionDate)))"
+              title="Dispense this prescription"
+            >
+              ✅ Dispense
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </ng-container>
+
+  <!-- Prescription Details Dialog -->
+  <div class="prescription-details-dialog" *ngIf="showPrescriptionDetailsDialog">
+    <div class="dialog-backdrop" (click)="closePrescriptionDetailsDialog()"></div>
+    <div class="dialog-content">
+      <app-prescription-paper [cardNumber]="cardNumber"></app-prescription-paper>
+      <button type="button" class="close-btn" (click)="closePrescriptionDetailsDialog()">Close</button>
+    </div>
+  </div>
 </div>

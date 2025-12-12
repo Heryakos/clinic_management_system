@@ -1221,6 +1221,32 @@ textarea.form-control {
   color: #495057;
   font-weight: 500;
 }
+.signature-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+}
+
+.signature-image-container {
+  margin-top: 8px;
+  text-align: center;
+  max-width: 200px;
+}
+
+.doctor-signature-img {
+  max-height: 80px;
+  max-width: 180px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: 2px;
+  background: #f9f9f9;
+}
+
+.no-signature {
+  color: #999;
+  font-style: italic;
+  font-size: 0.9em;
+}
 
 /* Responsive Design */
 @media (max-width: 768px) {
