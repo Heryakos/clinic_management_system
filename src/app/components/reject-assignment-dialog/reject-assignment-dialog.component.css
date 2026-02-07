@@ -1,0 +1,66 @@
+.dialog-content {
+    padding: 16px 0;
+  }
+  
+  .patient-info {
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+    color: #333;
+  
+    .card-number {
+      color: #555;
+      font-weight: normal;
+    }
+  }
+  
+  .warning-text {
+    color: #d32f2f;
+    margin: 16px 0 12px;
+    line-height: 1.5;
+  }
+  
+  .reasons-list {
+    margin: 8px 0 24px 20px;
+    padding-left: 0;
+    list-style-type: disc;
+    color: #444;
+  
+    li {
+      margin-bottom: 6px;
+    }
+  }
+  
+  .full-width {
+    width: 100%;
+  }
+  
+  .reason-field {
+    margin-top: 16px;
+  
+    .mat-mdc-form-field-flex {
+      background-color: #fff8e1;
+    }
+  
+    .required {
+      color: #d32f2f;
+    }
+  }
+  
+  mat-dialog-actions {
+    margin-top: 24px;
+    padding: 8px 0 0;
+    gap: 12px;
+  }
+  
+  button {
+    min-width: 120px;
+  }
+  
+  .rotating {
+    animation: spin 1.4s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }

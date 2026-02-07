@@ -16,15 +16,8 @@
     </div>
     <form (ngSubmit)="onSearch()" class="search-form">
       <div class="search-input-group">
-        <input 
-          type="text" 
-          id="searchPatientID" 
-          [(ngModel)]="searchPatientID" 
-          name="searchPatientID" 
-          class="search-input" 
-          placeholder="Enter Patient ID"
-          [disabled]="isSearching"
-        >
+        <input type="text" id="searchPatientID" [(ngModel)]="searchPatientID" name="searchPatientID"
+          class="search-input" placeholder="Enter Patient ID" [disabled]="isSearching">
         <button type="submit" class="search-button" [disabled]="isSearching">
           <span *ngIf="!isSearching">Search</span>
           <span *ngIf="isSearching" class="loading-spinner">⏳ Searching...</span>
@@ -34,114 +27,283 @@
     </form>
   </div>
 
-  <!-- Medication Stock Status (only shown when searching) -->
-  <div class="stock-card" *ngIf="medicationDetailsWithStock.length > 0">
-    <div class="card-header">
-      <h2>📦 Medication Stock Status</h2>
-      <p>Mark medications that are available in stock</p>
-    </div>
-    <div class="medication-grid">
-      <div class="medication-card" *ngFor="let item of medicationDetailsWithStock; let i = index">
-        <label class="medication-label">
-          <input 
-            type="checkbox" 
-            [(ngModel)]="item.isInStock" 
-            class="stock-checkbox"
-          />
-          <div class="medication-content">
-            <span class="medication-name">{{ item.medication }}</span>
-            <span class="stock-badge" [class.in-stock]="item.isInStock" [class.out-of-stock]="!item.isInStock">
-              {{ item.isInStock ? '✓ In Stock' : '✗ Out of Stock' }}
-            </span>
-          </div>
-        </label>
-      </div>
-    </div>
-  </div>
-
   <!-- Prescriptions Section -->
   <ng-container *ngIf="showFormAndTable">
     <div class="prescriptions-section">
+      <div *ngIf="isRefreshingAfterAction" class="refreshing-overlay">
+        <mat-spinner diameter="40"></mat-spinner>
+        <span>Updating prescription list...</span>
+      </div>
       <div class="section-header">
         <h2>
           <span class="section-icon">📋</span>
           {{ isActivePrescriptions ? 'Active Prescriptions Queue' : 'Patient Prescriptions' }}
         </h2>
-        <div class="prescription-count" *ngIf="prescriptions.length > 0">
+        <div class="prescription-count" *ngIf="isActivePrescriptions && prescriptions.length > 0">
           {{ prescriptions.length }} {{ prescriptions.length === 1 ? 'prescription' : 'prescriptions' }}
         </div>
-      </div>
-
-      <!-- Empty State -->
-      <div class="empty-state" *ngIf="prescriptions.length === 0 && !isSearching">
-        <div class="empty-icon">📭</div>
-        <h3>No prescriptions found</h3>
-        <p *ngIf="isActivePrescriptions">There are no active prescriptions in the queue.</p>
-        <p *ngIf="!isActivePrescriptions">No prescriptions found for this patient.</p>
-      </div>
-
-      <!-- Prescriptions Grid -->
-      <div class="prescriptions-grid" *ngIf="prescriptions.length > 0">
-        <div 
-          class="prescription-card" 
-          *ngFor="let prescription of prescriptions"
-          [class.active]="prescription.Status === 'Active'"
-          (click)="onPrescriptionRowClick(prescription)"
-        >
-          <div class="prescription-header">
-            <div class="prescription-status-badge" [class]="'status-' + (prescription.Status || 'unknown').toLowerCase()">
-              {{ prescription.Status || 'Unknown' }}
-            </div>
-            <div class="prescription-date">
-              {{ prescription.PrescriptionDate | date:'MMM d, y' }}
-            </div>
-          </div>
-
-          <div class="prescription-body">
-            <div class="patient-info-row">
-              <div class="info-item">
-                <span class="info-label">Patient:</span>
-                <span class="info-value">{{ prescription.FullName }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Card #:</span>
-                <span class="info-value">{{ prescription.CardNumber }}</span>
-              </div>
-            </div>
-
-            <div class="prescriber-info">
-              <span class="info-label">Prescribed by:</span>
-              <span class="info-value">{{ prescription.PrescriberName }}</span>
-            </div>
-
-            <div class="pharmacist-info" *ngIf="prescription.PharmacistName && prescription.PharmacistName !== 'N/A'">
-              <span class="info-label">Dispensed by:</span>
-              <span class="info-value">{{ prescription.PharmacistName }}</span>
-            </div>
-          </div>
-
-          <div class="prescription-actions">
-            <button 
-              type="button" 
-              class="action-button view-button" 
-              (click)="viewPrescriptionDetails(prescription.prescriptionID, $event)"
-              title="View prescription details"
-            >
-              👁️ View Details
-            </button>
-            <button 
-              type="button" 
-              class="action-button dispense-button" 
-              (click)="onDispenseClick(prescription, $event)" 
-              *ngIf="prescription.Status === 'Active'"
-              [disabled]="!(getValidPrescriptionId(prescription) || prescription.PrescriptionNumber || prescription.prescriptionNumber || (prescription.CardNumber && (prescription.PrescriptionDate || prescription.prescriptionDate)))"
-              title="Dispense this prescription"
-            >
-              ✅ Dispense
-            </button>
-          </div>
+        <div class="prescription-count"
+          *ngIf="!isActivePrescriptions && (activePrescriptions.length + dispensedPrescriptions.length) > 0">
+          {{ activePrescriptions.length + dispensedPrescriptions.length }} {{ (activePrescriptions.length +
+          dispensedPrescriptions.length) === 1 ? 'prescription' : 'prescriptions' }}
         </div>
       </div>
+
+      <!-- Queue Mode (Active Prescriptions Only) -->
+      <ng-container *ngIf="isActivePrescriptions">
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="prescriptions.length === 0 && !isSearching">
+          <div class="empty-icon">📭</div>
+          <h3>No prescriptions found</h3>
+          <p>There are no active prescriptions in the queue.</p>
+        </div>
+
+        <!-- Prescriptions Grid -->
+        <div class="prescriptions-grid" *ngIf="prescriptions.length > 0">
+          <div class="prescription-card" *ngFor="let prescription of prescriptions"
+            [class.active]="prescription.Status === 'Active'">
+            <!-- (click)="onPrescriptionRowClick(prescription)" -->
+            <div class="prescription-header">
+              <div class="prescription-status-badge"
+                [class]="'status-' + (prescription.Status || 'unknown').toLowerCase()">
+                {{ prescription.Status || 'Unknown' }}
+              </div>
+              <div class="prescription-date">
+                {{ prescription.PrescriptionDate | date:'MMM d, y' }}
+              </div>
+            </div>
+
+            <div class="prescription-body">
+              <div class="patient-info-row">
+                <div class="info-item">
+                  <span class="info-label">Patient:</span>
+                  <span class="info-value">{{ prescription.FullName }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Card #:</span>
+                  <span class="info-value">{{ prescription.CardNumber }}</span>
+                </div>
+              </div>
+
+              <div class="prescriber-info">
+                <span class="info-label">Prescribed by:</span>
+                <span class="info-value">{{ prescription.PrescriberName }}</span>
+              </div>
+
+              <div class="pharmacist-info" *ngIf="prescription.PharmacistName && prescription.PharmacistName !== 'N/A'">
+                <span class="info-label">Dispensed by:</span>
+                <span class="info-value">{{ prescription.PharmacistName }}</span>
+              </div>
+            </div>
+
+            <div class="prescription-actions">
+              <button type="button" class="action-button view-button"
+                (click)="viewPrescriptionDetails(prescription.prescriptionID, $event)"
+                title="View prescription details">
+                👁️ View Details
+              </button>
+              <button type="button" class="action-button dispense-button"
+                (click)="onDispenseClick(prescription, $event)" *ngIf="prescription.Status === 'Active'"
+                [disabled]="!(getValidPrescriptionId(prescription) || prescription.PrescriptionNumber || prescription.prescriptionNumber || (prescription.CardNumber && (prescription.PrescriptionDate || prescription.prescriptionDate)))"
+                title="Dispense this prescription">
+                ✅ Dispense
+              </button>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Patient Mode (Tabs for Active and Dispensed) -->
+      <ng-container *ngIf="!isActivePrescriptions">
+        <mat-tab-group>
+          <mat-tab label="Active ({{activePrescriptions.length}})">
+            <!-- Medication Stock Status (only for active tab) -->
+            <div class="stock-card" *ngIf="medicationDetailsWithStock.length > 0">
+              <div class="card-header">
+                <h2>📦 Medication Stock Status</h2>
+                <p>Mark medications that are available in stock</p>
+              </div>
+              <div class="medication-grid">
+                <div class="medication-card" *ngFor="let item of medicationDetailsWithStock; let i = index">
+                  <label class="medication-label">
+                    <input type="checkbox" [(ngModel)]="item.isInStock" class="stock-checkbox" />
+                    <div class="medication-content">
+                      <span class="medication-name">{{ item.medication }}</span>
+                      <span class="stock-badge" [class.in-stock]="item.isInStock"
+                        [class.out-of-stock]="!item.isInStock">
+                        {{ item.isInStock ? '✓ In Stock' : '✗ Out of Stock' }}
+                      </span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" *ngIf="activePrescriptions.length === 0 && !isSearching">
+              <div class="empty-icon">📭</div>
+              <h3>No active prescriptions found</h3>
+              <p>There are no active prescriptions for this patient.</p>
+            </div>
+
+            <!-- Prescriptions Grid -->
+            <div class="prescriptions-grid" *ngIf="activePrescriptions.length > 0">
+              <div class="prescription-card" *ngFor="let prescription of activePrescriptions"
+                [class.active]="prescription.Status === 'Active'">
+                <div class="prescription-header">
+                  <div class="prescription-status-badge"
+                    [class]="'status-' + (prescription.Status || 'unknown').toLowerCase()">
+                    {{ prescription.Status || 'Unknown' }}
+                  </div>
+                  <div class="prescription-date">
+                    {{ prescription.PrescriptionDate | date:'MMM d, y' }}
+                  </div>
+                </div>
+
+                <div class="prescription-body">
+                  <div class="patient-info-row">
+                    <div class="info-item">
+                      <span class="info-label">Patient:</span>
+                      <span class="info-value">{{ prescription.FullName }}</span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">Card #:</span>
+                      <span class="info-value">{{ prescription.CardNumber }}</span>
+                    </div>
+                  </div>
+
+                  <div class="prescriber-info">
+                    <span class="info-label">Prescribed by:</span>
+                    <span class="info-value">{{ prescription.PrescriberName }}</span>
+                  </div>
+
+                  <div class="pharmacist-info"
+                    *ngIf="prescription.PharmacistName && prescription.PharmacistName !== 'N/A'">
+                    <span class="info-label">Dispensed by:</span>
+                    <span class="info-value">{{ prescription.PharmacistName }}</span>
+                  </div>
+                </div>
+
+                <div class="prescription-actions">
+                  <button type="button" class="action-button view-button"
+                    (click)="viewPrescriptionDetails(prescription.prescriptionID, $event)"
+                    title="View prescription details">
+                    👁️ View Details
+                  </button>
+                  <button type="button" class="action-button dispense-button"
+                    (click)="onDispenseClick(prescription, $event)" *ngIf="prescription.Status === 'Active'"
+                    [disabled]="!(getValidPrescriptionId(prescription) || prescription.PrescriptionNumber || prescription.prescriptionNumber || (prescription.CardNumber && (prescription.PrescriptionDate || prescription.prescriptionDate)))"
+                    title="Dispense this prescription">
+                    ✅ Dispense
+                  </button>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+
+          <mat-tab label="Dispensed ({{dispensedPrescriptions.length}})">
+            <!-- Empty State -->
+            <div class="empty-state" *ngIf="dispensedPrescriptions.length === 0 && !isSearching">
+              <div class="empty-icon">📭</div>
+              <h3>No dispensed prescriptions found</h3>
+              <p>There are no dispensed prescriptions for this patient.</p>
+            </div>
+
+            <!-- Prescriptions Grid -->
+            <div class="prescriptions-grid" *ngIf="dispensedPrescriptions.length > 0">
+              <div class="prescription-card" *ngFor="let prescription of dispensedPrescriptions"
+                [class.active]="prescription.Status === 'Active'">
+                <div class="prescription-header">
+                  <div class="prescription-status-badge"
+                    [class]="'status-' + (prescription.Status || 'unknown').toLowerCase()">
+                    {{ prescription.Status || 'Unknown' }}
+                  </div>
+                  <div class="prescription-date">
+                    {{ prescription.PrescriptionDate | date:'MMM d, y' }}
+                  </div>
+                </div>
+
+                <div class="prescription-body">
+                  <div class="patient-info-row">
+                    <div class="info-item">
+                      <span class="info-label">Patient:</span>
+                      <span class="info-value">{{ prescription.FullName }}</span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">Card #:</span>
+                      <span class="info-value">{{ prescription.CardNumber }}</span>
+                    </div>
+                  </div>
+
+                  <div class="prescriber-info">
+                    <span class="info-label">Prescribed by:</span>
+                    <span class="info-value">{{ prescription.PrescriberName }}</span>
+                  </div>
+
+                  <div class="pharmacist-info"
+                    *ngIf="prescription.PharmacistName && prescription.PharmacistName !== 'N/A'">
+                    <span class="info-label">Dispensed by:</span>
+                    <span class="info-value">{{ prescription.PharmacistName }}</span>
+                  </div>
+                </div>
+
+                <div class="prescription-actions">
+                  <button type="button" class="action-button view-button"
+                    (click)="viewPrescriptionDetails(prescription.prescriptionID, $event)"
+                    title="View prescription details">
+                    👁️ View Details
+                  </button>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+          <!-- Out of Stock Tab -->
+          <mat-tab label="Out of Stock ({{outOfStockPrescriptions.length}})">
+            <div class="empty-state" *ngIf="outOfStockPrescriptions.length === 0">
+              <div class="empty-icon">✅</div>
+              <h3>All medications are in stock!</h3>
+              <p>No out-of-stock prescriptions.</p>
+            </div>
+
+            <div class="prescriptions-grid" *ngIf="outOfStockPrescriptions.length > 0">
+              <div class="prescription-card out-of-stock" *ngFor="let prescription of outOfStockPrescriptions">
+                <div class="prescription-header">
+                  <div class="prescription-status-badge status-outofstock">Out of Stock</div>
+                  <div class="prescription-date">
+                    {{ prescription.PrescriptionDate | date:'MMM d, y' }}
+                  </div>
+                </div>
+                <div class="prescription-body">
+                  <div class="patient-info-row">
+                    <div class="info-item">
+                      <span class="info-label">Patient:</span>
+                      <span class="info-value">{{ prescription.FullName }}</span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">Card #:</span>
+                      <span class="info-value">{{ prescription.CardNumber }}</span>
+                    </div>
+                  </div>
+                  <div class="out-of-stock-items">
+                    <strong>Missing Items:</strong>
+                    <ul>
+                      <li *ngFor="let item of getOutOfStockItems(prescription.prescriptionID)">
+                        {{ item }}
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="prescription-actions">
+                  <button class="action-button view-button"
+                    (click)="viewPrescriptionDetails(prescription.prescriptionID, $event)">
+                    👁️ View
+                  </button>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+        </mat-tab-group>
+      </ng-container>
     </div>
   </ng-container>
 

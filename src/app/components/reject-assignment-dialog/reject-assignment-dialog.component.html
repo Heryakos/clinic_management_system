@@ -1,0 +1,52 @@
+<h2 mat-dialog-title>Reject Wrong Assignment</h2>
+
+<mat-dialog-content class="dialog-content">
+  <div class="patient-info">
+    <strong>Patient:</strong> {{ data.patientName }} 
+    <span class="card-number">({{ data.cardNumber }})</span>
+  </div>
+
+  <p class="warning-text">
+    This action will mark the assignment as <strong>rejected</strong>.<br>
+    Use this only if:
+  </p>
+
+  <ul class="reasons-list">
+    <li>The patient was assigned to you by mistake</li>
+    <li>The patient never came to your examination room</li>
+  </ul>
+
+  <mat-form-field appearance="outline" class="full-width reason-field">
+    <mat-label>Reason / Comment <span class="required">*</span></mat-label>
+    <textarea 
+      matInput 
+      [(ngModel)]="reason" 
+      rows="4" 
+      placeholder="e.g., Patient assigned to wrong doctor, never showed up"
+      required
+      cdkTextareaAutosize
+      #autosize="cdkTextareaAutosize"
+      cdkAutosizeMinRows="3"
+      cdkAutosizeMaxRows="6">
+    </textarea>
+    <mat-error *ngIf="!reason.trim()">Please provide a reason</mat-error>
+  </mat-form-field>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button 
+    mat-button 
+    (click)="cancel()"
+    [disabled]="isSubmitting">
+    Cancel
+  </button>
+
+  <button 
+    mat-raised-button 
+    color="warn"
+    [disabled]="!reason.trim() || isSubmitting"
+    (click)="confirm()">
+    <mat-icon *ngIf="isSubmitting" class="rotating">loop</mat-icon>
+    {{ isSubmitting ? 'Rejecting...' : 'Reject Assignment' }}
+  </button>
+</mat-dialog-actions>

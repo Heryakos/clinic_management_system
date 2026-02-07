@@ -17,30 +17,88 @@
     </form>
   </div>
 
-  <div class="active-patients-section" *ngIf="!isSearchMode && activePatients.length > 0">
+  <div class="active-patients-section"
+    *ngIf="!isSearchMode && (currentActivePatients.length > 0 || historyPatients.length > 0)">
     <h3>Active Patients</h3>
+
+    <!-- Tabs for current vs history (finished sick leave) -->
+    <div class="tabs">
+      <button type="button" class="tab-button" [class.active]="selectedPatientsTab === 'current'"
+        (click)="selectedPatientsTab = 'current'; activePatients = currentActivePatients">
+        Current
+      </button>
+      <button type="button" class="tab-button" [class.active]="selectedPatientsTab === 'history'"
+        (click)="selectedPatientsTab = 'history'; activePatients = historyPatients">
+        Finished Sick Leave
+      </button>
+    </div>
+
     <div class="table-container">
       <table class="active-patients-table">
         <thead>
           <tr>
-            <th>Patient ID</th>
+            <!-- <th>Patient ID</th> -->
             <th>Card Number</th>
             <th>Full Name</th>
             <th>Age</th>
             <th>Gender</th>
             <th>Last Visit</th>
-            <th>Registration Date</th>
+            <th>Request Type</th>
+            <th>Status / Notice</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let patient of activePatients" (click)="onPatientRowClick(patient)" class="clickable-row">
-            <td>{{ patient.PatientID }}</td>
+            <!-- <td>{{ patient.PatientID }}</td> -->
             <td>{{ patient.CardNumber }}</td>
             <td>{{ patient.FullName }}</td>
             <td>{{ patient.Age }}</td>
             <td>{{ patient.gender }}</td>
             <td>{{ patient.LastVisitDate | date:'medium' }}</td>
-            <td>{{ patient.RegistrationDate | date:'medium' }}</td>
+            <td class="request-type-cell">
+              <div class="request-type-badge" [ngClass]="{
+                     'emergency': $any(patient).RequestType === 'Emergency',
+                     'follow-up': $any(patient).RequestType === 'Follow_Up',
+                     'examination': $any(patient).RequestType === 'Examination'
+                   }">
+                <mat-icon *ngIf="$any(patient).RequestType === 'Emergency'" class="emergency-icon">warning</mat-icon>
+                {{ $any(patient).RequestType || '—' }}
+              </div>
+
+              <!-- Optional: show when the request was made -->
+              <div class="request-date small">
+                {{ $any(patient).RequestDate | date:'short' }}
+              </div>
+            </td>
+            <td class="status-notice-cell">
+              <ng-container *ngIf="$any(patient).is_sick_leave_currently === 1; else regularPatient">
+                <span class="status-tag sick-leave">
+                  <mat-icon>local_hospital</mat-icon>
+                  On Sick Leave
+                  <small *ngIf="$any(patient).EndDate">
+                    until {{ $any(patient).EndDate | date:'mediumDate' }}
+                  </small>
+                </span>
+                <div *ngIf="$any(patient).RequestStatus !== 'Finished'" class="secondary-notice">
+                  Fit-to-work certificate pending
+                </div>
+              </ng-container>
+
+              <ng-template #regularPatient>
+                <span class="status-tag regular">
+                  Regular Visit
+                </span>
+              </ng-template>
+            </td>
+            <td class="action-cell">
+              <button type="button" mat-icon-button color="warn"
+                matTooltip="Reject wrong assignment (patient didn't come)"
+                (click)="openRejectAssignmentDialog(patient); $event.stopPropagation()" [disabled]="isRejecting">
+                <mat-icon *ngIf="!isRejecting">block</mat-icon>
+                <mat-icon *ngIf="isRejecting" class="rotating">loop</mat-icon>
+              </button>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -48,7 +106,8 @@
   </div>
 
   <!-- No Active Patients Message -->
-  <div class="no-results" *ngIf="!isSearchMode && !searched && activePatients.length === 0 && !isSearching">
+  <div class="no-results"
+    *ngIf="!isSearchMode && !searched && currentActivePatients.length === 0 && historyPatients.length === 0 && !isSearching">
     No active patients found.
   </div>
 
@@ -112,9 +171,9 @@
                 <div class="history-header" (click)="toggleHistory(i)">
                   <div class="header-left">
                     <strong>{{ history.CreatedDate | date:'medium' }}</strong>
-                    <span class="doctor">by Dr. {{ history.DoctorName || 'Unknown Doctor' }}</span>
-                    <span class="age-gender">Age: {{ history.Age }} • {{ history.Gender === 'M' ? 'Male' : 'Female'
-                      }}</span>
+                    <span class="doctor">by{{ history.DoctorName || 'Unknown Doctor' }}</span>
+                    <!-- <span class="age-gender">Age: {{ history.Age }} • {{ history.Gender === 'M' ? 'Male' : 'Female'
+                      }}</span> -->
                   </div>
                   <span class="toggle-icon">{{ showHistoryIndex === i ? 'Hide' : 'Show' }}</span>
                 </div>
@@ -261,7 +320,7 @@
 
       <!-- Laboratory Tests Tab -->
       <div *ngIf="selectedTab === 'laboratory-tests'">
-        <!-- Laboratory Test Request Form -->
+        <!-- Laboratory Test Request Form (unchanged) -->
         <div class="lab-request-form">
           <h3>Request Laboratory Test</h3>
           <form [formGroup]="labRequestForm" (ngSubmit)="onLabRequestSubmit()" class="lab-form">
@@ -277,12 +336,11 @@
               </div>
               <div class="form-group">
                 <label for="testCategory">Test Category:</label>
-                <select id="testCategory" formControlName="testCategory" class="form-control">
-                  <option value="Chemistry">Chemistry</option>
-                  <option value="Bacteriology">Bacteriology</option>
-                  <option value="Fluid_Analysis">Fluid Analysis</option>
-                  <option value="Hematology">Hematology</option>
-                  <option value="Serology">Serology</option>
+                <select id="testCategory" formControlName="testCategory" class="form-control"
+                  (change)="onTestCategoryChange()">
+                  <option *ngFor="let cat of objectKeys(dynamicTestCategories)" [value]="cat">
+                    {{ formatCategoryName(cat) }}
+                  </option>
                 </select>
               </div>
             </div>
@@ -309,6 +367,22 @@
                   {{ test.name }}
                 </label>
               </div>
+              <div *ngIf="filteredTests && filteredTests.length > 0" class="test-checkboxes">
+                <!-- Select All Checkbox (only for specific categories) -->
+                <div class="select-all-container" *ngIf="showSelectAll">
+                  <label class="select-all-label">
+                    <input type="checkbox" [checked]="selectAllChecked" (change)="onSelectAllChange($event)" />
+                    <strong>Select All Main Tests</strong>
+                  </label>
+                </div>
+
+                <!-- Individual Tests -->
+                <label *ngFor="let test of filteredTests; let idx = index" class="test-checkbox-item">
+                  <input type="checkbox" [checked]="isTestSelected(test.name)"
+                    (change)="onTestCheckboxChange($event, test)" />
+                  {{ test.name }}
+                </label>
+              </div>
               <div formArrayName="tests">
                 <div *ngFor="let test of testsFormArray.controls; let i = index" [formGroupName]="i" class="test-item">
                   <div class="form-group">
@@ -329,9 +403,26 @@
           </form>
         </div>
 
-        <!-- Laboratory Tests List -->
+        <!-- Laboratory Tests List with Tabs -->
         <div class="tests-list">
           <h3>Patient Laboratory Tests</h3>
+
+          <!-- Tabs: Ordered/Pending vs Completed -->
+          <div class="tabs">
+            <button type="button" class="tab-button" [class.active]="selectedLabTab === 'ordered'"
+              (click)="onLabTabChange('ordered')">
+              Ordered / Pending
+              <span class="badge" *ngIf="pendingLabCount > 0">
+                {{ pendingLabCount }}
+              </span>
+            </button>
+            <button type="button" class="tab-button" [class.active]="selectedLabTab === 'completed'"
+              (click)="onLabTabChange('completed')">
+              Completed
+            </button>
+          </div>
+
+          <!-- Tests Table -->
           <div class="table-container">
             <table class="tests-table">
               <thead>
@@ -342,32 +433,40 @@
                   <th>Priority</th>
                   <th>Status</th>
                   <th>Physician</th>
-                  <!-- <th>Technician</th> -->
                   <th>Reported By</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let test of laboratoryTests">
+                <tr *ngFor="let test of filteredLaboratoryTests">
                   <td>{{ test.testNumber }}</td>
                   <td>{{ test.testCategory }}</td>
                   <td>{{ test.testDate | date:'short' }}</td>
                   <td>{{ test.priority }}</td>
-                  <td>{{ test.status }}</td>
+                  <td>
+                    <span [class]="'status-' + (test.status | lowercase)">
+                      {{ test.status }}
+                    </span>
+                  </td>
                   <td>{{ test.orderingPhysicianName }}</td>
-                  <!-- <td>{{ test.technicianName || 'N/A' }}</td> -->
                   <td>{{ test.reportedByName || 'N/A' }}</td>
                   <td>
-                    <button type="button" class="action-btn view" (click)="viewTestDetails(test.testID)">View
-                      Results</button>
+                    <button type="button" class="action-btn view" (click)="viewTestDetails(test.testID)">
+                      View Results
+                    </button>
                   </td>
                 </tr>
               </tbody>
             </table>
+
+            <!-- Empty State -->
+            <div class="no-results" *ngIf="filteredLaboratoryTests.length === 0">
+              No {{ selectedLabTab === 'ordered' ? 'ordered/pending' : 'completed' }} tests found.
+            </div>
           </div>
         </div>
 
-        <!-- Laboratory Report Dialog - Replace the inline dialog with this -->
+        <!-- Laboratory Report Dialog -->
         <app-laboratory-report-dialog [showDialog]="showTestDetailsDialog" [testNumber]="selectedTestNumber"
           [testData]="selectedTestData" [testDetails]="selectedTestDetails" (close)="closeTestDetailsDialog()">
         </app-laboratory-report-dialog>
@@ -375,7 +474,7 @@
 
       <!-- Prescriptions Tab -->
       <div *ngIf="selectedTab === 'prescriptions'">
-        <!-- Prescription Request Form -->
+        <!-- Prescription Request Form (unchanged) -->
         <div class="prescription-request-form">
           <h3>Request Prescription</h3>
           <form [formGroup]="prescriptionForm" (ngSubmit)="onPrescriptionSubmit()" class="prescription-form">
@@ -402,11 +501,13 @@
                   <div class="form-row">
                     <div class="form-group">
                       <label for="medicationID-{{i}}">Medication:</label>
-                      <app-medication-tree-dropdown [medications]="categorizedMedications"
-                        [placeholder]="'Select medication'" [formControlName]="'medicationID'"
-                        (selectionChange)="onMedicationSelection($event, i)"
-                        [error]="medication.get('medicationID')?.invalid && medication.get('medicationID')?.touched ? 'Medication is required' : ''">
-                      </app-medication-tree-dropdown>
+                      <div style="position: relative; z-index: 10000;">
+                        <app-medication-tree-dropdown [medications]="categorizedMedications"
+                          [placeholder]="'Select medication'" [formControlName]="'medicationID'"
+                          (selectionChange)="onMedicationSelection($event, i)"
+                          [error]="medication.get('medicationID')?.invalid && medication.get('medicationID')?.touched ? 'Medication is required' : ''">
+                        </app-medication-tree-dropdown>
+                      </div>
                       <div class="error-message"
                         *ngIf="medication.get('medicationID')?.invalid && medication.get('medicationID')?.touched">
                       </div>
@@ -457,19 +558,6 @@
                         Valid quantity is required
                       </div>
                     </div>
-                    <!-- <div class="form-group">
-                <label for="unitPrice-{{i}}">Unit Price (ETB):</label>
-                <input 
-                  type="number" 
-                  step="0.01" 
-                  id="unitPrice-{{i}}" 
-                  formControlName="unitPrice"
-                  class="form-control"
-                  placeholder="Enter unit price">
-                <div class="error-message" *ngIf="medication.get('unitPrice')?.invalid && medication.get('unitPrice')?.touched">
-                  Valid unit price is required
-                </div>
-              </div> -->
                   </div>
                   <div class="form-group">
                     <label for="instructions-{{i}}">Instructions:</label>
@@ -487,12 +575,28 @@
           </form>
         </div>
 
-        <!-- Prescriptions List -->
+        <!-- Prescriptions List with Tabs -->
         <div class="prescriptions-list">
           <h3>Patient Prescriptions</h3>
 
-          <!-- Show table only if prescriptions exist -->
-          <div class="table-container" *ngIf="prescriptions && prescriptions.length > 0; else noPrescriptions">
+          <!-- Tabs: Active vs Dispensed -->
+          <div class="tabs">
+            <button type="button" class="tab-button" [class.active]="selectedPharmacyTab === 'active'"
+              (click)="onPharmacyTabChange('active')">
+              Active
+              <span class="badge" *ngIf="activePrescriptionCount > 0">
+                {{ activePrescriptionCount }}
+              </span>
+            </button>
+            <button type="button" class="tab-button" [class.active]="selectedPharmacyTab === 'dispensed'"
+              (click)="onPharmacyTabChange('dispensed')">
+              Dispensed
+            </button>
+          </div>
+
+          <!-- Table -->
+          <div class="table-container"
+            *ngIf="filteredPrescriptions && filteredPrescriptions.length > 0; else noPrescriptions">
             <table class="prescriptions-table">
               <thead>
                 <tr>
@@ -506,21 +610,20 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let prescription of prescriptions">
-                  <td><strong>{{ prescription.PrescriptionNumber || prescription.prescriptionNumber }}</strong></td>
-                  <td>{{ (prescription.PrescriptionDate || prescription.prescriptionDate) | date:'mediumDate' }}</td>
-                  <td>{{ (prescription.TotalAmount || prescription.totalAmount || 0) | currency:'ETB':'symbol':'1.2-2'
-                    }}</td>
+                <tr *ngFor="let prescription of filteredPrescriptions">
+                  <td><strong>{{ prescription.prescriptionNumber }}</strong></td>
+                  <td>{{ prescription.prescriptionDate | date:'mediumDate' }}</td>
+                  <td>{{ (prescription.totalAmount || 0) | currency:'ETB':'symbol':'1.2-2' }}</td>
                   <td>
-                    <span [class]="'status-' + (prescription.Status || prescription.status | lowercase)">
-                      {{ prescription.Status || prescription.status }}
+                    <span [class]="'status-' + (prescription.status | lowercase)">
+                      {{ prescription.status }}
                     </span>
                   </td>
-                  <td>{{ prescription.PrescriberName || prescription.prescriberName }}</td>
-                  <td>{{ (prescription.PharmacistName || prescription.pharmacistName) || 'Not Dispensed' }}</td>
+                  <td>{{ prescription.prescriberName }}</td>
+                  <td>{{ prescription.pharmacistName || 'Not Dispensed' }}</td>
                   <td>
                     <button type="button" class="action-btn view"
-                      (click)="viewPrescriptionDetails(prescription.PrescriptionID || prescription.prescriptionID)">
+                      (click)="viewPrescriptionDetails(prescription.prescriptionID)">
                       View Details
                     </button>
                   </td>
@@ -532,7 +635,7 @@
           <!-- No prescriptions message -->
           <ng-template #noPrescriptions>
             <div class="empty-state">
-              <p>No prescriptions found for this patient.</p>
+              <p>No {{ selectedPharmacyTab === 'active' ? 'active' : 'dispensed' }} prescriptions found.</p>
             </div>
           </ng-template>
 
@@ -542,13 +645,11 @@
           </app-prescription-paper>
         </div>
 
+        <!-- Legacy dialog (keep if needed) -->
         <div class="prescription-details-dialog" *ngIf="showPrescriptionDetailsDialog">
           <div class="dialog-backdrop" (click)="closePrescriptionDetailsDialog()"></div>
           <div class="dialog-content">
-            <!-- <h3>Prescription Details for #{{ selectedPrescriptionNumber }}</h3> -->
-            <!-- <app-prescription-paper [prescriptionData]="selectedPrescriptionDetails[0]"></app-prescription-paper> -->
             <app-prescription-paper [cardNumber]="cardNumber"></app-prescription-paper>
-
             <button type="button" class="close-btn" (click)="closePrescriptionDetailsDialog()">Close</button>
           </div>
         </div>

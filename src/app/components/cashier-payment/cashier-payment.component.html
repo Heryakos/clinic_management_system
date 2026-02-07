@@ -120,7 +120,14 @@
               <td>{{ approval.PreparedBy }}</td>
               <td>{{ approval.CheckedBy }}</td>
               <td>{{ approval.PreparedDate | date: 'short' }}</td>
-              <td>
+              <td class="actions-column">
+                <!-- View Documents button -->
+                <button type="button" class="action-btn view-docs"
+                  (click)="openDocumentsModal(approval.ReimbursementID)">
+                  View Documents
+                </button>
+
+                <!-- Existing Pay button (if you have one per row) -->
                 <button type="button" class="action-btn pay" (click)="openIndividualPaymentDialog(approval)">
                   Pay
                 </button>
@@ -178,11 +185,13 @@
               <th>Payment Date</th>
               <th>Method</th>
               <th>Reference</th>
+              <th>Pv Number</th>
+              <th>Edit Pv</th> <!-- new column -->
               <th>Status</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let payment of paymentHistory; trackBy: trackByPayment">
+            <tr *ngFor="let payment of paymentHistory; let i = index">
               <td>{{ payment.PaymentID }}</td>
               <td>{{ payment.ReimbursementNumber }}</td>
               <td>{{ payment.PatientName }}</td>
@@ -193,6 +202,28 @@
               <td>{{ payment.PaymentDate | date: 'short' }}</td>
               <td>{{ payment.PaymentMethod }}</td>
               <td>{{ payment.ReferenceNumber || 'N/A' }}</td>
+
+              <!-- Pv Number with inline edit -->
+              <td>
+                <span *ngIf="!payment.isEditing">{{ payment.pvNumber || 'N/A' }}</span>
+                <input *ngIf="payment.isEditing" [(ngModel)]="payment.editPvNumber" class="form-control" />
+              </td>
+
+              <!-- Edit / Save / Cancel buttons -->
+              <td>
+                <button type="button" *ngIf="!payment.isEditing" class="btn btn-sm btn-warning" (click)="startEditPv(payment)">
+                  ✏️ Edit
+                </button>
+                <ng-container *ngIf="payment.isEditing">
+                  <button type="button" class="btn btn-sm btn-success me-1" (click)="savePvNumber(payment, i)">
+                    Save
+                  </button>
+                  <button type="button" class="btn btn-sm btn-secondary" (click)="cancelEditPv(payment)">
+                    Cancel
+                  </button>
+                </ng-container>
+              </td>
+
               <td>
                 <span class="status-badge" [ngClass]="payment.Status.toLowerCase()">
                   {{ payment.Status }}
@@ -247,6 +278,22 @@
               <label>Checked By:</label>
               <span>{{ selectedApproval?.CheckedBy || 'N/A' }}</span>
             </div>
+            <div class="info-item">
+              <label>Age:</label>
+              <span>{{ selectedApproval?.age || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Gender:</label>
+              <span>{{ selectedApproval?.gender || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Bank Account No:</label>
+              <span>{{ selectedApproval?.bankAccountNo || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Organization:</label>
+              <span>{{ selectedApproval?.nameEn || 'N/A' }}</span>
+            </div>
           </div>
         </div>
 
@@ -255,7 +302,7 @@
           <div class="form-group">
             <label for="paymentAmount">Payment Amount *</label>
             <input type="number" id="paymentAmount" [(ngModel)]="individualPaymentAmount" step="0.01" min="0"
-              class="form-control" required />
+              class="form-control" required readonly />
             <small class="info-text" *ngIf="individualPaymentAmount > 3000">
               Check required for payments over 3,000 ETB
             </small>
@@ -263,17 +310,24 @@
           <div class="form-group">
             <label for="paidBy">Paid By *</label>
             <input type="text" id="paidBy" [(ngModel)]="individualPaidBy" class="form-control"
-              placeholder="Enter cashier name" required />
+              placeholder="Enter cashier name" required readonly />
           </div>
           <div class="form-group">
             <label for="paymentMethod">Payment Method *</label>
             <select id="paymentMethod" [(ngModel)]="individualPaymentMethod" class="form-control" required
               (change)="onPaymentMethodChange('individual')">
-              <option *ngFor="let method of getAllowedPaymentMethods(individualPaymentAmount)" [value]="method.value">
+              <option value="Bank Transfer">Bank Transfer</option>
+              <!-- <option *ngFor="let method of getAllowedPaymentMethods(individualPaymentAmount)" [value]="method.value">
                 {{ method.label }}
-              </option>
+              </option> -->
             </select>
           </div>
+          <div class="form-group">
+            <label for="pvNumber">Payment Voucher Number (Pv. No) *</label>
+            <input type="text" id="pvNumber" [(ngModel)]="individualPvNumber" class="form-control" required
+              placeholder="e.g. PV-2026-00123" />
+          </div>
+
 
           <!-- Cash Payment Specific Fields -->
           <div class="cash-payment-section" *ngIf="individualPaymentMethod === 'Cash'">
@@ -286,7 +340,7 @@
               <label for="amountTendered">Amount Tendered *</label>
               <input type="number" id="amountTendered" [(ngModel)]="individualAmountTendered"
                 (input)="calculateIndividualChange()" step="0.01" min="0" class="form-control"
-                [class.insufficient]="individualAmountTendered < individualPaymentAmount" required />
+                [class.insufficient]="individualAmountTendered < individualPaymentAmount" required readonly />
               <div class="validation-message" *ngIf="individualAmountTendered < individualPaymentAmount">
                 ⚠️ Amount tendered is less than payment amount
               </div>
@@ -602,6 +656,28 @@
         <button type="button" class="action-btn cancel" (click)="closeVoucherForm()">Close</button>
         <button type="button" class="action-btn save" (click)="saveAsPDF('check')">Save as PDF</button>
         <button type="button" class="action-btn confirm" (click)="printVoucherForm('check')">Print Voucher</button>
+      </div>
+    </div>
+  </div>
+  <!-- Documents Modal -->
+  <div class="modal" *ngIf="showDocumentsModal">
+    <div class="modal-backdrop" (click)="closeDocumentsModal()"></div>
+    <div class="modal-content large-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Reimbursement Documents</h3>
+        <button type="button" class="close-btn" (click)="closeDocumentsModal()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <app-reimbursement-documents-viewer [reimbursementId]="currentViewedReimbursementId"
+          title="Documents for Reimbursement #{{ currentViewedReimbursementNumber }}">
+        </app-reimbursement-documents-viewer>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="action-btn cancel" (click)="closeDocumentsModal()">
+          Close
+        </button>
       </div>
     </div>
   </div>

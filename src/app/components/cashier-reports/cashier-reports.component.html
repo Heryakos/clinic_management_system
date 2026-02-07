@@ -97,58 +97,110 @@
                     <div id="methodChart" class="chart"></div>
                 </div>
             </div>
-        </div>
+            <!-- Age Group Chart -->
+            <div class="chart-container">
+                <div class="chart-title">{{ getText('ageGroupBreakdown') }}</div>
+                <div id="ageChart" class="chart"></div>
+            </div>
 
-        <!-- Data Tables -->
-        <div class="data-tables">
-            <!-- Department Breakdown Table -->
+            <!-- Gender Chart -->
+            <div class="chart-container">
+                <div class="chart-title">{{ getText('genderBreakdown') }}</div>
+                <div id="genderChart" class="chart"></div>
+            </div>
+            <!-- Detailed Payments Table -->
             <div class="data-table">
-                <h3>{{ getText('departmentBreakdown') }}</h3>
+                <h3>{{ reportLang === 'am' ? 'ዝርዝር ክፍያዎች' : 'Detailed Payments' }}</h3>
                 <div class="table-container">
                     <table class="report-table">
                         <thead>
                             <tr>
-                                <th>{{ getText('department') }}</th>
-                                <th>{{ getText('count') }}</th>
-                                <th>{{ getText('amount') }}</th>
-                                <th>Percentage</th>
+                                <th>{{ reportLang === 'am' ? 'የPv ቁጥር' : 'Pv Number' }}</th>
+                                <th>{{ reportLang === 'am' ? 'የተከፈለለት ስም (እንግሊዝኛ)' : 'Payee Name (En)' }}</th>
+                                <th>{{ reportLang === 'am' ? 'የባንክ መለያ ቁጥር' : 'Bank Account No' }}</th>
+                                <th>{{ reportLang === 'am' ? 'መጠን' : 'Amount' }}</th>
+                                <th>{{ reportLang === 'am' ? 'የክፍያ ቀን' : 'Payment Date' }}</th>
+                                <th>{{ reportLang === 'am' ? 'ታካሚ ስም' : 'Patient Name' }}</th>
+                                <th>{{ reportLang === 'am' ? 'የክፍያ ቁጥር' : 'Reimbursement No' }}</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr *ngFor="let dept of departmentBreakdown">
-                                <td>{{ dept.department }}</td>
-                                <td>{{ dept.count }}</td>
-                                <td>{{ formatCurrency(dept.amount) }}</td>
-                                <td>{{ getPercentage(dept.amount, paymentSummary.totalAmount) }}%</td>
+                            <tr *ngFor="let p of detailedPayments">
+                                <td>{{ p.pvNumber || 'N/A' }}</td>
+                                <td>{{ p.payeeNameEn || 'N/A' }}</td>
+                                <td>{{ p.payeeBankAccountNo || 'N/A' }}</td>
+                                <td>{{ formatCurrency(p.paymentAmount) }}</td>
+                                <td>{{ p.paymentDate | date: 'shortDate' }}</td>
+                                <td>{{ p.patientName || 'N/A' }}</td>
+                                <td>{{ p.reimbursementNumber || 'N/A' }}</td>
+                            </tr>
+                            <tr *ngIf="detailedPayments.length === 0">
+                                <td colspan="7" class="no-data">
+                                    {{ reportLang === 'am' ? 'ዳታ የለም' : 'No payments found' }}
+                                </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
+        </div>
 
-            <!-- Payment Method Table -->
-            <div class="data-table">
-                <h3>{{ getText('methods') }}</h3>
-                <div class="table-container">
-                    <table class="report-table">
-                        <thead>
-                            <tr>
-                                <th>{{ getText('paymentMethod') }}</th>
-                                <th>{{ getText('count') }}</th>
-                                <th>{{ getText('amount') }}</th>
-                                <th>Percentage</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr *ngFor="let method of paymentMethodStats">
-                                <td>{{ method.method === 'Cash' ? getText('cash') : getText('check') }}</td>
-                                <td>{{ method.count }}</td>
-                                <td>{{ formatCurrency(method.amount) }}</td>
-                                <td>{{ getPercentage(method.amount, paymentSummary.totalAmount) }}%</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+        <!-- Data Tables -->
+        <!-- Age Group Table -->
+        <div class="data-table">
+            <h3>{{ getText('ageGroupBreakdown') }}</h3>
+            <div class="table-container">
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>{{ getText('ageGroup') }}</th>
+                            <th>{{ getText('count') }}</th>
+                            <th>{{ getText('amount') }}</th>
+                            <th>Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let group of ageGroupBreakdown">
+                            <td>{{ group.ageGroup }}</td>
+                            <td>{{ group.count }}</td>
+                            <td>{{ formatCurrency(group.amount) }}</td>
+                            <td>{{ getPercentage(group.amount, paymentSummary.totalAmount) }}%</td>
+                        </tr>
+                        <tr *ngIf="ageGroupBreakdown.length === 0">
+                            <td colspan="4" class="no-data">{{ reportLang === 'am' ? 'ዳታ የለም' : 'No data available' }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Gender Table -->
+        <div class="data-table">
+            <h3>{{ getText('genderBreakdown') }}</h3>
+            <div class="table-container">
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>{{ getText('gender') }}</th>
+                            <th>{{ getText('count') }}</th>
+                            <th>{{ getText('amount') }}</th>
+                            <th>Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let g of genderBreakdown">
+                            <td>{{ g.gender }}</td>
+                            <td>{{ g.count }}</td>
+                            <td>{{ formatCurrency(g.amount) }}</td>
+                            <td>{{ getPercentage(g.amount, paymentSummary.totalAmount) }}%</td>
+                        </tr>
+                        <tr *ngIf="genderBreakdown.length === 0">
+                            <td colspan="4" class="no-data">{{ reportLang === 'am' ? 'ዳታ የለም' : 'No data available' }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

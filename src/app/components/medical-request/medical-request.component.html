@@ -57,7 +57,7 @@
           placeholder="Select preferred time" [class.disabled-field]="hasPendingOrApprovedRequest">
         <div class="error-message"
           *ngIf="medicalRequestForm.get('preferredTime')?.hasError('invalidTime') && medicalRequestForm.get('preferredTime')?.touched">
-          Preferred time must be between 8:00 AM and 6:30 PM
+          Preferred time must be between 2:00 and 12:30 (Ethiopian time)
         </div>
         <div class="error-message"
           *ngIf="medicalRequestForm.get('preferredTime')?.hasError('required') && medicalRequestForm.get('preferredTime')?.touched">
@@ -88,7 +88,7 @@
       <h3>Request Messages</h3>
       <div class="messages-list">
         <div *ngFor="let request of medicalRequests" class="message-item">
-          <p><strong>Request ID:</strong> {{ request.requestID }}</p>
+          <!-- <p><strong>Request ID:</strong> {{ request.requestID }}</p> -->
           <p><strong>Employee:</strong> {{ request.employeeName }}</p>
           <p><strong>Status:</strong> 
             <span [class]="'status-badge ' + request.status.toLowerCase()">
@@ -99,7 +99,7 @@
           <p *ngIf="request.approvedByName"><strong>Approved By:</strong> {{ request.approvedByName }}</p>
           <p><strong>Request Date:</strong> {{ request.requestDate | date:'short' }}</p>
           <p><strong>Preferred Date:</strong> {{ displayECDate(request.preferredDate) }}</p>
-          <p><strong>Preferred Time:</strong> {{ request.preferredTime }}</p>
+          <p><strong>Preferred Time:</strong> {{ request.preferredTime | ethiopianTime }}</p>
         </div>
       </div>
       <button type="button" class="close-btn" (click)="closeMessages()">Close</button>

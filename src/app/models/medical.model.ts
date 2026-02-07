@@ -138,6 +138,9 @@ export interface PatientSummary {
   RoomNumber?:string;
   StaffUserID?:string;
   IsActive?: boolean;
+  RoleName?: string;
+  DoctorID?: string;
+  DoctorName?: string;
 
 
 }
@@ -159,7 +162,8 @@ export interface LaboratoryTest {
   }[];
   reportedBy: string;
   reportDate: Date;
-  reportedByName:string
+  reportedByName:string;
+  status: string;
 }
 
 export interface Prescription {

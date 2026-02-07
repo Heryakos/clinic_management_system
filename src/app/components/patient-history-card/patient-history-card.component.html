@@ -45,8 +45,26 @@
   </div>
 
   <!-- Initial Table Grid (Shown by Default) -->
-  <div class="active-patients-section" *ngIf="!isSearchMode && activePatients.length > 0">
+  <div class="active-patients-section" *ngIf="!isSearchMode && (currentActivePatients.length > 0 || historyPatients.length > 0)">
     <h3>Active Patients</h3>
+
+    <!-- Tabs for current vs history (finished sick leave) -->
+    <div class="tabs">
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active-tab]="selectedTab === 'current'"
+        (click)="selectedTab = 'current'; activePatients = currentActivePatients">
+        Current
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active-tab]="selectedTab === 'history'"
+        (click)="selectedTab = 'history'; activePatients = historyPatients">
+        Finished Sick Leave
+      </button>
+    </div>
     <div class="table-container">
       <table class="active-patients-table">
         <thead>
@@ -76,7 +94,7 @@
   </div>
 
   <!-- No Active Patients Message -->
-  <div class="no-results" *ngIf="!isSearchMode && activePatients.length === 0 && !isSearching">
+  <div class="no-results" *ngIf="!isSearchMode && currentActivePatients.length === 0 && historyPatients.length === 0 && !isSearching">
     No active patients found.
   </div>
 
@@ -157,6 +175,24 @@
 
     <div class="patient-history-section" *ngIf="patientHistory.length > 0">
       <h3>Patient History</h3>
+
+      <!-- Tabs for current vs completed assignments -->
+      <div class="tabs history-tabs">
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active-tab]="selectedHistoryTab === 'current'">
+          Current
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active-tab]="selectedHistoryTab === 'completed'"
+          (click)="selectedHistoryTab = 'completed'">
+          Completed
+        </button>
+      </div>
+
       <div class="table-container">
         <table class="history-table">
           <thead>
@@ -172,7 +208,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let history of patientHistory">
+            <tr *ngFor="let history of (selectedHistoryTab === 'current' ? currentAssignments : completedAssignments)">
               <td>{{ history.visitDate | date:'medium' }}</td>
               <td>{{ history.requestType || 'N/A' }}</td>
               <td>{{ history.chiefComplaint || 'N/A' }}</td>
@@ -197,6 +233,24 @@
     <app-patient-info-card [patient]="patient"></app-patient-info-card>
     <div class="patient-history-section" *ngIf="patientHistory.length > 0">
       <h3>Patient History</h3>
+
+      <!-- Tabs for current vs completed assignments (search mode) -->
+      <div class="tabs history-tabs">
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active-tab]="selectedHistoryTab === 'current'">
+          Current
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active-tab]="selectedHistoryTab === 'completed'"
+          (click)="selectedHistoryTab = 'completed'">
+          Completed
+        </button>
+      </div>
+
       <div class="table-container">
         <table class="history-table">
           <thead>
@@ -212,7 +266,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let history of patientHistory">
+            <tr *ngFor="let history of (selectedHistoryTab === 'current' ? currentAssignments : completedAssignments)">
               <td>{{ history.visitDate | date:'medium' }}</td>
               <td>{{ history.requestType || 'N/A' }}</td>
               <td>{{ history.chiefComplaint || 'N/A' }}</td>

@@ -35,6 +35,14 @@ export class PatientHistoryCardComponent implements OnInit {
   employeeID: string | null = null;
   selectedDoctorUserName: string | null = null;
   pendingCount: number = 0;
+  // Tabs for active vs history (sick-leave finished) patients
+  selectedTab: 'current' | 'history' = 'current';
+  currentActivePatients: PatientSummary[] = [];
+  historyPatients: PatientSummary[] = [];
+  // Tabs and data for patient history / assignments
+  selectedHistoryTab: 'current' | 'completed' = 'current';
+  currentAssignments: PatientHistory[] = [];
+  completedAssignments: PatientHistory[] = [];
   constructor(
     private fb: FormBuilder,
     private medicalService: MedicalService,
@@ -110,7 +118,30 @@ export class PatientHistoryCardComponent implements OnInit {
     this.isSearching = true;
     this.medicalService.getAllActivePatients().subscribe(
       (patients: any[]) => {
-        this.activePatients = patients.map(patient => ({
+        // Deduplicate by RequestNumber (or by PatientID/CardNumber if no RequestNumber)
+        const dedupMap = new Map<string, any>();
+        (patients || []).forEach(p => {
+          const key = p.RequestNumber || `${p.PatientID}_${p.CardNumber}`;
+          if (!dedupMap.has(key)) {
+            dedupMap.set(key, p);
+          } else {
+            const existing = dedupMap.get(key);
+            // Keep the latest by RequestDate if duplicates exist
+            const existingDate = existing.RequestDate ? new Date(existing.RequestDate) : null;
+            const currentDate = p.RequestDate ? new Date(p.RequestDate) : null;
+            if (currentDate && (!existingDate || currentDate > existingDate)) {
+              dedupMap.set(key, p);
+            }
+          }
+        });
+
+        const allPatients = Array.from(dedupMap.values());
+
+        // Split into current vs history based on CurrentRequestSickLeave flag coming from the API.
+        const currentRaw = allPatients.filter(p => !p.CurrentRequestSickLeave);
+        const historyRaw = allPatients.filter(p => p.CurrentRequestSickLeave);
+
+        const mapPatient = (patient: any): PatientSummary => ({
           PatientID: patient.PatientID,
           CardNumber: patient.CardNumber,
           FullName: patient.FullName,
@@ -133,7 +164,16 @@ export class PatientHistoryCardComponent implements OnInit {
           RoomNumber: patient.RoomNumber,
           StaffUserID: patient.StaffUserID,
           IsActive: patient.IS_Active
-        }));
+        });
+
+        this.currentActivePatients = currentRaw.map(mapPatient);
+        this.historyPatients = historyRaw.map(mapPatient);
+
+        // Keep activePatients pointing at the currently-selected tab for backward compatibility
+        this.activePatients = this.selectedTab === 'current'
+          ? this.currentActivePatients
+          : this.historyPatients;
+
         this.isSearching = false;
       },
       error => {
@@ -185,6 +225,8 @@ export class PatientHistoryCardComponent implements OnInit {
     this.isSearchMode = false;
     this.patient = patient;
     this.searched = true;
+    // When assigning, default the history tab to current assignments
+    this.selectedHistoryTab = 'current';
     this.loadPatientHistory(patient.CardNumber);
   }
 
@@ -276,7 +318,8 @@ export class PatientHistoryCardComponent implements OnInit {
   loadPatientHistory(cardNumber: string | number): void {
     this.medicalService.getPatientHistory(cardNumber).subscribe(
       (history: any[]) => {
-        this.patientHistory = history.map(item => ({
+        // Map API results to PatientHistory model
+        const mapped = (history || []).map(item => ({
           patientID: item.PatientID,
           cardNumber: item.CardNumber,
           firstName: item.FirstName,
@@ -298,10 +341,36 @@ export class PatientHistoryCardComponent implements OnInit {
           assignmentStatus: item.AssignmentStatus,
           doctorName: item.DoctorName
         }));
+
+        // Sort by visitDate (or assignmentDate) descending so index 0 is the latest
+        this.patientHistory = mapped.sort((a, b) => {
+          const aTime = a.visitDate ? a.visitDate.getTime() : (a.assignmentDate ? a.assignmentDate.getTime() : 0);
+          const bTime = b.visitDate ? b.visitDate.getTime() : (b.assignmentDate ? b.assignmentDate.getTime() : 0);
+          return bTime - aTime;
+        });
+
+        // Update pending count based on latest data
+        this.pendingCount = this.patientHistory.filter(h => h.assignmentStatus?.toLowerCase() === 'pending').length;
+
+        // Split history into current vs completed assignments
+        this.currentAssignments = this.patientHistory.filter(h => {
+          const status = (h.assignmentStatus || '').toLowerCase();
+          // treat no status or pending/approved as "current"
+          return !status || status === 'pending' || status === 'approved';
+        });
+
+        this.completedAssignments = this.patientHistory.filter(h => {
+          const status = (h.assignmentStatus || '').toLowerCase();
+          // completed / cancelled / rejected go to completed tab
+          return status === 'completed' || status === 'cancelled' || status === 'rejected';
+        });
       },
       error => {
         console.error('Error loading patient history:', error);
         this.patientHistory = [];
+        this.currentAssignments = [];
+        this.completedAssignments = [];
+        this.pendingCount = 0;
       }
     );
   }
@@ -335,8 +404,19 @@ export class PatientHistoryCardComponent implements OnInit {
             return;
           }
   
+          // Use the latest "current" assignment (or latest history entry) for cardID
+          const latestForAssignment = this.currentAssignments.length > 0
+            ? this.currentAssignments[0]
+            : this.patientHistory[0];
+
+          if (!latestForAssignment || !latestForAssignment.CardID) {
+            this.showErrorMessage(`No valid visit found to assign. Please refresh and try again.`);
+            this.isAssigning = false;
+            return;
+          }
+
           const assignment = {
-            cardID: this.patientHistory[0]?.CardID,
+            cardID: latestForAssignment.CardID,
             assignedRoom: selectedRoom.roomID, // RoomID (GUID)
             doctorID: selectedDoctor.userId, // UserID (GUID)
             assignedBy: this.createdBy, // UserID of the current user

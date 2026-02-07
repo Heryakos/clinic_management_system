@@ -1,7 +1,27 @@
+<!-- Full Screen Blocker when no active referral -->
+<div class="full-blocker" *ngIf="!hasPendingReferral && !isCheckingReferral">
+  <div class="blocker-content">
+    <mat-icon class="lock-icon">lock</mat-icon>
+    <h2>Reimbursement Not Available</h2>
+    <p>
+      Reimbursement requests can only be submitted if you have an <strong>active (Pending) referral</strong> from the
+      clinic.
+    </p>
+    <p>Please visit the clinic to obtain a referral first.</p>
+  </div>
+</div>
+
+<!-- Loading Overlay while checking -->
+<div class="full-blocker loading" *ngIf="isCheckingReferral">
+  <div class="blocker-content">
+    <mat-spinner diameter="50"></mat-spinner>
+    <h2>Checking Your Referral Status...</h2>
+  </div>
+</div>
 <div class="reimbursement-upload-container">
   <div class="form-section">
     <h2>Reimbursement Document Upload</h2>
-    
+
     <div class="user-info-card">
       <div class="user-info">
         <div class="info-item">
@@ -10,11 +30,11 @@
         </div>
         <div class="info-item">
           <span class="label">Payroll Number:</span>
-          <span class="value">{{ payrollNo || 'Loading...' }}</span> <!-- Changed to payrollNo -->
+          <span class="value">{{ payrollNo || 'Loading...' }}</span>
         </div>
         <div class="info-item">
           <span class="label">Department:</span>
-          <span class="value">{{ departmentName || 'Loading...' }}</span> <!-- Added departmentName -->
+          <span class="value">{{ departmentName || 'Loading...' }}</span>
         </div>
       </div>
     </div>
@@ -35,55 +55,35 @@
 
       <!-- Clinic Medical Expense Refund Fields -->
       <div *ngIf="uploadForm.get('formType')?.value === 'ClinicMedicalExpenseRefund'">
-        <div class="form-group">
-          <label for="patientName">Patient Name: <span class="required">*</span></label>
-          <input
-            type="text"
-            id="patientName"
-            formControlName="patientName"
-            class="form-control"
-            placeholder="Enter patient name"
-            readonly>
-          <div class="error-message" *ngIf="uploadForm.get('patientName')?.invalid && uploadForm.get('patientName')?.touched">
-            Patient name is required
-          </div>
-        </div>
-
+        <!-- Payroll Number - editable only for privileged -->
         <div class="form-group">
           <label for="payrollNo">Payroll Number: <span class="required">*</span></label>
-          <input
-            type="text"
-            id="payrollNo"
-            formControlName="payrollNo"
-            class="form-control"
-            placeholder="Enter payroll number"
-            readonly>
-          <div class="error-message" *ngIf="uploadForm.get('payrollNo')?.invalid && uploadForm.get('payrollNo')?.touched">
-            Payroll number is required
+          <div class="input-with-spinner">
+            <input type="text" id="payrollNo" formControlName="payrollNo" class="form-control"
+              placeholder="{{ isPrivilegedUser ? 'Enter payroll number (auto-lookup)' : 'Your payroll number' }}"
+              [readonly]="!isPrivilegedUser">
+            <mat-spinner diameter="20" *ngIf="isLookingUpEmployee"></mat-spinner>
           </div>
+          <small class="form-hint" *ngIf="isPrivilegedUser">
+            Type payroll number to auto-fill name & department
+          </small>
         </div>
 
+        <!-- Patient Name - always read-only -->
+        <div class="form-group">
+          <label for="patientName">Patient Name: <span class="required">*</span></label>
+          <input type="text" id="patientName" formControlName="patientName" class="form-control" readonly>
+        </div>
+
+        <!-- Department - always read-only -->
         <div class="form-group">
           <label for="department">Department: <span class="required">*</span></label>
-          <input
-            type="text"
-            id="department"
-            formControlName="department"
-            class="form-control"
-            placeholder="Enter department"
-            readonly>
-          <div class="error-message" *ngIf="uploadForm.get('department')?.invalid && uploadForm.get('department')?.touched">
-            Department is required
-          </div>
+          <input type="text" id="department" formControlName="department" class="form-control" readonly>
         </div>
 
         <div class="form-group">
           <label for="doneAt">Done At: <span class="required">*</span></label>
-          <input
-            type="text"
-            id="doneAt"
-            formControlName="doneAt"
-            class="form-control"
+          <input type="text" id="doneAt" formControlName="doneAt" class="form-control"
             placeholder="Enter location where investigation was done">
           <div class="error-message" *ngIf="uploadForm.get('doneAt')?.invalid && uploadForm.get('doneAt')?.touched">
             Done At is required
@@ -92,13 +92,10 @@
 
         <div class="form-group">
           <label for="orderedFrom">Ordered From: <span class="required">*</span></label>
-          <input
-            type="text"
-            id="orderedFrom"
-            formControlName="orderedFrom"
-            class="form-control"
+          <input type="text" id="orderedFrom" formControlName="orderedFrom" class="form-control"
             placeholder="Enter where investigation was ordered from">
-          <div class="error-message" *ngIf="uploadForm.get('orderedFrom')?.invalid && uploadForm.get('orderedFrom')?.touched">
+          <div class="error-message"
+            *ngIf="uploadForm.get('orderedFrom')?.invalid && uploadForm.get('orderedFrom')?.touched">
             Ordered From is required
           </div>
         </div>
@@ -109,115 +106,70 @@
             <h3>Investigations</h3>
             <span class="total-amount">Total Amount: {{ totalAmount | currency:'ETB':'symbol':'1.2-2' }}</span>
           </div>
-          
+
           <div *ngFor="let inv of investigations; let i = index" class="investigation-row">
             <div class="investigation-number">{{ i + 1 }}.</div>
             <div class="investigation-fields">
               <div class="form-group">
-                <label>Investigation Type:</label>
-                <input
-                  type="text"
-                  [(ngModel)]="inv.investigation"
-                  [ngModelOptions]="{standalone: true}"
-                  class="form-control"
-                  placeholder="Enter investigation type">
+                <label>Service Type:</label>
+                <input type="text" [(ngModel)]="inv.investigation" [ngModelOptions]="{standalone: true}"
+                  class="form-control" placeholder="e.g., X-Ray, Blood Test">
               </div>
+
               <div class="form-group">
                 <label>Invoice Number:</label>
-                <input
-                  type="text"
-                  [(ngModel)]="inv.invoiceNumber"
-                  [ngModelOptions]="{standalone: true}"
-                  class="form-control"
-                  placeholder="Enter invoice number">
+                <input type="text" [(ngModel)]="inv.invoiceNumber" [ngModelOptions]="{standalone: true}"
+                  class="form-control" placeholder="e.g., INV-2025-001">
               </div>
+
               <div class="form-group">
                 <label>Amount (ETB):</label>
-                <input
-                  type="number"
-                  [(ngModel)]="inv.amount"
-                  [ngModelOptions]="{standalone: true}"
-                  class="form-control"
-                  placeholder="Enter amount"
-                  min="0"
-                  step="0.01">
+                <input type="number" [(ngModel)]="inv.amount" [ngModelOptions]="{standalone: true}" class="form-control"
+                  placeholder="0.00" min="0" step="0.01">
+              </div>
+
+              <!-- Supporting Document (Invoice/Receipt) -->
+              <div class="form-group">
+                <label>Supporting Document (Invoice/Receipt):</label>
+                <input type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png"
+                  (change)="onInvestigationFileChange($event, i)" [id]="'inv-file-' + i">
+
+                <div *ngIf="inv.fileName" class="selected-file-info">
+                  <strong>Selected:</strong> {{ inv.fileName }} ({{ formatFileSize(inv.file?.size || 0) }})
+                  <button type="button" class="remove-file-btn" (click)="removeInvestigationFile(i)">×</button>
+                </div>
+
+                <small class="file-hint">PDF, JPG, PNG • Max 10MB • Uploaded on submit</small>
               </div>
             </div>
-            <button type="button" class="remove-btn" (click)="removeInvestigation(i)" 
-                    [disabled]="investigations.length === 1" title="Remove Investigation">
+
+            <button type="button" class="remove-btn" (click)="removeInvestigation(i)"
+              [disabled]="investigations.length === 1" title="Remove Investigation">
               ×
             </button>
           </div>
-          
+
           <button type="button" class="add-btn" (click)="addInvestigation()">
             + Add Another Investigation
           </button>
         </div>
       </div>
 
-      <!-- Other Form Type Fields -->
-      <div *ngIf="uploadForm.get('formType')?.value === 'Other'">
-        <div class="form-group">
-          <label for="description">Document Description: <span class="required">*</span></label>
-          <input
-            type="text"
-            id="description"
-            formControlName="description"
-            class="form-control"
-            placeholder="Enter description (e.g., Hospital Receipt, Medical Bill)">
-          <div class="error-message" *ngIf="uploadForm.get('description')?.invalid && uploadForm.get('description')?.touched">
-            Description is required
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="files">Upload Files (Receipts/Documents): <span class="required">*</span></label>
-          <input
-            type="file"
-            id="files"
-            (change)="onFileChange($event)"
-            multiple
-            class="form-control"
-            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx">
-          <div class="error-message" *ngIf="uploadForm.get('files')?.invalid && uploadForm.get('files')?.touched">
-            At least one file is required
-          </div>
-          <div class="file-hint">Supported formats: PDF, Images, Word, Excel (Max 10MB per file)</div>
-          
-          <div *ngIf="selectedFiles.length > 0" class="file-list">
-            <h4>Selected Files:</h4>
-            <ul>
-              <li *ngFor="let file of selectedFiles" class="file-item">
-                <span class="file-name">{{ file.name }}</span>
-                <span class="file-size">({{ formatFileSize(file.size) }})</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <!-- Auto-filled description for Clinic form -->
+      <!-- Auto-filled info -->
       <div *ngIf="uploadForm.get('formType')?.value === 'ClinicMedicalExpenseRefund'" class="form-info">
         <p>✓ Clinic Medical Expense Refund Form will be automatically generated and uploaded.</p>
-        <p>✓ All investigations will be included in the reimbursement request.</p>
+        <p>✓ All selected supporting documents will be uploaded with the request.</p>
       </div>
 
       <div class="form-actions">
-        <button
-          type="submit"
-          class="submit-btn"
-          [disabled]="uploadForm.invalid || isSubmitting">
+        <button type="submit" class="submit-btn" [disabled]="uploadForm.invalid || isSubmitting">
           <span *ngIf="!isSubmitting">Submit Reimbursement Request</span>
           <span *ngIf="isSubmitting" class="loading">
-            <span class="spinner"></span>
-            Processing...
+            <span class="spinner"></span> Processing...
           </span>
         </button>
-        
-        <button
-          type="button"
-          class="view-documents-btn"
-          (click)="showDocuments()">
+
+        <button type="button" class="view-documents-btn" (click)="showDocuments()">
           View My Documents
         </button>
       </div>
@@ -232,18 +184,19 @@
         <h3>My Reimbursement Documents</h3>
         <button type="button" class="close-btn" (click)="closeDocuments()" title="Close">&times;</button>
       </div>
-      
+
       <div class="modal-body">
         <!-- Reimbursement Selection -->
         <div class="section" *ngIf="reimbursements.length > 0">
           <h4>Select Reimbursement Request</h4>
           <div class="form-group">
-            <select class="form-control" (change)="loadDocumentsForReimbursement($event)" [value]="selectedReimbursementId || ''">
+            <select class="form-control" (change)="loadDocumentsForReimbursement($event)"
+              [value]="selectedReimbursementId || ''">
               <option value="">-- Choose a reimbursement request --</option>
               <option *ngFor="let reimb of reimbursements" [value]="reimb.reimbursementID">
-                {{ reimb.reimbursementNumber }} - 
-                {{ reimb.patientName }} - 
-                {{ reimb.totalAmount | currency:'ETB':'symbol':'1.2-2' }} - 
+                {{ reimb.reimbursementNumber }} -
+                {{ reimb.patientName }} -
+                {{ reimb.totalAmount | currency:'ETB':'symbol':'1.2-2' }} -
                 <span [class]="'status-' + reimb.status.toLowerCase()">{{ reimb.status | titlecase }}</span>
               </option>
             </select>
@@ -263,7 +216,7 @@
                   </button>
                 </div>
               </div>
-              
+
               <div class="document-details">
                 <div class="detail-item">
                   <strong>File Name:</strong> {{ doc.fileName }}
@@ -281,16 +234,17 @@
                   <strong>Uploaded By:</strong> {{ doc.uploadedBy }}
                 </div>
               </div>
-              
+
               <!-- Document Preview -->
               <div *ngIf="getPreviewType(doc.fileType, doc.fileName) !== 'none'" class="preview-section">
                 <div class="preview-header">
                   <span>Document Preview</span>
-                  <button type="button" class="download-btn small" (click)="downloadDocument(doc)" title="Download Full Document">
+                  <button type="button" class="download-btn small" (click)="downloadDocument(doc)"
+                    title="Download Full Document">
                     <span class="download-icon">↓</span> Download
                   </button>
                 </div>
-                
+
                 <div class="preview-content">
                   <!-- PDF Preview -->
                   <ng-container *ngIf="getPreviewType(doc.fileType, doc.fileName) === 'pdf'">
@@ -305,11 +259,11 @@
                         <div class="preview-error">
                           <p>⚠️ {{ pdfLoadErrors[doc.documentID] }}</p>
                           <div class="error-actions">
-                            <button type="button" class="retry-btn" 
-                                    (click)="retryPdfLoad(doc)"
-                                    [disabled]="(pdfRetryCount[doc.documentID] || 0) >= 3">
-                              <span class="retry-icon">🔄</span> 
-                              Retry {{ (pdfRetryCount[doc.documentID] || 0) > 0 ? '(' + (pdfRetryCount[doc.documentID] || 0) + '/3)' : '' }}
+                            <button type="button" class="retry-btn" (click)="retryPdfLoad(doc)"
+                              [disabled]="(pdfRetryCount[doc.documentID] || 0) >= 3">
+                              <span class="retry-icon">🔄</span>
+                              Retry {{ (pdfRetryCount[doc.documentID] || 0) > 0 ? '(' + (pdfRetryCount[doc.documentID]
+                              || 0) + '/3)' : '' }}
                             </button>
                             <button type="button" class="download-btn" (click)="downloadDocument(doc)">
                               <span class="download-icon">↓</span> Download Instead
@@ -318,35 +272,25 @@
                         </div>
                       </ng-container>
                       <ng-template #pdfEmbed>
-                        <embed [src]="getPdfPreviewUrl(doc)"
-                               type="application/pdf" 
-                               width="100%" 
-                               height="400px"
-                               (load)="onPdfLoad(doc)"
-                               (error)="onPdfError(doc, $event)" />
+                        <embed [src]="getPdfPreviewUrl(doc)" type="application/pdf" width="100%" height="400px"
+                          (load)="onPdfLoad(doc)" (error)="onPdfError(doc, $event)" />
                       </ng-template>
                     </div>
                   </ng-container>
-                  
+
                   <!-- Image Preview -->
                   <ng-container *ngIf="getPreviewType(doc.fileType, doc.fileName) === 'image'">
                     <div class="preview-frame">
-                      <img [src]="getDocumentPreviewUrl(doc)" 
-                           [alt]="doc.description" 
-                           class="preview-image"
-                           (load)="onImageLoad($event)"
-                           (error)="onImageError($event)" />
+                      <img [src]="getDocumentPreviewUrl(doc)" [alt]="doc.description" class="preview-image"
+                        (load)="onImageLoad($event)" (error)="onImageError($event)" />
                     </div>
                   </ng-container>
-                  
+
                   <!-- Office Document Preview -->
                   <ng-container *ngIf="getPreviewType(doc.fileType, doc.fileName) === 'office'">
                     <div class="preview-frame">
-                      <iframe [src]="getOfficePreviewUrl(doc)" 
-                              width="100%" 
-                              height="400px" 
-                              frameborder="0"
-                              title="Office Document Preview"></iframe>
+                      <iframe [src]="getOfficePreviewUrl(doc)" width="100%" height="400px" frameborder="0"
+                        title="Office Document Preview"></iframe>
                     </div>
                   </ng-container>
                 </div>
@@ -404,7 +348,8 @@
 
         <div class="no-date">
           <div><span class="label">No.</span><span class="line"></span></div>
-          <div style="margin-top:8px;"><span class="label">Date</span><span class="line" style="width:180px;"></span></div>
+          <div style="margin-top:8px;"><span class="label">Date</span><span class="line" style="width:180px;"></span>
+          </div>
         </div>
       </div>
 
@@ -444,7 +389,8 @@
         <div class="items">
           <div *ngFor="let inv of investigations; let i = index" class="line-item">
             <div class="number">{{i+1}}.</div>
-            <div class="blank">{{ inv.investigation }} (Invoice: {{ inv.invoiceNumber }}, Amount: {{ inv.amount }})</div>
+            <div class="blank">{{ inv.investigation }} (Invoice: {{ inv.invoiceNumber }}, Amount: {{ inv.amount }})
+            </div>
           </div>
           <ng-container *ngFor="let dummy of [].constructor(20 - investigations.length); let j = index">
             <div class="line-item">

@@ -21,14 +21,17 @@ export const environment = {
   username: window._UserName,
   // username: '10506', // this is supervisor and doctor
   // username: '10335', // Laboratory
-  // username: '10715',  // this is the Pharmacy
+  // username: '10426',  // this is the Pharmacy
   // username: '10024', // doctor
+  // username: '10242', // doctor
   //  username: '08448', // injection
   // username: 'C00113', // doctor
   // username: 'C00067', // patient
   // username: '11094', // patient
   // username: '05350', // cardroom
   // username: '10792', // finace
+  //  username: '10252', // Finance_Clinic_Teamleader
+  //  username: '10522', // Casher_Clinic
   phisicalPath: "./assets/i18n/",
   assetBasePath: window.assetBasePath || 'assets/',
   Lang: "10D04E8B-3361-E111-95D5-00E04C05559B",

@@ -72,12 +72,23 @@ export class MedicalRequestComponent implements OnInit {
     return (control: AbstractControl): { [key: string]: any } | null => {
       const time = control.value;
       if (!time) return null;
-      const [hours, minutes] = time.split(':').map(Number);
-      if (hours < 8 || hours > 18) return { invalidTime: true };
-      if (hours === 18 && minutes > 30) return { invalidTime: true };
+  
+      let [gcHour, minute] = time.split(':').map(Number);
+  
+      // Convert GC → Ethiopian
+      let ecHour = gcHour - 6;
+      if (ecHour <= 0) ecHour += 12;
+      if (ecHour > 12) ecHour -= 12;
+  
+      // Ethiopian working hours: 2:00 – 12:30
+      if (ecHour < 2) return { invalidTime: true };
+      if (ecHour > 12) return { invalidTime: true };
+      if (ecHour === 12 && minute > 30) return { invalidTime: true };
+  
       return null;
     };
   }
+  
 
   loadUserData(): void {
     this.medicalService.getEmployeeById(environment.username).subscribe(
@@ -104,18 +115,24 @@ export class MedicalRequestComponent implements OnInit {
   loadMedicalRequests(employeeCode: string): void {
     this.medicalService.getMedicalRequestsByEmployeeCode(employeeCode).subscribe(
       (requests: MedicalRequestView[]) => {
-        this.medicalRequests = requests;
-        // Check if any request is Pending or Approved
-        this.hasPendingOrApprovedRequest = requests.some(
-          request => request.status.toLowerCase() === 'pending' || request.status.toLowerCase() === 'approved'
+        this.medicalRequests = requests || [];
+
+        // Only treat as "blocking" if the request is Pending/Approved AND NOT already marked as sick-leave.
+        // Finished sick-leave requests (isSickLeave = true) should NOT block new submissions.
+        const blockingRequests = this.medicalRequests.filter(r =>
+          !r.isSickLeave &&
+          r.status &&
+          (r.status.toLowerCase() === 'pending' || r.status.toLowerCase() === 'approved')
         );
-        
-        // Set current request status for display
+
+        this.hasPendingOrApprovedRequest = blockingRequests.length > 0;
+
+        // Set current request status for display (based only on blocking requests)
         if (this.hasPendingOrApprovedRequest) {
-          const activeRequest = requests.find(
-            request => request.status.toLowerCase() === 'pending' || request.status.toLowerCase() === 'approved'
-          );
+          const activeRequest = blockingRequests[0];
           this.currentRequestStatus = activeRequest?.status || '';
+        } else {
+          this.currentRequestStatus = '';
         }
       },
       error => {

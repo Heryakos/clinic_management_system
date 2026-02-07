@@ -9,110 +9,101 @@
   flex-direction: column;
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
-  position: relative;
 }
 
+/* Top Header */
 .top-header {
   position: fixed;
   top: 0;
-  left: 70px;
+  left: 0;
   right: 0;
-  height: 70px;
-  background: linear-gradient(135deg, #2563eb 0%, #3678be 100%);
-  color: white;
+  height: 80px;
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   padding: 0 30px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  z-index: 999;
-  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
 }
 
-.mobile-menu-toggle {
-  display: none;
-  background: none;
-  border: none;
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1400px;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-logo-img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.header-logo-text h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.header-logo-text p {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 4px 0 0;
+}
+
+.employee-name {
+  font-size: 13px;
+  color: #2563eb;
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+.header-notifications {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-notifications app-notification-bell {
+  font-size: 28px;
+  color: #4b5563;
   cursor: pointer;
-  padding: 8px;
-  margin-right: 15px;
-  position: relative;
-  width: 30px;
-  height: 24px;
-}
-
-.hamburger-icon,
-.hamburger-icon::before,
-.hamburger-icon::after {
-  display: block;
-  width: 30px;
-  height: 3px;
-  background-color: white;
-  border-radius: 2px;
-  position: absolute;
   transition: all 0.3s ease;
 }
 
-.hamburger-icon::before {
-  content: '';
-  top: -8px;
+.header-notifications app-notification-bell:hover {
+  color: #2563eb;
+  transform: scale(1.15);
 }
 
-.hamburger-icon::after {
-  content: '';
-  top: 8px;
-}
-
-.header-center {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  text-align: center;
-}
-
-.header-center h1 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-}
-
-.header-center .employee-welcome {
-  margin-top: 5px;
+.header-notifications .notification-text {
   font-size: 14px;
-  opacity: 0.95;
-  font-weight: 400;
+  color: #4b5563;
+  font-weight: 500;
 }
 
-.header-right {
-  margin-left: auto; /* Push notification bell to far right */
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.employee-welcome {
-  margin: 5px 0 0 0;
-  font-size: 14px;
-  opacity: 0.95;
-  font-weight: 400;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
+/* Sidebar - fixed but stops before DNN footer */
 .sidebar {
+  position: fixed;
+  top: 80px;
+  left: 0;
+  bottom: 80px; /* Leaves space for typical DNN footer (~80px). Adjust if your footer is taller */
   width: 70px;
   background: white;
-  color: #1f2937;
-  position: fixed;
-  height: 100vh;
-  overflow: visible !important;
-  z-index: 1000;
+  overflow: hidden;
+  z-index: 900;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
 }
@@ -122,9 +113,10 @@
 }
 
 .sidebar-content {
-  height: calc(100vh - 140px);
+  height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
+  padding: 20px 0;
 }
 
 .sidebar-content::-webkit-scrollbar {
@@ -144,66 +136,9 @@
   background: #94a3b8;
 }
 
-.logo {
-  padding: 25px 20px;
-  border-bottom: 1px solid #e5e7eb;
-  margin-bottom: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-}
-
-.logo-icon {
-  color: #2563eb;
-  transition: transform 0.3s ease;
-}
-
-.sidebar:hover .logo-icon {
-  transform: scale(1.1);
-}
-
-.logo-text {
-  opacity: 0;
-  margin-top: 10px;
-  transition: opacity 0.3s ease 0.1s;
-  text-align: center;
-}
-
-.logo-text h2 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: #1f2937;
-  white-space: nowrap;
-}
-
-.logo-text p {
-  margin: 3px 0;
-  font-size: 12px;
-  color: #6b7280;
-  white-space: nowrap;
-}
-
-.logo-text .employee-name {
-  margin-top: 8px;
-  font-size: 13px;
-  color: #2563eb;
-  font-weight: 600;
-  padding: 4px 12px;
-  background: #eff6ff;
-  border-radius: 12px;
-  white-space: nowrap;
-}
-
-.sidebar:hover .logo-text {
-  opacity: 1;
-}
-
 .nav-menu {
   list-style: none;
   padding: 0 8px;
-  margin: 0;
 }
 
 .nav-menu li {
@@ -216,7 +151,7 @@
   padding: 14px 16px;
   color: #4b5563;
   text-decoration: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s ease;
   border-radius: 12px;
   white-space: nowrap;
   position: relative;
@@ -238,17 +173,10 @@
 .nav-menu a .icon {
   min-width: 24px;
   height: 24px;
-  text-align: center;
-  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.3s ease;
-}
-
-.nav-menu a .icon svg {
-  width: 22px;
-  height: 22px;
+  font-size: 20px;
 }
 
 .nav-menu a .text {
@@ -287,63 +215,45 @@
   font-weight: 600;
 }
 
+/* Main Content */
 .main-content {
-  flex: 1;
   margin-left: 70px;
-  padding: 20px;
-  min-height: 100vh;
-  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.main-content.with-header {
-  margin-top: 70px;
+  margin-top: 80px;
   padding: 30px;
+  padding-bottom: 120px; /* Extra space so content doesn't hide under DNN footer */
+  flex: 1;
+  transition: margin-left 0.3s ease;
 }
 
 .sidebar:hover ~ .main-content {
   margin-left: 280px;
 }
 
-.sidebar:hover ~ .top-header {
-  left: 280px;
-}
-
+/* Responsive */
 @media (max-width: 1024px) {
   .sidebar:hover {
     width: 250px;
   }
-
   .sidebar:hover ~ .main-content {
     margin-left: 250px;
-  }
-
-  .sidebar:hover ~ .top-header {
-    left: 250px;
   }
 }
 
 @media (max-width: 768px) {
-  .mobile-menu-toggle {
-    display: block;
-  }
-
   .top-header {
-    left: 0;
-    padding: 0 15px;
+    height: 70px;
+    padding: 0 20px;
   }
 
-  .header-left h1 {
+  .header-logo-text h2 {
     font-size: 18px;
   }
 
-  .employee-welcome {
-    display: none;
-  }
-
   .sidebar {
+    top: 70px;
+    bottom: 80px; /* Still respects footer on mobile */
     width: 0;
     transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .sidebar.mobile-open {
@@ -351,99 +261,17 @@
     transform: translateX(0);
   }
 
-  .sidebar-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: -1;
-  }
-
-  .sidebar.mobile-open .sidebar-overlay {
-    display: block;
-  }
-
-  .sidebar.mobile-open .logo-text,
-  .sidebar.mobile-open .nav-menu a .text {
-    opacity: 1;
-  }
-
-  .sidebar.mobile-open:hover {
-    width: 280px;
-  }
-
   .main-content {
-    margin-left: 0;
-    padding: 15px;
-  }
-
-  .main-content.with-header {
+    margin-left: 0 !important;
+    margin-top: 70px;
     padding: 20px 15px;
-  }
-
-  .sidebar:hover ~ .main-content,
-  .sidebar.mobile-open ~ .main-content {
-    margin-left: 0;
-  }
-
-  .sidebar:hover ~ .top-header {
-    left: 0;
+    padding-bottom: 100px;
   }
 }
 
 @media (max-width: 480px) {
-  .header-left h1 {
-    font-size: 16px;
-  }
-
-  .sidebar.mobile-open {
-    width: 260px;
-  }
-
-  .main-content.with-header {
-    padding: 15px 10px;
-  }
-}
-
-@media print {
-  .sidebar,
-  .top-header {
-    display: none;
-  }
-
   .main-content {
-    margin-left: 0;
-    margin-top: 0;
+    padding: 15px 10px;
+    padding-bottom: 100px;
   }
-}
-
-@keyframes slideInFromLeft {
-  from {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.sidebar {
-  animation: slideInFromLeft 0.5s ease-out;
-}
-
-.top-header {
-  animation: fadeIn 0.5s ease-out;
 }

@@ -4,11 +4,23 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as echarts from 'echarts';
 import { FontService } from '../../services/FontService.service';
+import html2canvas from 'html2canvas';
 
 interface ReportTexts {
   [key: string]: {
     [key: string]: string;
   };
+}
+interface AgeGroupStats {
+  ageGroup: string;
+  count: number;
+  amount: number;
+}
+
+interface GenderStats {
+  gender: string;
+  count: number;
+  amount: number;
 }
 
 @Component({
@@ -18,6 +30,8 @@ interface ReportTexts {
 })
 export class CashierReportsComponent implements OnInit, OnDestroy {
   @ViewChild('reportContent') reportContent!: ElementRef;
+  @ViewChild('ageChart') ageChartRef?: ElementRef;
+  @ViewChild('genderChart') genderChartRef?: ElementRef;
 
   // Report data
   paymentSummary: any = {
@@ -28,10 +42,15 @@ export class CashierReportsComponent implements OnInit, OnDestroy {
   paymentTrends: any[] = [];
   departmentBreakdown: any[] = [];
   paymentMethodStats: any[] = [];
+  ageGroupBreakdown: AgeGroupStats[] = [];
+  genderBreakdown: GenderStats[] = [];
+  detailedPayments: any[] = [];
 
   // Date filters
   startDate: string = '';
   endDate: string = '';
+  ageChart?: any;
+  genderChart?: any;
 
   // Chart instances
   trendsChart: any;
@@ -47,6 +66,10 @@ export class CashierReportsComponent implements OnInit, OnDestroy {
   // Report texts for both languages
   reportTexts: ReportTexts = {
     en: {
+      ageGroup: 'Age Group',
+      gender: 'Gender',
+      ageGroupBreakdown: 'Age Group Breakdown',
+      genderBreakdown: 'Gender Distribution',
       title: 'Cashier Payment Report',
       summary: 'Payment Summary',
       trends: 'Payment Trends',
@@ -69,6 +92,10 @@ export class CashierReportsComponent implements OnInit, OnDestroy {
       birr: 'ETB'
     },
     am: {
+      ageGroup: 'የዕድሜ ቡድን',
+      gender: 'ፆታ',
+      ageGroupBreakdown: 'በዕድሜ ቡድን መከፋፈል',
+      genderBreakdown: 'በፆታ መከፋፈል',
       title: 'የካሺየር ክፍያ ሪፖርት',
       summary: 'የክፍያ ማጠቃለያ',
       trends: 'የክፍያ አዝማሚያዎች',
@@ -138,6 +165,9 @@ export class CashierReportsComponent implements OnInit, OnDestroy {
         this.paymentTrends = data.trends || [];
         this.departmentBreakdown = data.departmentBreakdown || [];
         this.paymentMethodStats = data.paymentMethodStats || [];
+        this.ageGroupBreakdown = data.ageGroupBreakdown || [];
+        this.genderBreakdown = data.genderBreakdown || [];
+        this.detailedPayments = data.detailedPayments || [];
 
         // Format dates for trends
         this.paymentTrends = this.paymentTrends.map((trend: any) => ({
@@ -172,7 +202,96 @@ export class CashierReportsComponent implements OnInit, OnDestroy {
       this.initTrendsChart();
       this.initDepartmentChart();
       this.initMethodChart();
+      this.initAgeChart();
+      this.initGenderChart();
+
+      // Force resize on all charts after a small delay (helps with ngIf / hidden tabs)
+      setTimeout(() => {
+        if (this.trendsChart) this.trendsChart.resize();
+        if (this.departmentChart) this.departmentChart.resize();
+        if (this.methodChart) this.methodChart.resize();
+        if (this.ageChart) this.ageChart.resize();
+        if (this.genderChart) this.genderChart.resize();
+      }, 300);
     }, 100);
+  }
+  initAgeChart(): void {
+    const dom = document.getElementById('ageChart');
+    if (!dom) return;
+
+    this.ageChart?.dispose();
+    this.ageChart = echarts.init(dom);
+
+    const hasData = this.ageGroupBreakdown.length > 0;
+
+    const option = {
+      title: {
+        text: this.getText('ageGroupBreakdown'),
+        left: 'center',
+        textStyle: { fontSize: 16 }
+      },
+      tooltip: { trigger: 'item' },
+      legend: {
+        orient: 'horizontal',
+        bottom: 10,
+        data: this.ageGroupBreakdown.map(g => g.ageGroup)
+      },
+      series: [{
+        type: 'pie',
+        radius: hasData ? ['45%', '70%'] : '0%',   // avoid empty circle look
+        center: ['50%', '55%'],
+        data: this.ageGroupBreakdown.map(g => ({
+          name: g.ageGroup,
+          value: g.amount
+        })),
+        label: {
+          formatter: '{b}: {c} ETB ({d}%)',
+          fontSize: 12
+        },
+        emphasis: {
+          label: { fontSize: 14, fontWeight: 'bold' }
+        }
+      }],
+      graphic: hasData ? [] : [{
+        type: 'text',
+        left: 'center',
+        top: 'center',
+        style: {
+          text: this.reportLang === 'am' ? 'ዳታ የለም' : 'No Data',
+          fontSize: 16,
+          fill: '#999'
+        }
+      }]
+    };
+
+    this.ageChart.setOption(option);
+    this.ageChart.resize();
+  }
+
+  initGenderChart(): void {
+    const dom = document.getElementById('genderChart');
+    if (!dom) return;
+
+    this.genderChart?.dispose();
+    this.genderChart = echarts.init(dom);
+
+    const option = {
+      title: { text: this.getText('genderBreakdown'), left: 'center' },
+      tooltip: { trigger: 'item' },
+      series: [{
+        type: 'pie',
+        radius: '60%',
+        data: this.genderBreakdown.map(g => ({
+          name: g.gender,
+          value: g.amount
+        })),
+        label: {
+          formatter: '{b}: {c} ({d}%)'
+        }
+      }]
+    };
+
+    this.genderChart.setOption(option);
   }
 
   initTrendsChart(): void {
@@ -425,47 +544,166 @@ export class CashierReportsComponent implements OnInit, OnDestroy {
     this.isLoading = true;
 
     try {
-      // Load Amharic font first
+      // Load font
       const fontBase64 = await this.fontService.loadFontBase64('fonts/AbyssinicaSIL-Regular.json').toPromise();
-      
-      if (!fontBase64) {
-        console.error('Amharic font loading failed');
-        this.isLoading = false;
-        return;
-      }
+      if (!fontBase64) throw new Error('Font loading failed');
 
-      const doc = new jsPDF('landscape', 'mm', 'a4');
+      const doc = new jsPDF({
+        orientation: 'portrait',   // better for tables
+        unit: 'mm',
+        format: 'a4'
+      });
 
-      // Add Amharic font support
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 15;
       const fontName = 'AbyssinicaSIL';
+
       doc.addFileToVFS('AbyssinicaSIL-Regular.ttf', fontBase64);
       doc.addFont('AbyssinicaSIL-Regular.ttf', fontName, 'normal');
-      
-      // Set font based on current language
-      if (this.reportLang === 'am') {
-        doc.setFont(fontName);
-      } else {
-        doc.setFont('helvetica');
+
+      const useAmharicFont = this.reportLang === 'am';
+      const font = useAmharicFont ? fontName : 'helvetica';
+
+      let y = 15;
+
+      // Header
+      doc.setFont(font, 'bold');
+      doc.setFontSize(16);
+      doc.text('Federal Housing Corporation Medical Clinic', pageWidth / 2, y, { align: 'center' });
+      y += 8;
+
+      doc.setFontSize(14);
+      doc.text(this.getText('title'), pageWidth / 2, y, { align: 'center' });
+      y += 10;
+
+      doc.setFont(font, 'normal');
+      doc.setFontSize(10);
+      doc.text(`${this.getText('dateRange')}: ${this.startDate || '—'} - ${this.endDate || '—'}`, margin, y);
+      y += 6;
+      doc.text(`${this.getText('generatedOn')}: ${new Date().toLocaleString(useAmharicFont ? 'am-ET' : 'en-US')}`, margin, y);
+      y += 12;
+
+      // Summary
+      doc.setFont(font, 'bold');
+      doc.setFontSize(12);
+      doc.text(this.getText('summary'), margin, y);
+      y += 7;
+
+      autoTable(doc, {
+        startY: y,
+        head: [[this.getText('summary'), this.getText('value')]],
+        body: [
+          [this.getText('totalPayments'), this.paymentSummary.totalPayments?.toString() || '0'],
+          [this.getText('totalAmount'), this.formatCurrency(this.paymentSummary.totalAmount || 0)],
+          [this.getText('averagePayment'), this.formatCurrency(this.paymentSummary.averagePayment || 0)]
+        ],
+        theme: 'grid',
+        styles: { font, fontSize: 10, cellPadding: 5, textColor: [40, 40, 40] },
+        headStyles: { fillColor: [33, 150, 243], textColor: [255, 255, 255], fontStyle: 'bold' },
+        margin: { left: margin, right: margin },
+        didParseCell(data) {
+          if (data.column.index === 0) data.cell.styles.fontStyle = 'bold';
+        }
+      });
+
+      y = (doc as any).lastAutoTable.finalY + 15;
+
+      // Helper to add section table
+      const addSectionTable = (title: string, data: any[], headRow: string[], mapRow: (item: any) => any[]) => {
+        if (!data?.length) return;
+
+        if (y > 240) { doc.addPage(); y = 20; }
+
+        doc.setFont(font, 'bold');
+        doc.setFontSize(12);
+        doc.text(title, margin, y);
+        y += 8;
+
+        autoTable(doc, {
+          startY: y,
+          head: [headRow],
+          body: data.map(mapRow),
+          theme: 'grid',
+          styles: { font, fontSize: 9.5, cellPadding: 4, overflow: 'linebreak' },
+          headStyles: { fillColor: [44, 62, 80], textColor: [255, 255, 255], fontStyle: 'bold' },
+          alternateRowStyles: { fillColor: [245, 247, 250] },
+          margin: { left: margin, right: margin },
+          columnStyles: { 0: { cellWidth: 70 } }
+        });
+
+        y = (doc as any).lastAutoTable.finalY + 12;
+      };
+
+      // All sections
+      addSectionTable(
+        this.getText('departmentBreakdown'),
+        this.departmentBreakdown,
+        [this.getText('department'), this.getText('count'), this.getText('amount'), 'Percentage'],
+        d => [d.department, d.count, this.formatCurrency(d.amount), this.getPercentage(d.amount, this.paymentSummary.totalAmount) + '%']
+      );
+
+      addSectionTable(
+        this.getText('methods'),
+        this.paymentMethodStats,
+        [this.getText('paymentMethod'), this.getText('count'), this.getText('amount'), 'Percentage'],
+        m => [m.method, m.count, this.formatCurrency(m.amount), this.getPercentage(m.amount, this.paymentSummary.totalAmount) + '%']
+      );
+
+      addSectionTable(
+        this.getText('ageGroupBreakdown'),
+        this.ageGroupBreakdown,
+        [this.getText('ageGroup'), this.getText('count'), this.getText('amount'), 'Percentage'],
+        a => [a.ageGroup, a.count, this.formatCurrency(a.amount), this.getPercentage(a.amount, this.paymentSummary.totalAmount) + '%']
+      );
+
+      addSectionTable(
+        this.getText('genderBreakdown'),
+        this.genderBreakdown,
+        [this.getText('gender'), this.getText('count'), this.getText('amount'), 'Percentage'],
+        g => [g.gender, g.count, this.formatCurrency(g.amount), this.getPercentage(g.amount, this.paymentSummary.totalAmount) + '%']
+      );
+
+      addSectionTable(
+        this.reportLang === 'am' ? 'ዝርዝር ክፍያዎች' : 'Detailed Payments',
+        this.detailedPayments,
+        [
+          this.reportLang === 'am' ? 'Pv ቁጥር' : 'Pv Number',
+          this.reportLang === 'am' ? 'የተከፈለለት ስም' : 'Payee Name',
+          this.reportLang === 'am' ? 'የባንክ መለያ' : 'Bank Account',
+          this.reportLang === 'am' ? 'መጠን' : 'Amount',
+          this.reportLang === 'am' ? 'ቀን' : 'Date'
+        ],
+        p => [
+          p.pvNumber || 'N/A',
+          p.payeeNameEn || 'N/A',
+          p.payeeBankAccountNo || 'N/A',
+          this.formatCurrency(p.paymentAmount),
+          new Date(p.paymentDate).toLocaleDateString()
+        ]
+      );
+
+      // Page footer
+      const pages = doc.getNumberOfPages();
+      for (let i = 1; i <= pages; i++) {
+        doc.setPage(i);
+        doc.setFont(font, 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(120);
+        doc.text(
+          `Page ${i} of ${pages} • Federal Housing Corporation Medical Clinic`,
+          pageWidth / 2,
+          290,
+          { align: 'center' }
+        );
       }
 
-      // Add company header
-      await this.addReportHeader(doc);
+      // Save
+      const lang = this.reportLang.toUpperCase();
+      doc.save(`Cashier_Report_${new Date().toISOString().split('T')[0]}_${lang}.pdf`);
 
-      // Add summary section
-      this.addSummarySection(doc);
-
-      // Add charts as images
-      await this.addChartsAsImages(doc);
-
-      // Add detailed table
-      this.addDetailedTable(doc);
-
-      // Add footer
-      this.addReportFooter(doc);
-
-      doc.save(`cashier-report-${new Date().toISOString().split('T')[0]}.pdf`);
-    } catch (error) {
-      console.error('Error generating PDF:', error);
+    } catch (err) {
+      console.error('PDF export failed:', err);
+      alert(this.reportLang === 'am' ? 'PDF መፍጠር አልተሳካም' : 'Failed to create PDF');
     } finally {
       this.isLoading = false;
     }
@@ -498,7 +736,7 @@ export class CashierReportsComponent implements OnInit, OnDestroy {
     doc.setFont('helvetica', 'normal');
     doc.text(`${this.getText('dateRange')}: ${this.startDate} ${this.getText('to')} ${this.endDate}`, 20, 45);
     doc.text(`${this.getText('generatedOn')}: ${new Date().toLocaleDateString()}`, 20, 50);
-    
+
     // Add line separator
     doc.setDrawColor(200, 200, 200);
     doc.line(20, 55, 277, 55);
@@ -688,6 +926,8 @@ export class CashierReportsComponent implements OnInit, OnDestroy {
     if (this.methodChart) {
       this.methodChart.dispose();
     }
+    if (this.ageChart) this.ageChart.dispose();
+    if (this.genderChart) this.genderChart.dispose();
 
     // Remove resize listeners
     window.removeEventListener('resize', () => { });

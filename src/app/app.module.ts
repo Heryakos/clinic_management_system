@@ -1,8 +1,10 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { HttpClientModule } from '@angular/common/http';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -14,9 +16,15 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatTableModule } from '@angular/material/table';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
+import { NgxEchartsModule } from 'ngx-echarts';
 
 import { AppComponent } from './app.component';
+import { AppRoutingModule } from './app-routing.module'; // ← Import the MODULE, not 'routes'
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { MedicalRequestComponent } from './components/medical-request/medical-request.component';
 import { DoctorComponent } from './components/Doctor/Doctor.component';
@@ -27,9 +35,6 @@ import { InventoryComponent } from './components/inventory/inventory.component';
 import { SickLeaveComponent } from './components/sick-leave/sick-leave.component';
 import { ReportsComponent } from './components/reports/reports.component';
 import { MedicalService } from './medical.service';
-import { routes } from './app-routing.module';
-import { HttpClientModule } from '@angular/common/http';
-import { NgxEchartsModule } from 'ngx-echarts';
 import { UsersComponent } from './components/users/users.component';
 import { PatientHistoryCardComponent } from './components/patient-history-card/patient-history-card.component';
 import { InjectionComponent } from './components/injection/injection.component';
@@ -42,8 +47,6 @@ import { MedicationTreeDropdownComponent } from './components/medication-tree-dr
 import { LaboratoryReportDialogComponent } from './components/laboratory-report-dialog/laboratory-report-dialog.component';
 import { SupervisorMedicalRequestsComponent } from './components/supervisor-medical-requests/supervisor-medical-requests.component';
 import { PrescriptionPaperComponent } from './components/prescription-paper/prescription-paper.component';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { MatDialogModule } from '@angular/material/dialog';
 import { ClinicFormComponent } from './components/clinic-form/clinic-form.component';
 import { ReasonTreeDropdownComponent } from './components/reason-tree-dropdown/reason-tree-dropdown.component';
 import { ReferralModalComponent } from './components/referral-modal/referral-modal.component';
@@ -64,24 +67,32 @@ import { InjectionDetailsDialogComponent } from './components/injection-details-
 import { ReimbursementDocumentUploadComponent } from './components/reimbursement-document-upload/reimbursement-document-upload.component';
 import { StockRequestFormComponent } from './components/stock-request-form/stock-request-form.component';
 import { InjectionPaperComponent } from './components/injection-paper/injection-paper.component';
-// import { EthiopianDatePickerDirective } from './components/directive/ethiopian-date-picker.directive';
 import { LucyCalendarDirective } from 'lucy-calendar';
 import { EthiopianDatePickerComponent } from './components/ethiopian-date-picker/ethiopian-date-picker.component';
 import { EthiopianDateAdapter } from './directive/ethiopian-date-adapter';
 import { ClinicMedicalExpenseFormComponent } from './components/clinic-medical-expense-form/clinic-medical-expense-form.component';
 import { InjectionManagementComponent } from './components/injection-management/injection-management.component';
-import { MatTableModule } from '@angular/material/table';
 import { WoundCarePaperComponent } from './components/wound-care-paper/wound-care-paper.component';
 import { SuturingPaperComponent } from './components/suturing-paper/suturing-paper.component';
 import { EarIrrigationPaperComponent } from './components/ear-irrigation-paper/ear-irrigation-paper.component';
 import { FinanceApprovalComponent } from './components/finance-approval/finance-approval.component';
 import { CashierPaymentComponent } from './components/cashier-payment/cashier-payment.component';
 import { CashierReportsComponent } from './components/cashier-reports/cashier-reports.component';
+import { SickLeaveViewerComponent } from './components/sick-leave-viewer/sick-leave-viewer.component';
+import { EthiopianDatePipe } from './Pipe/ethiopian-date.pipe';
+import { EthiopianTimePipe } from './Pipe/ethiopian-time.pipe';
+import { PatientHistoryTimelineComponent } from './components/patient-history-timeline/patient-history-timeline.component';
+import { PatientHistoryComponent } from './components/patient-history/patient-history.component';
+import { InventoryRequestFormComponent } from './components/inventory-request-form/inventory-request-form.component';
+import { AddTherapeuticCategoryDialogComponent } from './components/add-therapeutic-category-dialog/add-therapeutic-category-dialog.component';
+import { ConfirmDispenseDialogComponent } from './components/confirm-dispense-dialog/confirm-dispense-dialog.component';
+import { RejectAssignmentDialogComponent } from './components/reject-assignment-dialog/reject-assignment-dialog.component';
+import { ReimbursementDocumentsViewerComponent } from './components/reimbursement-documents-viewer/reimbursement-documents-viewer.component';
+import { AccessDeniedComponent } from './components/access-denied/access-denied.component';
 
 
 @NgModule({
   declarations: [
-    // EthiopianDatePickerDirective,
     AppComponent,
     DashboardComponent,
     MedicalRequestComponent,
@@ -93,7 +104,6 @@ import { CashierReportsComponent } from './components/cashier-reports/cashier-re
     SickLeaveComponent,
     ReportsComponent,
     UsersComponent,
-    // PatientHistoryCardComponent,
     InjectionComponent,
     PatientAssignmentComponent,
     PatientCardComponent,
@@ -119,7 +129,6 @@ import { CashierReportsComponent } from './components/cashier-reports/cashier-re
     InventoryManagementComponent,
     ItemReceivingComponent,
     InjectionDetailsDialogComponent,
-    // ReimbursementDocumentUploadComponent,
     InjectionPaperComponent,
     ClinicMedicalExpenseFormComponent,
     InjectionManagementComponent,
@@ -129,12 +138,33 @@ import { CashierReportsComponent } from './components/cashier-reports/cashier-re
     FinanceApprovalComponent,
     CashierPaymentComponent,
     CashierReportsComponent,
-    // EthiopianDatePickerComponent,
-    // StockRequestFormComponent
-    // PatientMedicalHistoryComponent
-    // PatientInfoCardComponent
+    SickLeaveViewerComponent,
+    EthiopianDatePipe,
+    EthiopianTimePipe,
+    ReimbursementDocumentUploadComponent,
+    PatientHistoryTimelineComponent,
+    PatientHistoryComponent,
+    InventoryRequestFormComponent,
+    AddTherapeuticCategoryDialogComponent,
+    RejectAssignmentDialogComponent,
+    ReimbursementDocumentsViewerComponent,
+    AccessDeniedComponent,
+    // ConfirmDispenseDialogComponent,
+    // Add any other non-standalone components here
   ],
   imports: [
+    BrowserModule,
+    BrowserAnimationsModule,
+    ReactiveFormsModule,
+    FormsModule,
+    HttpClientModule,
+    CommonModule,
+    AppRoutingModule, // ← This imports the routes correctly
+
+    NgxEchartsModule.forRoot({
+      echarts: () => import('echarts')
+    }),
+
     MatButtonModule,
     MatCheckboxModule,
     MatDatepickerModule,
@@ -147,26 +177,21 @@ import { CashierReportsComponent } from './components/cashier-reports/cashier-re
     MatFormFieldModule,
     MatSnackBarModule,
     MatDialogModule,
-    NgxEchartsModule.forRoot({
-      echarts: () => import('echarts')
-    }),    BrowserModule,
-    ReactiveFormsModule,
-    FormsModule,
-    HttpClientModule,
-    RouterModule.forRoot(routes),
-    CommonModule,
-    PatientHistoryCardComponent, // Moved to imports
-    PatientInfoCardComponent, // Moved to imports
-    PatientMedicalHistoryComponent, 
-    StockRequestFormComponent, // Standalone component
-    BrowserAnimationsModule,
+    MatExpansionModule,
+    MatIconModule,                    
+    MatProgressSpinnerModule,
+
+    // Standalone components / directives
+    PatientHistoryCardComponent,
+    PatientInfoCardComponent,
+    PatientMedicalHistoryComponent,
+    StockRequestFormComponent,
     LucyCalendarDirective,
     EthiopianDatePickerComponent,
-    MatExpansionModule
   ],
   providers: [
     MedicalService,
-    EthiopianDateAdapter   
+    EthiopianDateAdapter
   ],
   bootstrap: [AppComponent]
 })

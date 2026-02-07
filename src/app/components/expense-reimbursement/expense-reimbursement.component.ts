@@ -34,7 +34,7 @@ export class ExpenseReimbursementComponent implements OnInit {
     private sanitizer: DomSanitizer,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadExpenseReimbursements();
@@ -44,9 +44,10 @@ export class ExpenseReimbursementComponent implements OnInit {
     this.isLoading = true;
     this.medicalService.getExpenseReimbursements().subscribe(
       (reimbursements) => {
-        console.log('API Response:', reimbursements);
-        
-        this.expenseReimbursements = (reimbursements as any[]).map((r: any) => ({
+        console.log('Raw API Response:', reimbursements);
+
+        // Map and normalize
+        const mapped = (reimbursements as any[]).map((r: any) => ({
           reimbursementID: r.reimbursementID || r.ReimbursementID,
           reimbursementNumber: r.reimbursementNumber || r.ReimbursementNumber,
           patientName: r.patientName || r.PatientName,
@@ -69,9 +70,19 @@ export class ExpenseReimbursementComponent implements OnInit {
           formType: r.formType || r.FormType || null,
           investigations: []
         }));
-        
+
+        // DE-DUPLICATE by reimbursementID
+        const uniqueMap = new Map<number, any>();
+        mapped.forEach(item => {
+          if (item.reimbursementID) {
+            uniqueMap.set(item.reimbursementID, item);
+          }
+        });
+
+        this.expenseReimbursements = Array.from(uniqueMap.values());
         this.filteredReimbursements = [...this.expenseReimbursements];
-        console.log('Mapped reimbursements:', this.filteredReimbursements);
+
+        console.log('De-duplicated reimbursements:', this.expenseReimbursements);
 
         this.isLoading = false;
         this.cdr.detectChanges();
@@ -86,83 +97,75 @@ export class ExpenseReimbursementComponent implements OnInit {
   }
 
   filterReimbursements(): void {
-    const term = this.searchTerm.toLowerCase();
+    const term = this.searchTerm.toLowerCase().trim();
+    if (!term) {
+      this.filteredReimbursements = [...this.expenseReimbursements];
+      return;
+    }
+
     this.filteredReimbursements = this.expenseReimbursements.filter(
       (r) =>
-        r.payrollNo?.toLowerCase().includes(term) ||
-        r.patientName.toLowerCase().includes(term)
+        (r.payrollNo?.toLowerCase().includes(term) ?? false) ||
+        (r.patientName?.toLowerCase().includes(term) ?? false)
     );
   }
 
   viewDetails(reimbursement: ExpenseReimbursement): void {
+    this.isLoading = true;
     if (!reimbursement || !reimbursement.reimbursementID || reimbursement.reimbursementID <= 0) {
-      console.error('Invalid reimbursement object or missing reimbursementID:', reimbursement);
-      this.showErrorMessage('Cannot view details: Invalid reimbursement ID.');
+      console.error('Invalid reimbursement');
       return;
     }
-  
-    console.log('Viewing details for reimbursementID:', reimbursement.reimbursementID);
+
     this.selectedReimbursement = reimbursement;
-  
-    this.medicalService.getReimbursementDetails(reimbursement.reimbursementID).subscribe(
-      (details: any[]) => {
-        if (!details || details.length === 0) {
-          console.warn('No details found for reimbursementID:', reimbursement.reimbursementID);
-          this.showErrorMessage('No details found for this reimbursement.');
-          return;
-        }
-  
-        this.selectedReimbursement = {
-          ...this.selectedReimbursement,
-          ...details[0],
-          approvedAmount: details[0].ApprovedAmount || 0
-        };
-  
-        this.investigations = details.map((d) => ({
-          DetailID: d.DetailID,
-          InvestigationType: d.InvestigationType,
-          Location: d.Location,
-          OrderedFrom: d.OrderedFrom,
-          InvoiceNumber: d.InvoiceNumber,
-          Amount: d.DetailAmount || d.Amount,
-          InvestigationDate: this.parseDate(d.InvestigationDate),
-          status: d.DetailStatus || d.status,
-          comments: d.DetailComments || d.comments,
-          approvedBy: d.DetailApprovedBy || d.approvedBy,
-          approvedDate: this.parseDate(d.DetailApprovedDate)
-        }));
-  
-        // Fetch documents for the reimbursement
-        this.fetchDocumentsForReimbursement(reimbursement.reimbursementID);
-  
-        this.showDetailsModal = true;
+
+    // Load REAL investigation details from ExpenseReimbursementDetails table
+    this.medicalService.getInvestigationDetails(reimbursement.reimbursementID).subscribe(
+      (details) => {
+        this.investigations = details;
+        console.log('Loaded investigations:', this.investigations);
+        this.cdr.detectChanges();
       },
       (error) => {
-        console.error('Error loading details for reimbursementID:', reimbursement.reimbursementID, error);
-        this.showErrorMessage('Error loading details. Please try again.');
+        console.error('Error loading investigations:', error);
+        this.investigations = [];
       }
     );
+
+    // Load documents separately (already working)
+    this.fetchDocumentsForReimbursement(reimbursement.reimbursementID);
+
+    this.showDetailsModal = true;
+    this.isLoading = false;
+    this.cdr.detectChanges();
+  }
+  formatFileSize(bytes: number | null | undefined): string {
+    if (!bytes || bytes <= 0) return 'Unknown';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 
-  // NEW: Fetch documents for the reimbursement
+  // Fetch documents for the reimbursement
   private fetchDocumentsForReimbursement(reimbursementId: number): void {
     console.log('Fetching documents for reimbursement ID:', reimbursementId);
     this.medicalService.getDocumentsByReimbursementId(reimbursementId).subscribe({
       next: (documents: any[]) => {
         console.log('Documents loaded:', JSON.stringify(documents, null, 2));
-        
+
         this.documents = documents.map(doc => ({
           DocumentID: doc.documentID || doc.DocumentID,
           DocumentDescription: doc.description || doc.Description || 'Document',
           FileName: doc.fileName || doc.FileName,
           FileType: doc.fileType || doc.FileType,
+          FileSize: doc.fileSize || 0,  // ← Make sure it's FileSize (capital S)
           uploadDate: this.parseDate(doc.uploadDate || doc.UploadDate),
+          UploadedBy: doc.uploadedBy || 'Unknown',
           previewType: this.getPreviewType(doc.fileType || doc.FileType, doc.fileName || doc.FileName),
-          previewUrl: this.sanitizer.bypassSecurityTrustResourceUrl(
-            `${this.medicalService.getReimbursementDocumentDownloadUrl(doc.documentID || doc.DocumentID)}#view=FitH&toolbar=0&navpanes=0`
-          )
+          // ...
         }));
-        
+
         // Load PDF previews asynchronously
         this.documents.forEach(doc => {
           if (doc.previewType === 'pdf') {
@@ -171,7 +174,7 @@ export class ExpenseReimbursementComponent implements OnInit {
             this.loadPdfPreview(doc);
           }
         });
-        
+
         // Force layout recalculation
         this.forceScrollRecalculation();
         this.cdr.detectChanges();
@@ -183,6 +186,24 @@ export class ExpenseReimbursementComponent implements OnInit {
       }
     });
   }
+  retryPdfLoad(doc: any): void {
+    const docId = doc.DocumentID;
+    const retryCount = (this.pdfRetryCount[docId] || 0) + 1;
+  
+    if (retryCount > 3) {
+      this.pdfLoadErrors[docId] = 'Max retry attempts reached';
+      this.pdfLoading[docId] = false;
+      this.cdr.detectChanges();
+      return;
+    }
+  
+    this.pdfRetryCount[docId] = retryCount;
+    this.pdfLoading[docId] = true;
+    this.pdfLoadErrors[docId] = '';
+    this.cdr.detectChanges();
+  
+    this.loadPdfPreview(doc);
+  }
   getPdfPreviewUrl(doc: any): SafeResourceUrl {
     const url = this.pdfPreviewUrls[doc.DocumentID];
     console.log(`Getting PDF preview URL for document ${doc.DocumentID}:`, url ? 'URL exists' : 'No URL found');
@@ -193,21 +214,21 @@ export class ExpenseReimbursementComponent implements OnInit {
     try {
       const url = this.medicalService.getReimbursementDocumentDownloadUrl(doc.DocumentID);
       console.log('Fetching PDF from:', url);
-      
+
       const response = await fetch(url, {
         method: 'GET',
         headers: { 'Accept': 'application/pdf' }
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       const blob = await response.blob();
       if (blob.size === 0) {
         throw new Error('Document is empty');
       }
-      
+
       const blobUrl = window.URL.createObjectURL(blob);
       this.pdfPreviewUrls[doc.DocumentID] = this.sanitizer.bypassSecurityTrustResourceUrl(blobUrl + '#view=FitH&toolbar=0&navpanes=0');
       this.pdfLoadErrors[doc.DocumentID] = '';
@@ -225,7 +246,7 @@ export class ExpenseReimbursementComponent implements OnInit {
 
   // NEW: Get investigation count by status
   getInvestigationCountByStatus(status: string): number {
-    return this.investigations.filter(inv => 
+    return this.investigations.filter(inv =>
       (inv.status || 'pending').toLowerCase() === status.toLowerCase()
     ).length;
   }
@@ -235,6 +256,40 @@ export class ExpenseReimbursementComponent implements OnInit {
     return this.investigations
       .filter(inv => (inv.status || 'pending').toLowerCase() === 'approved')
       .reduce((sum, inv) => sum + (inv.Amount || 0), 0);
+  }
+
+  get clinicForms(): any[] {
+    return this.documents.filter(doc =>
+      (doc.DocumentDescription || '').toLowerCase().includes('clinic') &&
+      (doc.DocumentDescription || '').toLowerCase().includes('form')
+    );
+  }
+
+  get supportingDocuments(): any[] {
+    return this.documents.filter(doc => !this.isClinicForm(doc));
+  }
+
+  // Group supporting documents by Invoice Number (extracted from description)
+  get groupedSupportingDocuments(): Map<string, any[]> {
+    const map = new Map<string, any[]>();
+
+    this.supportingDocuments.forEach(doc => {
+      // Extract invoice number from description like "testservice - Invoice #testinvoice (123 ETB)"
+      const match = (doc.DocumentDescription || '').match(/Invoice #([^ ]+)/i);
+      const key = match ? match[1] : 'Other';
+
+      if (!map.has(key)) {
+        map.set(key, []);
+      }
+      map.get(key)!.push(doc);
+    });
+
+    return map;
+  }
+
+  isClinicForm(doc: any): boolean {
+    const desc = (doc.DocumentDescription || '').toLowerCase();
+    return desc.includes('clinic') && desc.includes('form');
   }
 
   getPreviewType(fileType?: string, fileName?: string): 'pdf' | 'image' | 'office' | 'none' {
@@ -265,19 +320,19 @@ export class ExpenseReimbursementComponent implements OnInit {
     this.selectedReimbursement = null;
     this.investigations = [];
     this.documents = [];
-    
+
     // Clean up blob URLs
     Object.values(this.pdfPreviewUrls).forEach(url => {
       if (typeof url === 'string') {
         window.URL.revokeObjectURL(url);
       }
     });
-    
+
     this.pdfPreviewUrls = {};
     this.pdfLoadErrors = {};
     this.pdfLoading = {};
     this.pdfRetryCount = {};
-    
+
     this.closeCommentDialog();
   }
 
@@ -292,30 +347,50 @@ export class ExpenseReimbursementComponent implements OnInit {
     this.pendingStatusUpdate = null;
     this.statusComment = '';
   }
+  getStatusClass(status: string | null | undefined): string {
+    return (status || 'pending').toLowerCase();
+  }
 
-  // UPDATED: Enhanced status update method
+  getStatusDisplay(status: string | null | undefined): string {
+    return status || 'Pending';
+  }
+
+  isPending(status: string | null | undefined): boolean {
+    return (status || 'pending').toLowerCase() === 'pending';
+  }
+
   updateReimbursementStatus(): void {
-    if (!this.pendingStatusUpdate || !this.statusComment.trim()) {
-      this.showErrorMessage('Please provide a comment for the status update.');
+    if (!this.pendingStatusUpdate) {
+      this.showErrorMessage('No status update pending.');
       return;
     }
 
     const { id, detailId, status } = this.pendingStatusUpdate;
-    
-    this.medicalService.updateReimbursementStatus(id, detailId, status, this.statusComment).subscribe({
+    const commentToSend = this.statusComment.trim(); // Allow empty
+
+    // Optional: You can still warn if empty, but don't block
+    // if (!commentToSend) {
+    //   this.showErrorMessage('Please provide a comment.');
+    //   return;
+    // }
+
+    this.medicalService.updateReimbursementStatus(id, detailId, status, commentToSend).subscribe({
       next: () => {
+        this.showSuccessMessage(
+          detailId
+            ? `Investigation ${status === 'approved' ? 'approved' : 'rejected'} successfully.`
+            : `Reimbursement request ${status === 'approved' ? 'approved' : 'rejected'}.`
+        );
         this.loadExpenseReimbursements();
-        this.showSuccessMessage(`Status updated to ${status}.`);
-        this.closeCommentDialog();
-        
-        // Refresh the details view if modal is open
         if (this.showDetailsModal && this.selectedReimbursement) {
           this.viewDetails(this.selectedReimbursement);
         }
+        this.closeCommentDialog();
       },
       error: (error: any) => {
-        console.error('Error updating status:', error);
-        this.showErrorMessage('Error updating status. Please try again.');
+        console.error('Status update failed:', error);
+        const msg = error.error?.Message || error.message || 'Update failed';
+        this.showErrorMessage(`Failed: ${msg}`);
       }
     });
   }
@@ -385,7 +460,7 @@ export class ExpenseReimbursementComponent implements OnInit {
   }
 
   private showSuccessMessage(message: string): void {
-    this.snackBar.open(message, 'Close', {  
+    this.snackBar.open(message, 'Close', {
       duration: 5000,
       panelClass: ['success-snackbar']
     });

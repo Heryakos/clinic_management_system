@@ -127,18 +127,22 @@ export class InjectionPaperComponent implements OnInit {
 
   private processInjectionResponse(data: any): void {
     const formData = {
-      FullName: data.PatientName || '',
-      gender: data.Sex || '',
+      // Patient info - use exact API field names (case-sensitive)
+      FullName: data.FullName || '',
+      gender: data.Gender || '',           // form control is "gender" (lowercase g)
       age: data.Age || null,
       Weight: data.Weight || null,
       CardNumber: data.CardNumber || '',
       woreda: data.Woreda || '',
-      houseNo: data.KebeleHouseNo || '',
-      phone: data.TelNo || '',
-      MedicalHistory: data.Diagnosis || '',
+      houseNo: data.HouseNo || '',
+      phone: data.Phone || '',
+      MedicalHistory: data.MedicalHistory || '',
   
+      // Injection details
       injectionNumber: data.InjectionNumber || '',
-      injectionDate: data.InjectionDate ? new Date(data.InjectionDate).toISOString().split('T')[0] : '',
+      injectionDate: data.InjectionDate 
+        ? new Date(data.InjectionDate).toISOString().split('T')[0] 
+        : '',
       status: data.Status || '',
       orderingPhysicianName: data.OrderingPhysicianName || '',
   
@@ -154,7 +158,9 @@ export class InjectionPaperComponent implements OnInit {
       notes: data.Notes || '',
   
       administeredByName: data.AdministeredByName || '',
-      administeredDate: data.AdministeredDate ? new Date(data.AdministeredDate).toISOString().split('T')[0] : ''
+      administeredDate: data.AdministeredDate 
+        ? new Date(data.AdministeredDate).toISOString().split('T')[0] 
+        : ''
     };
   
     this.injectionForm.patchValue(formData);

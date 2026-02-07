@@ -1,212 +1,88 @@
 <div class="referral-modal-overlay">
-  <div class="referral-modal-content">
-    <div class="modal-header">
-      <h2>Patient Referral Form</h2>
-      <button type="button" class="close-btn" (click)="onClose()">×</button>
+  <div class="referral-modal-content yellow-slip-style">
+    <div class="header">
+      <h2>Federal Housing corporation Medium Clinic</h2>
+      <h3>Patient Referral Slip</h3>
+      <div class="ref-info">
+        <span>Ref. No: {{ referralForm.get('referralNumber')?.value }}</span>
+        <span>Date: {{ referralForm.get('referralDate')?.value | date:'mediumDate' }}</span>
+      </div>
     </div>
 
-    <form [formGroup]="referralForm" (ngSubmit)="onSubmit()" class="referral-form">
-      <div class="form-section">
-        <h3>Patient Information</h3>
-        <div class="form-group">
-          <label>Patient Name</label>
-          <input type="text" formControlName="patientName" class="form-control" readonly>
-        </div>
-        <div class="form-group">
-          <label>Patient ID</label>
-          <input type="text" formControlName="patientId" class="form-control" readonly>
-        </div>
-        <div class="form-group">
-          <label>Card Number</label>
-          <input type="text" formControlName="cardNumber" class="form-control" readonly>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Age</label>
-            <input type="text" formControlName="age" class="form-control" readonly>
-          </div>
-          <div class="form-group">
-            <label>Gender</label>
-            <input type="text" formControlName="gender" class="form-control" readonly>
-          </div>
+    <form [formGroup]="referralForm" (ngSubmit)="onSubmit()">
+      <!-- To Section -->
+      <div class="section">
+        <h4>To</h4>
+        <input type="text" formControlName="referredTo" placeholder="Hospital/Clinic Name" required>
+        <input type="text" formControlName="referredToAddress" placeholder="Address">
+        <input type="text" formControlName="referredToPhone" placeholder="Phone">
+      </div>
+
+      <!-- Patient Information -->
+      <div class="section">
+        <h4>Patient Information</h4>
+        <div class="grid">
+          <div><label>Name</label><input formControlName="patientName" readonly></div>
+          <div><label>Age</label><input formControlName="age" readonly></div>
+          <div><label>Sex</label><input formControlName="gender" readonly></div>
+          <div><label>Occupation</label><input formControlName="occupation"></div>
+          <div><label>Address</label><input formControlName="address" readonly></div>
+          <div><label>Woreda</label><input formControlName="woreda"></div>
+          <div><label>Kebele</label><input formControlName="kebele"></div>
+          <div><label>House No.</label><input formControlName="houseNo"></div>
         </div>
       </div>
 
-      <div class="form-section">
-        <h3>Referral Details</h3>
-        <div class="form-group">
-          <label>Referring Physician</label>
-          <input type="text" formControlName="referringPhysician" class="form-control" readonly>
-        </div>
-        <div class="form-group">
-          <label>Department *</label>
-          <select formControlName="department" class="form-control" [class.error]="isFieldInvalid('department')">
-            <option value="">Select Department</option>
-            <option *ngFor="let dept of departments" [value]="dept">{{ dept }}</option>
-          </select>
-          <div class="error-message" *ngIf="isFieldInvalid('department')">
-            Department is required
-          </div>
-        </div>
+      <!-- Clinical Section -->
+      <div class="section">
+        <label>Clinical Findings</label>
+        <textarea formControlName="clinicalFindings" rows="4"></textarea>
 
-        <div class="form-group">
-          <label>Referred To *</label>
-          <select formControlName="referredTo" class="form-control" [class.error]="isFieldInvalid('referredTo')">
-            <option value="">Select Option</option>
-            <option *ngFor="let option of referredToOptions" [value]="option">{{ option }}</option>
-          </select>
-          <div class="error-message" *ngIf="isFieldInvalid('referredTo')">
-            Referred To is required
-          </div>
-        </div>
+        <label>Diagnosis</label>
+        <textarea formControlName="diagnosis" rows="2"></textarea>
 
-        <div class="form-group">
-          <label>Priority</label>
-          <select formControlName="priority" class="form-control">
-            <option *ngFor="let priority of priorities" [value]="priority">{{ priority }}</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Referral Date</label>
-          <input type="date" formControlName="referralDate" class="form-control" readonly>
-        </div>
-        <div class="form-group">
-          <label>Reference ID</label>
-          <input type="number" formControlName="referenceId" class="form-control">
-        </div>
-        <div class="form-group">
-          <label>Notes</label>
-          <textarea formControlName="notes" class="form-control" rows="3"></textarea>
-        </div>
+        <label>Investigation Result</label>
+        <textarea formControlName="investigationResult" rows="3"></textarea>
+
+        <label>Rx. Given</label>
+        <textarea formControlName="rxGiven" rows="3"></textarea>
+
+        <label>Reason for Referral *</label>
+        <textarea formControlName="reasonForReferral" rows="4" required></textarea>
       </div>
 
-      <div class="form-section">
-        <h3>Clinical Details</h3>
-        <div class="form-group">
-          <label>Reason for Referral *</label>
-          <textarea formControlName="reasonForReferral" class="form-control" rows="3" [class.error]="isFieldInvalid('reasonForReferral')"></textarea>
-          <div class="error-message" *ngIf="isFieldInvalid('reasonForReferral')">
-            Reason for referral is required
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Clinical History</label>
-          <textarea formControlName="clinicalHistory" class="form-control" rows="4"></textarea>
-        </div>
-        <div class="form-group">
-          <label>Current Diagnosis</label>
-          <textarea formControlName="currentDiagnosis" class="form-control" rows="3"></textarea>
-        </div>
-        <div class="form-group">
-          <label>Vital Signs</label>
-          <div class="vital-signs-group">
-            <input type="text" placeholder="Blood Pressure" formControlName="bloodPressure" class="form-control">
-            <input type="text" placeholder="Heart Rate" formControlName="heartRate" class="form-control">
-            <input type="text" placeholder="Temperature" formControlName="temperature" class="form-control">
-            <input type="text" placeholder="Weight" formControlName="weight" class="form-control">
-            <input type="text" placeholder="Height" formControlName="height" class="form-control">
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Current Medications</label>
-          <textarea formControlName="currentMedications" class="form-control" rows="3"></textarea>
-        </div>
-        <div class="form-group">
-          <label>Allergies</label>
-          <textarea formControlName="allergies" class="form-control" rows="2"></textarea>
-        </div>
-        <div class="form-group">
-          <label>Lab Results</label>
-          <textarea formControlName="labResults" class="form-control" rows="3"></textarea>
-        </div>
+      <!-- Physician -->
+      <div class="section">
+        <label>Referred by</label>
+        <input formControlName="physicianName" readonly>
+        <label>Signature</label>
+        <input formControlName="physicianSignature" placeholder="Type name as signature">
       </div>
 
-      <div class="form-section">
-        <h3>Insurance Information</h3>
-        <div class="form-group">
-          <label>Insurance Provider</label>
-          <input type="text" formControlName="insuranceProvider" class="form-control">
-        </div>
-        <div class="form-group">
-          <label>Policy Number</label>
-          <input type="text" formControlName="policyNumber" class="form-control">
-        </div>
-        <div class="form-group">
-          <label>Group Number</label>
-          <input type="text" formControlName="groupNumber" class="form-control">
-        </div>
+      <hr class="divider">
+
+      <!-- Feed Back Section (read-only for now) -->
+      <div class="section feedback">
+        <h3>Feed Back</h3>
+        <p><em>To be filled by receiving facility and returned</em></p>
+        <label>Finding</label>
+        <textarea rows="4" disabled></textarea>
+        <label>Diagnosis</label>
+        <textarea rows="2" disabled></textarea>
+        <label>Rx. Given</label>
+        <textarea rows="3" disabled></textarea>
+        <label>Followed by</label>
+        <input disabled>
+        <label>Signature</label>
+        <input disabled>
       </div>
 
-      <div class="form-section">
-        <h3>Additional Information</h3>
-        <div class="checkbox-group">
-          <label class="checkbox-label">
-            <input type="checkbox" formControlName="urgentFollowUp">
-            Urgent Follow Up Required
-          </label>
-          <label class="checkbox-label">
-            <input type="checkbox" formControlName="transportationNeeded">
-            Transportation Needed
-          </label>
-          <label class="checkbox-label">
-            <input type="checkbox" formControlName="interpreterNeeded">
-            Interpreter Needed
-          </label>
-        </div>
-        <div class="form-group">
-          <label>Additional Notes</label>
-          <textarea formControlName="additionalNotes" class="form-control" rows="3"></textarea>
-        </div>
-      </div>
-
-      <div class="form-section">
-        <h3>Physician Information</h3>
-        <div class="form-group">
-          <label>Physician Name *</label>
-          <input type="text" formControlName="physicianName" class="form-control" readonly="readonly" [class.error]="isFieldInvalid('physicianName')">
-          <div class="error-message" *ngIf="isFieldInvalid('physicianName')">
-            Physician name is required
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Physician License</label>
-          <input type="text" formControlName="physicianLicense" class="form-control">
-        </div>
-        <div class="form-group">
-          <label>Physician Phone</label>
-          <input type="text" formControlName="physicianPhone" class="form-control" readonly>
-        </div>
-        <div class="form-group">
-          <label>Physician Signature</label>
-          <input type="text" formControlName="physicianSignature" class="form-control">
-        </div>
-      </div>
-
-      <div class="modal-actions">
-        <div class="action-group">
-          <button type="button" class="action-btn export" (click)="onExportDetailedPDF()" [disabled]="isSubmitting">
-            Export Detailed PDF
-          </button>
-          <button type="button" class="action-btn export" (click)="onExportSummaryPDF()" [disabled]="isSubmitting">
-            Export Summary PDF
-          </button>
-          <button type="button" class="action-btn print" (click)="onPrintDetailed()" [disabled]="isSubmitting">
-            Print Detailed
-          </button>
-          <button type="button" class="action-btn print" (click)="onPrintSummary()" [disabled]="isSubmitting">
-            Print Summary
-          </button>
-        </div>
-        <div class="action-group">
-          <button type="button" class="action-btn cancel" (click)="onClose()" [disabled]="isSubmitting">
-            Cancel
-          </button>
-          <button type="submit" class="submit-btn" [disabled]="isSubmitting || referralForm.invalid">
-            {{ isSubmitting ? 'Submitting...' : 'Submit Referral' }}
-          </button>
-          <button type="button" (click)="debugForm()">Debug Form</button>
-
-        </div>
+      <div class="actions">
+        <button type="button" (click)="onExportPDF()">Print / Export PDF</button>
+        <button type="button" (click)="onClose()">Cancel</button>
+        <button type="submit" [disabled]="isSubmitting || referralForm.invalid">
+          {{ isSubmitting ? 'Submitting...' : 'Submit Referral' }}
+        </button>
       </div>
     </form>
   </div>

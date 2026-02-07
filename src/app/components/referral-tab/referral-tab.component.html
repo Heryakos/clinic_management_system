@@ -1,5 +1,4 @@
 <div class="referral-tab-container">
-  <!-- No Patient Selected Message -->
   <div *ngIf="!patient" class="no-results">
     <div class="empty-state">
       <h3>No Patient Selected</h3>
@@ -7,16 +6,13 @@
     </div>
   </div>
 
-  <!-- Referral Content -->
   <div *ngIf="patient">
-    <!-- Header Section -->
     <div class="referral-header">
       <div class="patient-info">
-        <h3>{{ patient.FullName }} - Referral Management</h3>
+        <h3>{{ patient.FullName }} - External Referral Management</h3>
         <p>Card Number: {{ patient.CardNumber }} | Patient ID: {{ patient.PatientID }}</p>
       </div>
       
-      <!-- Referral Request Button -->
       <div class="referral-request-section">
         <button
           type="button"
@@ -37,16 +33,14 @@
         <div class="referrals-grid">
           <div *ngFor="let referral of referrals" class="referral-card">
             <div class="referral-card-header">
-              <div class="referral-icon">
-                {{ getDepartmentIcon(referral.Department) }}
-              </div>
+              <div class="referral-icon">🏥</div>
               <div class="referral-info">
-                <h5>{{ referral.Department }}</h5>
-                <p class="referral-id">REF-{{ referral.ReferralID }}</p>
+                <h5>To: {{ referral.referredTo }}</h5>
+                <p class="referral-id">{{ referral.referralNumber }}</p>
               </div>
               <div class="referral-status">
-                <span [class]="getStatusClass(referral.Status)">
-                  {{ referral.Status }}
+                <span [class]="getStatusClass(referral.status)">
+                  {{ referral.status }}
                 </span>
               </div>
             </div>
@@ -54,71 +48,49 @@
             <div class="referral-card-body">
               <div class="referral-detail">
                 <label>Date:</label>
-                <span>{{ formatDate(referral.ReferralDate) }}</span>
+                <span>{{ formatDate(referral.referralDate) }}</span>
               </div>
-              <div class="referral-detail" *ngIf="referral.Notes">
-                <label>Notes:</label>
-                <span>{{ referral.Notes }}</span>
+              <div class="referral-detail">
+                <label>Reason:</label>
+                <span>{{ (referral.reasonForReferral || '') | slice:0:50 }}{{ (referral.reasonForReferral?.length || 0) > 50 ? '...' : '' }}</span>
               </div>
-              <div class="referral-detail" *ngIf="referral.PhysicianName">
-                <label>Physician:</label>
-                <span>{{ referral.PhysicianName }}</span>
+              <div class="referral-detail" *ngIf="referral.clinicalFindings">
+                <label>Findings:</label>
+                <span>{{ (referral.clinicalFindings || '') | slice:0:50 }}{{ (referral.clinicalFindings?.length || 0) > 50 ? '...' : '' }}</span>
               </div>
             </div>
             
             <div class="referral-card-actions">
-              <button
-                  type="button"
-                  class="action-btn view"
-                  (click)="viewReferralDetails(referral.ReferralID)"
-              >
-                  View Details
+              <button type="button" class="action-btn view" (click)="viewReferralDetails(referral.referralID)">
+                View Details
               </button>
-              <button
-                  *ngIf="referral.Status === 'Pending'"
-                  type="button"
-                  class="action-btn progress"
-                  (click)="updateReferralStatus(referral.ReferralID, 'In_Progress')"
-              >
-                  Start Progress
+              <button *ngIf="referral.status === 'Pending'" type="button" class="action-btn progress"
+                (click)="updateReferralStatus(referral.referralID, 'In_Progress')">
+                Start Progress
               </button>
-              <button
-                  *ngIf="referral.Status === 'In_Progress'"
-                  type="button"
-                  class="action-btn complete"
-                  (click)="updateReferralStatus(referral.ReferralID, 'Completed')"
-              >
-                  Complete
+              <button *ngIf="referral.status === 'In_Progress'" type="button" class="action-btn complete"
+                (click)="updateReferralStatus(referral.referralID, 'Completed')">
+                Complete
               </button>
-              <button
-                  *ngIf="referral.Status !== 'Completed' && referral.Status !== 'Cancelled'"
-                  type="button"
-                  class="action-btn cancel"
-                  (click)="updateReferralStatus(referral.ReferralID, 'Cancelled')"
-              >
-                  Cancel
+              <button *ngIf="referral.status !== 'Completed' && referral.status !== 'Cancelled'" 
+                type="button" class="action-btn cancel"
+                (click)="updateReferralStatus(referral.referralID, 'Cancelled')">
+                Cancel
               </button>
-          </div>
-          
-          
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- No Referrals Template -->
+    <!-- No Referrals Message -->
     <ng-template #noReferrals>
       <div class="no-data">
         <div class="empty-state">
           <div class="empty-icon">📋</div>
           <h4>No Referrals Found</h4>
-          <p>No referrals have been created for this patient yet.</p>
-          <button
-            type="button"
-            class="submit-btn"
-            (click)="onReferralRequest()"
-            [disabled]="isRequestingReferral"
-          >
+          <p>No external referrals have been created for this patient yet.</p>
+          <button type="button" class="submit-btn" (click)="onReferralRequest()">
             Create First Referral
           </button>
         </div>
@@ -135,98 +107,64 @@
       (submitReferral)="onReferralSubmit($event)"
     ></app-referral-modal>
 
-    <!-- Referral Details Modal -->
+    <!-- Details Modal -->
     <div *ngIf="showReferralDetails && selectedReferral" class="referral-details-modal">
       <div class="modal-overlay" (click)="closeReferralDetails()"></div>
       <div class="modal-content">
         <div class="modal-header">
-          <h3>Referral Details - REF-{{ selectedReferral.ReferralID }}</h3>
+          <h3>Referral Details - {{ selectedReferral.referralNumber }}</h3>
           <button type="button" class="close-btn" (click)="closeReferralDetails()">×</button>
         </div>
         <div class="modal-body">
           <div class="details-section">
-            <h4>Basic Information</h4>
+            <h4>Referral To</h4>
             <div class="detail-row">
-              <label>Department:</label>
-              <span>{{ selectedReferral.Department }}</span>
+              <label>Hospital/Clinic:</label>
+              <span>{{ selectedReferral.referredTo }}</span>
             </div>
+            <div class="detail-row" *ngIf="selectedReferral.referredToAddress">
+              <label>Address:</label>
+              <span>{{ selectedReferral.referredToAddress }}</span>
+            </div>
+            <div class="detail-row" *ngIf="selectedReferral.referredToPhone">
+              <label>Phone:</label>
+              <span>{{ selectedReferral.referredToPhone }}</span>
+            </div>
+          </div>
+
+          <div class="details-section">
+            <h4>Clinical Information</h4>
+            <div class="detail-row">
+              <label>Clinical Findings:</label>
+              <span>{{ selectedReferral.clinicalFindings || 'N/A' }}</span>
+            </div>
+            <div class="detail-row">
+              <label>Diagnosis:</label>
+              <span>{{ selectedReferral.diagnosis || 'N/A' }}</span>
+            </div>
+            <div class="detail-row">
+              <label>Investigation Result:</label>
+              <span>{{ selectedReferral.investigationResult || 'N/A' }}</span>
+            </div>
+            <div class="detail-row">
+              <label>Rx Given:</label>
+              <span>{{ selectedReferral.rxGiven || 'N/A' }}</span>
+            </div>
+            <div class="detail-row">
+              <label>Reason for Referral:</label>
+              <span>{{ selectedReferral.reasonForReferral }}</span>
+            </div>
+          </div>
+
+          <div class="details-section">
+            <h4>Status & Date</h4>
             <div class="detail-row">
               <label>Status:</label>
-              <span [class]="getStatusClass(selectedReferral.Status)">{{ selectedReferral.Status }}</span>
+              <span [class]="getStatusClass(selectedReferral.status)">{{ selectedReferral.status }}</span>
             </div>
             <div class="detail-row">
-              <label>Date:</label>
-              <span>{{ formatDate(selectedReferral.ReferralDate) }}</span>
-            </div>
-            <div class="detail-row" *ngIf="selectedReferral.CompletedDate">
-              <label>Completed Date:</label>
-              <span>{{ formatDate(selectedReferral.CompletedDate) }}</span>
-            </div>
-          </div>
-          
-          <div class="details-section" *ngIf="selectedReferral.ClinicalHistory || selectedReferral.CurrentDiagnosis">
-            <h4>Clinical Information</h4>
-            <div class="detail-row" *ngIf="selectedReferral.ClinicalHistory">
-              <label>Clinical History:</label>
-              <span>{{ selectedReferral.ClinicalHistory }}</span>
-            </div>
-            <div class="detail-row" *ngIf="selectedReferral.CurrentDiagnosis">
-              <label>Current Diagnosis:</label>
-              <span>{{ selectedReferral.CurrentDiagnosis }}</span>
-            </div>
-          </div>
-          
-          <div class="details-section" *ngIf="selectedReferral.VitalSignsBloodPressure || selectedReferral.VitalSignsHeartRate">
-            <h4>Vital Signs</h4>
-            <div class="vital-signs-grid">
-              <div *ngIf="selectedReferral.VitalSignsBloodPressure" class="vital-sign">
-                <label>Blood Pressure:</label>
-                <span>{{ selectedReferral.VitalSignsBloodPressure }}</span>
-              </div>
-              <div *ngIf="selectedReferral.VitalSignsHeartRate" class="vital-sign">
-                <label>Heart Rate:</label>
-                <span>{{ selectedReferral.VitalSignsHeartRate }}</span>
-              </div>
-              <div *ngIf="selectedReferral.VitalSignsTemperature" class="vital-sign">
-                <label>Temperature:</label>
-                <span>{{ selectedReferral.VitalSignsTemperature }}</span>
-              </div>
-              <div *ngIf="selectedReferral.VitalSignsWeight" class="vital-sign">
-                <label>Weight:</label>
-                <span>{{ selectedReferral.VitalSignsWeight }}</span>
-              </div>
-              <div *ngIf="selectedReferral.VitalSignsHeight" class="vital-sign">
-                <label>Height:</label>
-                <span>{{ selectedReferral.VitalSignsHeight }}</span>
-              </div>
-            </div>
-          </div>
-          
-          <div class="details-section" *ngIf="selectedReferral.PhysicianName">
-            <h4>Physician Information</h4>
-            <div class="detail-row">
-              <label>Physician Name:</label>
-              <span>{{ selectedReferral.PhysicianName }}</span>
-            </div>
-            <div class="detail-row" *ngIf="selectedReferral.PhysicianLicense">
-              <label>License:</label>
-              <span>{{ selectedReferral.PhysicianLicense }}</span>
-            </div>
-            <div class="detail-row" *ngIf="selectedReferral.PhysicianPhone">
-              <label>Phone:</label>
-              <span>{{ selectedReferral.PhysicianPhone }}</span>
-            </div>
-          </div>
-          
-          <div class="details-section" *ngIf="selectedReferral.Notes || selectedReferral.AdditionalNotes">
-            <h4>Notes</h4>
-            <div class="detail-row" *ngIf="selectedReferral.Notes">
-              <label>Notes:</label>
-              <span>{{ selectedReferral.Notes }}</span>
-            </div>
-            <div class="detail-row" *ngIf="selectedReferral.AdditionalNotes">
-              <label>Additional Notes:</label>
-              <span>{{ selectedReferral.AdditionalNotes }}</span>
+              <label>Referral Date:</label>
+              <span>{{ formatDate(selectedReferral.referralDate) }}</span>
             </div>
           </div>
         </div>

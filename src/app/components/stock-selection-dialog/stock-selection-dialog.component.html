@@ -1,20 +1,65 @@
 <div class="stock-selection-dialog">
-    <h2>Select Medication Stock Status</h2>
-    <div class="button-container">
+  <div class="dialog-header">
+    <h2>📋 Prescription Medications</h2>
+    <p class="dialog-subtitle">Select medications to view prescription details</p>
+  </div>
+
+  <div class="medication-sections">
+    <!-- In-Stock Medications -->
+    <div class="medication-section" *ngIf="data.inStockMedications && data.inStockMedications.length > 0">
+      <div class="section-header in-stock-header">
+        <span class="status-icon">✅</span>
+        <h3>In-Stock Medications ({{ data.inStockMedications.length }})</h3>
+      </div>
+      <div class="medication-list">
+        <div 
+          class="medication-item in-stock-item" 
+          *ngFor="let medication of data.inStockMedications; let i = index"
+          (click)="openPrescriptionDialog([medication], 'In-Stock: ' + getMedicationName(medication))"
+        >
+          <span class="medication-text">{{ medication }}</span>
+          <span class="view-icon">👁️</span>
+        </div>
+      </div>
       <button 
-        class="stock-btn in-stock" 
-        (click)="openPrescriptionDialog(data.inStockMedications, 'In-Stock Medications')"
-        [disabled]="data.inStockMedications.length === 0"
+        class="view-all-btn in-stock-btn" 
+        (click)="openPrescriptionDialog(data.inStockMedications, 'All In-Stock Medications')"
       >
-        In-Stock Medications
-      </button>
-      <button 
-        class="stock-btn out-of-stock" 
-        (click)="openPrescriptionDialog(data.outOfStockMedications, 'Out-of-Stock Medications')"
-        [disabled]="data.outOfStockMedications.length === 0"
-      >
-        Out-of-Stock Medications
+        View All In-Stock Medications
       </button>
     </div>
+
+    <!-- Out-of-Stock Medications -->
+    <div class="medication-section" *ngIf="data.outOfStockMedications && data.outOfStockMedications.length > 0">
+      <div class="section-header out-of-stock-header">
+        <span class="status-icon">❌</span>
+        <h3>Out-of-Stock Medications ({{ data.outOfStockMedications.length }})</h3>
+      </div>
+      <div class="medication-list">
+        <div 
+          class="medication-item out-of-stock-item" 
+          *ngFor="let medication of data.outOfStockMedications; let i = index"
+          (click)="openPrescriptionDialog([medication], 'Out-of-Stock: ' + getMedicationName(medication))"
+        >
+          <span class="medication-text">{{ medication }}</span>
+          <span class="view-icon">👁️</span>
+        </div>
+      </div>
+      <button 
+        class="view-all-btn out-of-stock-btn" 
+        (click)="openPrescriptionDialog(data.outOfStockMedications, 'All Out-of-Stock Medications')"
+      >
+        View All Out-of-Stock Medications
+      </button>
+    </div>
+
+    <!-- No Medications Message -->
+    <div class="no-medications" *ngIf="(!data.inStockMedications || data.inStockMedications.length === 0) && (!data.outOfStockMedications || data.outOfStockMedications.length === 0)">
+      <p>No medication details available for this prescription.</p>
+    </div>
+  </div>
+
+  <div class="dialog-actions">
     <button class="close-btn" (click)="closeDialog()">Close</button>
   </div>
+</div>

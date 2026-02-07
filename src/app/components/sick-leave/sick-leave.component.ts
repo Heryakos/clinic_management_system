@@ -8,6 +8,9 @@ import { ASSETS } from '../../assets.config';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { FontService } from '../../services/FontService.service';
 import { forkJoin } from 'rxjs';
+import { environment } from 'src/environments/environment';
+import html2canvas from 'html2canvas';
+
 
 @Component({
   selector: 'app-sick-leave',
@@ -15,9 +18,13 @@ import { forkJoin } from 'rxjs';
   styleUrls: ['./sick-leave.component.css']
 })
 export class SickLeaveComponent implements OnInit {
+
+  currentDoctorName: string = 'Unknown';
+  currentDoctorID: string | null = null;
+  currentEmployeeID: string | null = null;
   logoPath = ASSETS.LOGO;
 
-  @Input() patientID: string | null = null; // CardNumber
+  @Input() patientID: string | null = null;
   @Input() createdBy: string | null = null;
   sickLeaveForm!: FormGroup;
   activeSickLeaves: SickLeave[] = [];
@@ -33,9 +40,10 @@ export class SickLeaveComponent implements OnInit {
     private medicalService: MedicalService,
     private cdr: ChangeDetectorRef,
     private snackBar: MatSnackBar,
-    private fontService: FontService  // ✅ Inject the new service
+    private fontService: FontService
   ) { }
   ngOnInit(): void {
+    this.loadCurrentDoctorInfo();
     console.log('SickLeaveComponent initialized with patientID:', this.patientID, 'createdBy:', this.createdBy);
     this.initializeForm();
     this.loadSickLeaves();
@@ -45,7 +53,6 @@ export class SickLeaveComponent implements OnInit {
     this.subscribeToFormChanges();
   }
   subscribeToFormChanges(): void {
-    // Subscribe to changes in startDate and endDate
     this.sickLeaveForm.get('startDate')?.valueChanges.subscribe(() => {
       this.calculateTotalDays();
     });
@@ -55,16 +62,50 @@ export class SickLeaveComponent implements OnInit {
     });
   }
 
+  private loadCurrentDoctorInfo(): void {
+    const username = environment.username;
+
+    if (!username) {
+      console.warn('No username in environment → cannot load doctor info');
+      return;
+    }
+
+    this.medicalService.getEmployeeById(username).subscribe({
+      next: (response: any) => {
+        const employee = response?.c_Employees?.[0];
+
+        if (employee) {
+          this.currentDoctorName = employee.en_name?.trim()
+            ? `${employee.en_name.trim()}`
+            : 'Unknown';
+
+          this.currentDoctorID = employee.user_ID ?? null;
+          this.currentEmployeeID = employee.employee_Id ?? null;
+
+          console.log('Current doctor loaded:', {
+            name: this.currentDoctorName,
+            userID: this.currentDoctorID,
+            empID: this.currentEmployeeID
+          });
+
+          this.createdBy = this.currentDoctorID;
+        } else {
+          console.warn('No employee data found for current user');
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load current doctor info:', err);
+      }
+    });
+  }
 
 
   initializeForm(): void {
     this.sickLeaveForm = this.fb.group({
-      // Disabled fields don't need validators - they're auto-filled
       employeeId: [{ value: '', disabled: true }],
       employeeName: [{ value: '', disabled: true }],
       address: [{ value: '', disabled: true }],
       diagnosis: [{ value: '', disabled: true }],
-      // Only validate startDate and endDate for sick leave (not fitToWork)
       startDate: ['', Validators.required],
       endDate: ['', Validators.required],
       totalDays: [{ value: '', disabled: true }],
@@ -96,7 +137,6 @@ export class SickLeaveComponent implements OnInit {
         recommendations: 'Resume normal work duties immediately. No sick leave required.'
       });
 
-      // Disable and remove required validators for fitToWork
       this.sickLeaveForm.get('startDate')?.disable();
       this.sickLeaveForm.get('endDate')?.disable();
       this.sickLeaveForm.get('recommendations')?.disable();
@@ -104,22 +144,19 @@ export class SickLeaveComponent implements OnInit {
       this.sickLeaveForm.get('endDate')?.clearValidators();
       this.sickLeaveForm.get('startDate')?.updateValueAndValidity();
       this.sickLeaveForm.get('endDate')?.updateValueAndValidity();
+      this.sickLeaveForm.get('totalDays')?.setValue(0, { emitEvent: false });
     }
     else {
-      // SWITCHING BACK TO SICK LEAVE — RE-FETCH LATEST HISTORY
       this.sickLeaveForm.get('startDate')?.enable();
       this.sickLeaveForm.get('endDate')?.enable();
       this.sickLeaveForm.get('recommendations')?.enable();
-      // Re-add required validators for sick leave
       this.sickLeaveForm.get('startDate')?.setValidators([Validators.required]);
       this.sickLeaveForm.get('endDate')?.setValidators([Validators.required]);
       this.sickLeaveForm.get('startDate')?.updateValueAndValidity();
       this.sickLeaveForm.get('endDate')?.updateValueAndValidity();
 
-      // Show loading state
       this.isSubmitting = true;
 
-      // RE-FETCH LATEST MEDICAL HISTORY TO GET FRESH DIAGNOSIS
       this.medicalService.getPatientByCardNumberHistory(this.patientID!).subscribe({
         next: (historyResponse: any[]) => {
           const latestHistory = historyResponse.length > 0 ? historyResponse[0] : null;
@@ -153,6 +190,33 @@ export class SickLeaveComponent implements OnInit {
 
     this.calculateTotalDays();
   }
+  confirmCancel(leave: SickLeave): void {
+    if (confirm(`Are you sure you want to CANCEL sick leave for ${leave.employeeName}?`)) {
+      this.updateLeaveStatus(leave.certificateID, 'Cancelled');
+    }
+  }
+
+  issueFitToWorkOverride(leave: SickLeave): void {
+    if (confirm(`Issue a Fit to Work certificate to override the current sick leave for ${leave.employeeName}?`)) {
+      // Option 1: Just update status
+      // this.updateLeaveStatus(leave.certificateID, 'FitToWork');
+
+      // BETTER Option 2: Create a NEW FitToWork certificate (cleaner history)
+      this.selectedType = 'fitToWork';
+      this.sickLeaveForm.patchValue({
+        employeeId: leave.employeeID,
+        employeeName: leave.employeeName,
+        address: leave.address,
+        age: leave.age,
+        sex: leave.sex,
+        examinedOn: new Date().toISOString().split('T')[0],
+        doctorName: leave.doctorName,
+        SignatureText: leave.signature,
+        patientId: leave.patientID
+      });
+      this.onSubmit();
+    }
+  }
   calculateTotalDays(): void {
     if (this.selectedType === 'fitToWork') {
       this.sickLeaveForm.get('totalDays')?.setValue(0);
@@ -165,73 +229,79 @@ export class SickLeaveComponent implements OnInit {
     if (startDate && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
-      const timeDiff = end.getTime() - start.getTime();
-      const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
-
-      if (daysDiff > 0) {
-        this.sickLeaveForm.get('totalDays')?.setValue(daysDiff);
-      } else {
-        this.sickLeaveForm.get('totalDays')?.setValue('');
+      let daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24)) + 1;
+      if (end < start) {
+        daysDiff = 0;
       }
+      this.sickLeaveForm.get('totalDays')?.setValue(daysDiff > 0 ? daysDiff : '');
+    } else {
+      this.sickLeaveForm.get('totalDays')?.setValue('');
     }
   }
+  // calculateTotalDays(): void {
+  //   if (this.selectedType === 'fitToWork') {
+  //     this.sickLeaveForm.get('totalDays')?.setValue(0);
+  //     return;
+  //   }
+
+  //   const startDate = this.sickLeaveForm.get('startDate')?.value;
+  //   const endDate = this.sickLeaveForm.get('endDate')?.value;
+
+  //   if (startDate && endDate) {
+  //     const start = new Date(startDate);
+  //     const end = new Date(endDate);
+  //     const timeDiff = end.getTime() - start.getTime();
+  //     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
+
+  //     if (daysDiff > 0) {
+  //       this.sickLeaveForm.get('totalDays')?.setValue(daysDiff);
+  //     } else {
+  //       this.sickLeaveForm.get('totalDays')?.setValue('');
+  //     }
+  //   }
+  // }
 
   prefillForm(): void {
     if (!this.patientID) {
       console.warn('No patientID provided for prefill');
       return;
     }
-
-    // Wait for BOTH patient data AND medical history
     forkJoin({
       patient: this.medicalService.getPatient(this.patientID),
       history: this.medicalService.getPatientByCardNumberHistory(this.patientID)
     }).subscribe({
       next: ({ patient, history }) => {
-        // Handle patient response (array or object)
         const p = Array.isArray(patient) ? patient[0] : patient;
         if (!p) {
           this.showErrorMessage('Patient not found.');
           return;
         }
-
-        // Get latest medical history
         const latestHistory = history && history.length > 0 ? history[0] : null;
-
-        // AUTO-FILL EVERYTHING
         this.sickLeaveForm.patchValue({
-          // EMPLOYEE INFO
           employeeId: p.CardNumber || p.EmployeeID || '',
           employeeName: p.FullName || '',
           address: p.Address || 'Addis Ababa',
-
-          // DEMOGRAPHICS
-          age: p.Age || null,
-          sex: p.Gender === 'M' ? 'Male' : p.Gender === 'F' ? 'Female' : 'Unknown',
-
-          // EXAM DATE
+          age: p.Age ? Number(p.Age) : null,
+          // sex: p.Gender === 'M' ? 'Male' : p.Gender === 'F' ? 'Female' : 'Unknown',
+          sex: this.normalizeGender(p.Gender),
           examinedOn: p.LastVisitDate
             ? new Date(p.LastVisitDate).toISOString().split('T')[0]
             : new Date().toISOString().split('T')[0],
-
-          // MEDICAL INFO — FROM LAST VISIT
           diagnosis: latestHistory?.MedicalHistory
             || p.MedicalHistory
             || 'Patient examined and stable',
 
           // DOCTOR INFO
-          doctorName: latestHistory?.DoctorName || 'Dr. Unknown Doctor',
+          // doctorName: latestHistory?.DoctorName || 'Unknown Doctor',
+          doctorName: latestHistory?.DoctorName?.trim() && latestHistory.DoctorName.trim() !== ''
+            ? latestHistory.DoctorName.trim()
+            : this.currentDoctorName,
 
-          // SIGNATURE — FROM HISTORY (IT WORKS!)
           SignatureText: latestHistory?.SignatureText || '',
-
-          // HIDDEN - PatientID should be a GUID string or null
           patientId: p.PatientID ? (typeof p.PatientID === 'string' ? p.PatientID : null) : null
         });
 
         console.log('SICK LEAVE FORM AUTO-FILLED PERFECTLY:', this.sickLeaveForm.value);
-
-        // Force UI update
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -241,20 +311,37 @@ export class SickLeaveComponent implements OnInit {
     });
   }
 
-  // Method to get the signature image source
+  private normalizeGender(genderValue: string | null | undefined): string {
+    if (!genderValue?.trim()) {
+      console.warn('Gender value is empty or null');
+      return 'Unknown';
+    }
+
+    const original = genderValue.trim();
+    const upper = original.toUpperCase();
+
+    console.log('Raw gender from API:', JSON.stringify(original));
+
+    if (upper.includes('ሴት') || upper.includes('FEMALE') || upper.includes('/ FEMALE')) {
+      return 'Female';
+    }
+
+    if (upper.includes('ወንድ') || upper.includes('MALE') || upper.includes('/ MALE')) {
+      return 'Male';
+    }
+    console.warn('Unrecognized gender format:', original);
+    return original;
+  }
   getSignatureImageSrc(): string {
     const signature = this.sickLeaveForm.get('SignatureText')?.value;
     if (!signature || signature === '' || typeof signature !== 'string') {
-      return ''; // Return empty = no image
+      return '';
     }
-
-    // Clean any possible prefix
     const cleanSig = signature.startsWith('data:') ? signature.split(',')[1] : signature;
 
     return `data:image/png;base64,${cleanSig}`;
   }
 
-  // Method to handle signature image errors
   handleSignatureError(event: any): void {
     console.error('Signature image error:', event);
     const img = event.target;
@@ -265,24 +352,17 @@ export class SickLeaveComponent implements OnInit {
 
 
   onSubmit(): void {
-    // Validate required fields manually since disabled fields don't affect form.valid
     const formValue = this.sickLeaveForm.getRawValue();
-    
-    // Check if createdBy is set
     if (!this.createdBy) {
       console.error('createdBy is not set!');
       this.showErrorMessage('Doctor information is missing. Please refresh the page.');
       return;
     }
-
-    // Validate required fields based on type
     if (this.selectedType === 'sickLeave') {
       if (!formValue.startDate || !formValue.endDate) {
         this.showErrorMessage('Start date and end date are required for sick leave.');
         return;
       }
-      
-      // Validate date range
       const start = new Date(formValue.startDate);
       const end = new Date(formValue.endDate);
       if (end < start) {
@@ -290,7 +370,6 @@ export class SickLeaveComponent implements OnInit {
         return;
       }
     } else if (this.selectedType === 'fitToWork') {
-      // For FitToWork, ensure dates are set to today
       const today = new Date().toISOString().split('T')[0];
       if (!formValue.startDate) {
         formValue.startDate = today;
@@ -300,7 +379,6 @@ export class SickLeaveComponent implements OnInit {
       }
     }
 
-    // Validate required auto-filled fields
     if (!formValue.employeeId || !formValue.employeeName) {
       console.error('Missing required fields:', {
         employeeId: formValue.employeeId,
@@ -310,14 +388,13 @@ export class SickLeaveComponent implements OnInit {
       return;
     }
 
-    // For FitToWork, diagnosis and doctorName can have defaults
     if (!formValue.diagnosis) {
-      formValue.diagnosis = this.selectedType === 'fitToWork' 
+      formValue.diagnosis = this.selectedType === 'fitToWork'
         ? 'Patient is clinically stable and fit to resume regular work duties with no restrictions.'
         : 'To be examined';
     }
     if (!formValue.doctorName) {
-      formValue.doctorName = 'Dr. Unknown';
+      formValue.doctorName = 'Unknown';
     }
 
     this.isSubmitting = true;
@@ -325,16 +402,13 @@ export class SickLeaveComponent implements OnInit {
     const status = this.selectedType === 'fitToWork' ? 'FitToWork' : 'Active';
     const today = new Date();
 
-    // SAFE DATE HANDLING — Convert to Date objects for the service
     const getSafeDate = (value: any): Date => {
       if (!value || value === '') {
         return today;
       }
-      // If it's already a Date object, return it
       if (value instanceof Date) {
         return isNaN(value.getTime()) ? today : value;
       }
-      // If it's a string, parse it
       if (typeof value === 'string') {
         const d = new Date(value + 'T00:00:00.000Z');
         return isNaN(d.getTime()) ? today : d;
@@ -342,20 +416,15 @@ export class SickLeaveComponent implements OnInit {
       return today;
     };
 
-    // Convert createdBy to GUID string
     const doctorIDGuid = this.createdBy;
 
-    // For FitToWork, ensure startDate and endDate are the same (today)
     let startDate = getSafeDate(formValue.startDate);
     let endDate = getSafeDate(formValue.endDate);
-    
+
     if (this.selectedType === 'fitToWork') {
-      // For FitToWork, both dates should be today
       startDate = today;
       endDate = today;
     }
-
-    // Create payload matching SickLeave interface (with Date objects)
     const payload: any = {
       employeeID: formValue.employeeId || '',
       employeeName: formValue.employeeName || '',
@@ -364,16 +433,18 @@ export class SickLeaveComponent implements OnInit {
       endDate: endDate,
       diagnosis: formValue.diagnosis || 'To be examined',
       recommendations: formValue.recommendations || null,
-      doctorID: doctorIDGuid,
-      doctorName: formValue.doctorName || 'Dr. Unknown',
+      // doctorID: doctorIDGuid,
+      // doctorName: formValue.doctorName || 'Unknown',
+      doctorName: this.sickLeaveForm.get('doctorName')?.value || this.currentDoctorName,
+      doctorID: this.createdBy || this.currentDoctorID,
       status: status,
       issueDate: today,
-      createdBy: doctorIDGuid,
+      // createdBy: doctorIDGuid,
+      createdBy: this.createdBy || this.currentDoctorID,
       age: formValue.age ? parseInt(formValue.age.toString()) : null,
       sex: formValue.sex || 'Unknown',
       examinedOn: formValue.examinedOn ? getSafeDate(formValue.examinedOn) : null,
       signature: formValue.SignatureText || null,
-      // PatientID should be a GUID string or null, not an integer
       patientID: formValue.patientId ? (typeof formValue.patientId === 'string' ? formValue.patientId : null) : null
     };
 
@@ -400,8 +471,6 @@ export class SickLeaveComponent implements OnInit {
       }
     });
   }
-
-  // Helper method to get form validation errors for debugging
   private getFormValidationErrors(): any {
     const errors: any = {};
     Object.keys(this.sickLeaveForm.controls).forEach(key => {
@@ -448,286 +517,95 @@ export class SickLeaveComponent implements OnInit {
     this.selectedLeave = null;
   }
 
-  downloadCertificate(): void {
-    if (!this.selectedLeave) return;
+  async printCertificate(): Promise<void> {
+    if (!this.selectedLeave || !this.showPrintModal) return;
 
-    // Load font async
-    this.fontService.loadFontBase64('fonts/AbyssinicaSIL-Regular.json').subscribe(fontBase64 => {
-      if (!fontBase64) {
-        console.error('Font loading failed; falling back to default font.');
-        this.generateDownloadPDFWithoutCustomFont();
-        return;
-      }
+    try {
+      const element = document.getElementById('printable-certificate');
+      if (!element) throw new Error('Certificate element not found');
 
-      const doc = new jsPDF();
+      const actions = document.querySelector('.modal-actions');
+      if (actions) (actions as HTMLElement).style.display = 'none';
 
-      // Add custom font for Amharic (Ethiopic script) support
-      const fontName = 'AbyssinicaSIL-Regular.ttf'; // Matches your font file name
-      const fontFamily = 'AbyssinicaSIL'; // Custom family name
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
 
-      doc.addFileToVFS(fontName, fontBase64);
-      doc.addFont(fontName, fontFamily, 'normal');
-      doc.setFont(fontFamily); // Set the custom font for the entire document to handle Amharic/Unicode
+      const imgData = canvas.toDataURL('image/png');
 
-      const logoUrl = 'assets/photo_2025-07-21_14-48-47.jpg';
+      const pdf = new jsPDF({
+        unit: 'mm',
+        format: 'a4',
+        orientation: 'portrait'
+      });
 
-      doc.addImage(logoUrl, 'JPEG', 15, 10, 30, 30);
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-      doc.setFontSize(16);
-      doc.text('FEDERAL HOUSING COOPERATION MEDIUM CLINIC', 60, 20);
-      doc.setFontSize(10);
-      doc.text('TEL. 011-855-3615', 60, 25);
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      if (actions) (actions as HTMLElement).style.display = 'flex';
+      const pdfBlob = pdf.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
 
-      doc.setFontSize(12);
-      doc.text('Medical Certificate', 85, 50, { align: 'center' });
-      doc.text(`Date: ${this.selectedLeave!.issueDate?.toLocaleDateString() || new Date().toLocaleDateString()}`, 15, 60);
-
-      doc.setFontSize(10);
-      doc.text('Name:', 15, 70);
-      doc.text(this.selectedLeave!.employeeName || '', 30, 70);
-      doc.text('Age:', 80, 70);
-      doc.text(this.selectedLeave!.age?.toString() || '', 90, 70);
-      doc.text('Sex:', 110, 70);
-      doc.text(this.selectedLeave!.sex || '', 120, 70);
-
-      doc.text('Address:', 15, 80);
-      doc.text(this.selectedLeave!.address || '', 30, 80);
-
-      doc.text('Examined on:', 15, 90);
-      doc.text(this.selectedLeave!.examinedOn?.toLocaleDateString() || '', 40, 90);
-
-      doc.text('Diagnosis:', 15, 100);
-      doc.text(this.selectedLeave!.diagnosis, 30, 100);
-
-      doc.text("Doctor's Recommendation:", 15, 110);
-      doc.text(this.selectedLeave!.recommendations || 'Rest and follow-up as needed', 40, 110);
-
-      if (this.selectedLeave!.status === 'FitToWork') {
-        doc.text('Rest Required:', 15, 120);
-        doc.text('No rest required - Patient is fit to work', 40, 120);
+      const printWindow = window.open(pdfUrl, '_blank');
+      if (printWindow) {
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+        };
       } else {
-        doc.text('Rest Required:', 15, 120);
-        doc.text(
-          `${this.selectedLeave!.totalDays} days (${this.selectedLeave!.startDate?.toLocaleDateString() || ''} - ${this.selectedLeave!.endDate?.toLocaleDateString() || ''})`,
-          40,
-          120
-        );
+        this.snackBar.open('Popup blocked. Try downloading instead.', 'Close', { duration: 5000 });
       }
-
-      doc.text("Doctor's Name:", 15, 130);
-      doc.text(this.selectedLeave!.doctorName || '', 40, 130);
-      doc.text('Signature:', 15, 140);
-      if (this.selectedLeave!.signature) {
-        doc.addImage(`data:image/png;base64,${this.selectedLeave!.signature}`, 'PNG', 40, 135, 60, 20);
-      }
-      doc.text('Date:', 15, 150);
-      doc.text(this.selectedLeave!.issueDate?.toLocaleDateString() || '', 30, 150);
-
-      doc.save(`medical-certificate-${this.selectedLeave!.certificateID}.pdf`);
-    });
+    } catch (err) {
+      console.error('Print failed:', err);
+      this.snackBar.open('Failed to generate print view. Try again.', 'Close', { duration: 5000 });
+    }
   }
 
-  // Fallback download without custom font
-  private generateDownloadPDFWithoutCustomFont(): void {
-    const doc = new jsPDF();
-    const logoUrl = 'assets/photo_2025-07-21_14-48-47.jpg';
+  // ──────────────────────────────────────────────────────────────
+  // DOWNLOAD: Capture HTML → PDF → save file
+  // ──────────────────────────────────────────────────────────────
+  async downloadCertificate(): Promise<void> {
+    if (!this.selectedLeave || !this.showPrintModal) return;
 
-    doc.addImage(logoUrl, 'JPEG', 15, 10, 30, 30);
+    try {
+      const element = document.getElementById('printable-certificate');
+      if (!element) throw new Error('Certificate element not found');
 
-    doc.setFontSize(16);
-    doc.text('FEDERAL HOUSING COOPERATION MEDIUM CLINIC', 60, 20);
-    doc.setFontSize(10);
-    doc.text('TEL. 011-855-3615', 60, 25);
+      const actions = document.querySelector('.modal-actions');
+      if (actions) (actions as HTMLElement).style.display = 'none';
 
-    doc.setFontSize(12);
-    doc.text('Medical Certificate', 85, 50, { align: 'center' });
-    doc.text(`Date: ${this.selectedLeave!.issueDate?.toLocaleDateString() || new Date().toLocaleDateString()}`, 15, 60);
+      const canvas = await html2canvas(element, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      });
 
-    doc.setFontSize(10);
-    doc.text('Name:', 15, 70);
-    doc.text(this.selectedLeave!.employeeName || '', 30, 70);
-    doc.text('Age:', 80, 70);
-    doc.text(this.selectedLeave!.age?.toString() || '', 90, 70);
-    doc.text('Sex:', 110, 70);
-    doc.text(this.selectedLeave!.sex || '', 120, 70);
+      const imgData = canvas.toDataURL('image/png');
 
-    doc.text('Address:', 15, 80);
-    doc.text(this.selectedLeave!.address || '', 30, 80);
+      const pdf = new jsPDF({
+        unit: 'mm',
+        format: 'a4',
+        orientation: 'portrait'
+      });
 
-    doc.text('Examined on:', 15, 90);
-    doc.text(this.selectedLeave!.examinedOn?.toLocaleDateString() || '', 40, 90);
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-    doc.text('Diagnosis:', 15, 100);
-    doc.text(this.selectedLeave!.diagnosis, 30, 100);
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      if (actions) (actions as HTMLElement).style.display = 'flex';
 
-    doc.text("Doctor's Recommendation:", 15, 110);
-    doc.text(this.selectedLeave!.recommendations || 'Rest and follow-up as needed', 40, 110);
-
-    if (this.selectedLeave!.status === 'FitToWork') {
-      doc.text('Rest Required:', 15, 120);
-      doc.text('No rest required - Patient is fit to work', 40, 120);
-    } else {
-      doc.text('Rest Required:', 15, 120);
-      doc.text(
-        `${this.selectedLeave!.totalDays} days (${this.selectedLeave!.startDate?.toLocaleDateString() || ''} - ${this.selectedLeave!.endDate?.toLocaleDateString() || ''})`,
-        40,
-        120
-      );
+      pdf.save(`medical-certificate-${this.selectedLeave.certificateID || 'unknown'}-${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (err) {
+      console.error('Download failed:', err);
+      this.snackBar.open('Failed to generate PDF. Try again.', 'Close', { duration: 5000 });
     }
-
-    doc.text("Doctor's Name:", 15, 130);
-    doc.text(this.selectedLeave!.doctorName || '', 40, 130);
-    doc.text('Signature:', 15, 140);
-    if (this.selectedLeave!.signature) {
-      doc.addImage(`data:image/png;base64,${this.selectedLeave!.signature}`, 'PNG', 40, 135, 60, 20);
-    }
-    doc.text('Date:', 15, 150);
-    doc.text(this.selectedLeave!.issueDate?.toLocaleDateString() || '', 30, 150);
-
-    doc.save(`medical-certificate-${this.selectedLeave!.certificateID}.pdf`);
   }
-
-  printCertificate(): void {
-    if (!this.selectedLeave) return;
-
-    // Load font async
-    this.fontService.loadFontBase64('fonts/AbyssinicaSIL-Regular.json').subscribe(fontBase64 => {
-      if (!fontBase64) {
-        console.error('Font loading failed; falling back to default font.');
-        this.generatePrintPDFWithoutCustomFont();
-        return;
-      }
-
-      const doc = new jsPDF();
-
-      // Add custom font for Amharic (Ethiopic script) support
-      const fontName = 'AbyssinicaSIL-Regular.ttf'; // Matches your font file name
-      const fontFamily = 'AbyssinicaSIL'; // Custom family name
-
-      doc.addFileToVFS(fontName, fontBase64);
-      doc.addFont(fontName, fontFamily, 'normal');
-      doc.setFont(fontFamily); // Set the custom font for the entire document to handle Amharic/Unicode
-
-      const logoUrl = 'assets/photo_2025-07-21_14-48-47.jpg';
-
-      doc.addImage(logoUrl, 'JPEG', 15, 10, 30, 30);
-
-      doc.setFontSize(16);
-      doc.text('FEDERAL HOUSING COOPERATION MEDIUM CLINIC', 60, 20);
-      doc.setFontSize(10);
-      doc.text('TEL. 011-855-3615', 60, 25);
-
-      doc.setFontSize(12);
-      doc.text('Medical Certificate', 85, 50, { align: 'center' });
-      doc.text(`Date: ${this.selectedLeave!.issueDate?.toLocaleDateString() || new Date().toLocaleDateString()}`, 15, 60);
-
-      doc.setFontSize(10);
-      doc.text('Name:', 15, 70);
-      doc.text(this.selectedLeave!.employeeName || '', 30, 70);
-      doc.text('Age:', 80, 70);
-      doc.text(this.selectedLeave!.age?.toString() || '', 90, 70);
-      doc.text('Sex:', 110, 70);
-      doc.text(this.selectedLeave!.sex || '', 120, 70);
-
-      doc.text('Address:', 15, 80);
-      doc.text(this.selectedLeave!.address || '', 30, 80);
-
-      doc.text('Examined on:', 15, 90);
-      doc.text(this.selectedLeave!.examinedOn?.toLocaleDateString() || '', 40, 90);
-
-      doc.text('Diagnosis:', 15, 100);
-      doc.text(this.selectedLeave!.diagnosis, 30, 100);
-
-      doc.text("Doctor's Recommendation:", 15, 110);
-      doc.text(this.selectedLeave!.recommendations || 'Rest and follow-up as needed', 40, 110);
-
-      if (this.selectedLeave!.status === 'FitToWork') {
-        doc.text('Rest Required:', 15, 120);
-        doc.text('No rest required - Patient is fit to work', 40, 120);
-      } else {
-        doc.text('Rest Required:', 15, 120);
-        doc.text(
-          `${this.selectedLeave!.totalDays} days (${this.selectedLeave!.startDate?.toLocaleDateString() || ''} - ${this.selectedLeave!.endDate?.toLocaleDateString() || ''})`,
-          40,
-          120
-        );
-      }
-
-      doc.text("Doctor's Name:", 15, 130);
-      doc.text(this.selectedLeave!.doctorName || '', 40, 130);
-      doc.text('Signature:', 15, 140);
-      if (this.selectedLeave!.signature) {
-        doc.addImage(`data:image/png;base64,${this.selectedLeave!.signature}`, 'PNG', 40, 135, 60, 20);
-      }
-      doc.text('Date:', 15, 150);
-      doc.text(this.selectedLeave!.issueDate?.toLocaleDateString() || '', 30, 150);
-
-      doc.autoPrint();
-      window.open(doc.output('bloburl'), '_blank');
-    });
-  }
-
-  // Fallback print without custom font
-  private generatePrintPDFWithoutCustomFont(): void {
-    const doc = new jsPDF();
-    const logoUrl = 'assets/photo_2025-07-21_14-48-47.jpg';
-
-    doc.addImage(logoUrl, 'JPEG', 15, 10, 30, 30);
-
-    doc.setFontSize(16);
-    doc.text('FEDERAL HOUSING COOPERATION MEDIUM CLINIC', 60, 20);
-    doc.setFontSize(10);
-    doc.text('TEL. 011-855-3615', 60, 25);
-
-    doc.setFontSize(12);
-    doc.text('Medical Certificate', 85, 50, { align: 'center' });
-    doc.text(`Date: ${this.selectedLeave!.issueDate?.toLocaleDateString() || new Date().toLocaleDateString()}`, 15, 60);
-
-    doc.setFontSize(10);
-    doc.text('Name:', 15, 70);
-    doc.text(this.selectedLeave!.employeeName || '', 30, 70);
-    doc.text('Age:', 80, 70);
-    doc.text(this.selectedLeave!.age?.toString() || '', 90, 70);
-    doc.text('Sex:', 110, 70);
-    doc.text(this.selectedLeave!.sex || '', 120, 70);
-
-    doc.text('Address:', 15, 80);
-    doc.text(this.selectedLeave!.address || '', 30, 80);
-
-    doc.text('Examined on:', 15, 90);
-    doc.text(this.selectedLeave!.examinedOn?.toLocaleDateString() || '', 40, 90);
-
-    doc.text('Diagnosis:', 15, 100);
-    doc.text(this.selectedLeave!.diagnosis, 30, 100);
-
-    doc.text("Doctor's Recommendation:", 15, 110);
-    doc.text(this.selectedLeave!.recommendations || 'Rest and follow-up as needed', 40, 110);
-
-    if (this.selectedLeave!.status === 'FitToWork') {
-      doc.text('Rest Required:', 15, 120);
-      doc.text('No rest required - Patient is fit to work', 40, 120);
-    } else {
-      doc.text('Rest Required:', 15, 120);
-      doc.text(
-        `${this.selectedLeave!.totalDays} days (${this.selectedLeave!.startDate?.toLocaleDateString() || ''} - ${this.selectedLeave!.endDate?.toLocaleDateString() || ''})`,
-        40,
-        120
-      );
-    }
-
-    doc.text("Doctor's Name:", 15, 130);
-    doc.text(this.selectedLeave!.doctorName || '', 40, 130);
-    doc.text('Signature:', 15, 140);
-    if (this.selectedLeave!.signature) {
-      doc.addImage(`data:image/png;base64,${this.selectedLeave!.signature}`, 'PNG', 40, 135, 60, 20);
-    }
-    doc.text('Date:', 15, 150);
-    doc.text(this.selectedLeave!.issueDate?.toLocaleDateString() || '', 30, 150);
-
-    doc.autoPrint();
-    window.open(doc.output('bloburl'), '_blank');
-  }
-
   private showErrorMessage(message: string): void {
     this.snackBar.open(message, 'Close', {
       duration: 5000,

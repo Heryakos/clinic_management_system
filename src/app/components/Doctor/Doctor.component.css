@@ -37,7 +37,8 @@
 
 .procedure-type-tabs {
   display: flex;
-  gap: 20px; /* Increased gap for better spacing */
+  gap: 20px;
+  /* Increased gap for better spacing */
   max-width: 800px;
   margin: 0 auto;
   flex-wrap: wrap;
@@ -62,7 +63,8 @@
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   min-height: 60px;
-  min-width: 150px; /* Added min-width for better sizing */
+  min-width: 150px;
+  /* Added min-width for better sizing */
 }
 
 .procedure-type-btn::before {
@@ -317,7 +319,7 @@
     grid-template-columns: 1fr;
     gap: 10px;
   }
-  
+
   .procedure-type-btn {
     justify-content: center;
     text-align: center;
@@ -521,7 +523,8 @@
 }
 
 .chevron.open {
-  transform: rotate(90deg); /* rotate to point down */
+  transform: rotate(90deg);
+  /* rotate to point down */
 }
 
 .history-content {
@@ -534,8 +537,15 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .patient-card-container h2 {
@@ -545,7 +555,11 @@
   font-weight: 500;
 }
 
-.search-container, .edit-form, .lab-request-form, .prescription-request-form, .injection-request-form {
+.search-container,
+.edit-form,
+.lab-request-form,
+.prescription-request-form,
+.injection-request-form {
   background: white;
   padding: 30px;
   border-radius: 10px;
@@ -553,7 +567,11 @@
   margin-bottom: 40px;
 }
 
-.search-form, .patient-form, .lab-form, .prescription-form, .injection-form {
+.search-form,
+.patient-form,
+.lab-form,
+.prescription-form,
+.injection-form {
   display: grid;
   gap: 20px;
 }
@@ -602,7 +620,9 @@ textarea.form-control {
   margin-top: 5px;
 }
 
-.search-btn, .submit-btn, .action-btn {
+.search-btn,
+.submit-btn,
+.action-btn {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   padding: 12px 30px;
@@ -622,28 +642,38 @@ textarea.form-control {
   background: #28a745;
 }
 
-.search-btn:hover:not(:disabled), .submit-btn:hover:not(:disabled), .action-btn:hover:not(:disabled) {
+.search-btn:hover:not(:disabled),
+.submit-btn:hover:not(:disabled),
+.action-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
-.search-btn:disabled, .submit-btn:disabled, .action-btn:disabled {
+.search-btn:disabled,
+.submit-btn:disabled,
+.action-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.tests-section, .medications-section, .injections-section {
+.tests-section,
+.medications-section,
+.injections-section {
   margin: 30px 0;
 }
 
-.tests-section h4, .medications-section h4, .injections-section h4 {
+.tests-section h4,
+.medications-section h4,
+.injections-section h4 {
   color: #2c3e50;
   margin-bottom: 20px;
   font-size: 1.3em;
   font-weight: 500;
 }
 
-.test-item, .medication-item, .injection-item {
+.test-item,
+.medication-item,
+.injection-item {
   display: grid;
   grid-template-columns: 1fr;
   gap: 15px;
@@ -653,14 +683,18 @@ textarea.form-control {
   align-items: start;
 }
 
-.tests-list, .prescriptions-list, .injections-list {
+.tests-list,
+.prescriptions-list,
+.injections-list {
   background: white;
   padding: 30px;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.tests-list h3, .prescriptions-list h3, .injections-list h3 {
+.tests-list h3,
+.prescriptions-list h3,
+.injections-list h3 {
   color: #2c3e50;
   margin-bottom: 20px;
   font-size: 1.5em;
@@ -669,17 +703,27 @@ textarea.form-control {
 
 .table-container {
   overflow-x: auto;
-  margin-top: 20px; /* Added margin for spacing from header */
-  border: 1px solid #e9ecef; /* Added border for definition */
-  border-radius: 8px; /* Rounded corners */
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Subtle shadow */
+  margin-top: 20px;
+  /* Added margin for spacing from header */
+  border: 1px solid #e9ecef;
+  /* Added border for definition */
+  border-radius: 8px;
+  /* Rounded corners */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  /* Subtle shadow */
 }
 
-.tests-table, .prescriptions-table, .injections-table, .procedures-table {
+.tests-table,
+.prescriptions-table,
+.injections-table,
+.procedures-table {
   width: 100%;
-  border-collapse: separate; /* Changed to separate for border-spacing */
-  border-spacing: 0; /* No spacing between cells */
-  margin-top: 0; /* Removed extra margin */
+  border-collapse: separate;
+  /* Changed to separate for border-spacing */
+  border-spacing: 0;
+  /* No spacing between cells */
+  margin-top: 0;
+  /* Removed extra margin */
 }
 
 .tests-table th,
@@ -690,10 +734,12 @@ textarea.form-control {
 .injections-table td,
 .procedures-table th,
 .procedures-table td {
-  padding: 5px 10px; /* Increased horizontal padding */
+  padding: 5px 10px;
+  /* Increased horizontal padding */
   text-align: left;
   border-bottom: 1px solid #e9ecef;
-  vertical-align: middle; /* Center content vertically */
+  vertical-align: middle;
+  /* Center content vertically */
 }
 
 .tests-table th,
@@ -706,14 +752,16 @@ textarea.form-control {
   text-transform: uppercase;
   font-size: 0.875rem;
   letter-spacing: 0.5px;
-  border-top: 1px solid #e9ecef; /* Added top border */
+  border-top: 1px solid #e9ecef;
+  /* Added top border */
 }
 
 .tests-table tr:last-child td,
 .prescriptions-table tr:last-child td,
 .injections-table tr:last-child td,
 .procedures-table tr:last-child td {
-  border-bottom: none; /* Remove bottom border on last row */
+  border-bottom: none;
+  /* Remove bottom border on last row */
 }
 
 .tests-table tr:hover,
@@ -765,7 +813,8 @@ textarea.form-control {
 .checkbox-group {
   display: flex;
   align-items: center;
-  margin-top: 25px; /* Adjust to align with other fields */
+  margin-top: 25px;
+  /* Adjust to align with other fields */
 }
 
 .checkbox-label {
@@ -886,7 +935,7 @@ textarea.form-control {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.4);
 }
 
 .dialog-content {
@@ -899,7 +948,7 @@ textarea.form-control {
   padding: 32px 24px;
   min-width: 320px;
   max-width: 90vw;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 .medical-history-content {
@@ -922,7 +971,7 @@ textarea.form-control {
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 16px;
-  box-shadow: 0 2px 8px rgba(102,126,234,0.08);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.08);
 }
 
 .close-btn {
@@ -948,7 +997,52 @@ textarea.form-control {
   cursor: pointer;
 }
 
-.dropdown-menu {
+.tab-button .badge {
+  margin-left: 8px;
+  background: #dc3545;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 12px;
+  display: inline-block;
+  min-width: 20px;
+  text-align: center;
+}
+
+.test-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.select-all-container {
+  margin-bottom: 10px;
+  padding: 8px;
+  background-color: #f0f8ff;
+  border-radius: 6px;
+  border-left: 4px solid #007bff;
+}
+
+.select-all-label {
+  font-weight: bold;
+  color: #0056b3;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.select-all-label input {
+  transform: scale(1.3);
+}
+
+.test-checkbox-item {
+  margin-left: 20px;
+}
+
+.clinic-dropdown-menu {
   position: absolute;
   top: 100%;
   left: 0;
@@ -979,14 +1073,14 @@ textarea.form-control {
   cursor: pointer;
 }
 
-.dropdown-item {
+.clinic-dropdown-item {
   padding: 8px 12px;
   cursor: pointer;
   font-size: 14px;
   color: #333;
 }
 
-.dropdown-item:hover {
+.clinic-dropdown-item:hover {
   background: #f8f9fa;
 }
 
@@ -1009,6 +1103,7 @@ textarea.form-control {
   background-color: #f8f9fa;
   cursor: not-allowed;
 }
+
 .active-patients-section {
   background: white;
   padding: 30px;
@@ -1121,6 +1216,7 @@ textarea.form-control {
   background-color: #f8f9fa;
   cursor: not-allowed;
 }
+
 /* Medical History Panel Enhancements */
 .filter-section {
   background: #f8f9fa;
@@ -1221,6 +1317,7 @@ textarea.form-control {
   color: #495057;
   font-weight: 500;
 }
+
 .signature-section {
   margin-top: 12px;
   padding-top: 12px;
@@ -1248,6 +1345,131 @@ textarea.form-control {
   font-size: 0.9em;
 }
 
+.status-notice-cell {
+  white-space: nowrap;
+  padding: 8px 12px !important;
+}
+
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.status-tag.sick-leave {
+  background-color: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
+
+.status-tag.regular {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+
+.secondary-notice {
+  font-size: 0.82rem;
+  color: #d32f2f;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+tr.on-sick-leave {
+  background-color: rgba(244, 67, 54, 0.06);
+  font-weight: 500;
+}
+
+.rotating {
+  animation: spin 1.4s linear infinite;
+}
+
+/* Row highlighting for urgency */
+.emergency-row {
+  background-color: #fff3cd !important;
+  /* light yellow/orange */
+  font-weight: 500;
+}
+
+.sick-leave-row {
+  background-color: #ffebee !important;
+  /* light red */
+}
+
+/* Request Type badge styling */
+.request-type-cell {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.request-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.request-type-badge.emergency {
+  background-color: #dc3545;
+  color: white;
+  border: 1px solid #c82333;
+  box-shadow: 0 1px 3px rgba(220, 53, 69, 0.3);
+}
+
+.request-type-badge.follow-up {
+  background-color: #6c757d;
+  color: white;
+}
+
+.request-type-badge.examination {
+  background-color: #17a2b8;
+  color: white;
+}
+
+/* Emergency icon pulse animation (optional but very noticeable) */
+.emergency-icon {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.2);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Small request date below badge */
+.request-date.small {
+  font-size: 0.78rem;
+  color: #6c757d;
+  margin-top: 4px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .history-summary {
@@ -1255,15 +1477,15 @@ textarea.form-control {
     align-items: flex-start;
     gap: 8px;
   }
-  
+
   .info-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .filter-section .form-row {
     grid-template-columns: 1fr;
   }
-  
+
   .pagination {
     flex-direction: column;
     gap: 10px;
@@ -1281,16 +1503,23 @@ textarea.form-control {
   .patient-card-container {
     padding: 10px;
   }
-  
-  .patient-form, .edit-form, .search-container, .lab-request-form, .prescription-request-form, .injection-request-form {
+
+  .patient-form,
+  .edit-form,
+  .search-container,
+  .lab-request-form,
+  .prescription-request-form,
+  .injection-request-form {
     padding: 20px;
   }
-  
+
   .form-row {
     grid-template-columns: 1fr;
   }
-  
-  .test-item, .medication-item, .injection-item {
+
+  .test-item,
+  .medication-item,
+  .injection-item {
     grid-template-columns: 1fr;
   }
 
@@ -1315,7 +1544,8 @@ textarea.form-control {
   padding: 30px;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  margin-top: 40px; /* Added margin to separate from tabs */
+  margin-top: 40px;
+  /* Added margin to separate from tabs */
 }
 
 .procedures-list h3 {
@@ -1323,5 +1553,6 @@ textarea.form-control {
   margin-bottom: 25px;
   font-size: 1.5em;
   font-weight: 500;
-  text-align: center; /* Centered header */
+  text-align: center;
+  /* Centered header */
 }

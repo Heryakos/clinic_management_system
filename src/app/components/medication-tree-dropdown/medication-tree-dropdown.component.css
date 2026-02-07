@@ -1,6 +1,7 @@
 .medication-tree-dropdown {
   position: relative;
   width: 100%;
+  overflow: visible !important;
 }
 
 .dropdown-trigger {
@@ -15,6 +16,8 @@
   align-items: center;
   cursor: pointer;
   transition: all 0.3s;
+  position: relative;
+  z-index: 2;
 }
 
 .dropdown-trigger:hover:not(.disabled) {
@@ -66,19 +69,21 @@
   margin-top: 5px;
 }
 
-.dropdown-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 1px solid #e9ecef;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+.clinic-dropdown-menu {
+  position: absolute !important;
+  top: 100% !important;
+  left: 0 !important;
+  right: 0 !important;
+  background: white !important;
+  border: 1px solid #e9ecef !important;
+  border-radius: 6px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2) !important;
+  z-index: 9999 !important;           /* MUCH higher than DNN's usual layers */
   max-height: 400px;
   display: flex;
   flex-direction: column;
+  overflow: visible !important;
+  margin-top: 4px !important;         /* Small gap to avoid trigger overlap issues */
 }
 
 .search-container {
@@ -290,7 +295,7 @@
 }
 
 @media (max-width: 768px) {
-  .dropdown-menu {
+  .clinic-dropdown-menu {
     max-height: 300px;
   }
   

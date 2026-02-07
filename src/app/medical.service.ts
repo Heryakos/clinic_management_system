@@ -99,12 +99,79 @@ export class MedicalService {
   private chmsFinanceBase = environment.rootPath2 + 'CHMS_Finance/';
   private chmsCashierBase = environment.rootPath2 + 'CHMS_Cashier/';
   private EmployeeProfile = environment.rootPath2 + 'EmployeeProfile';
+  private CHMSPatientHistory = environment.rootPath2 + 'CHMS_PatientHistory/';
   private userRoleIdsSubject = new BehaviorSubject<string[]>([]);
   userRoleIds$ = this.userRoleIdsSubject.asObservable();
 
   private headers = new HttpHeaders({ 'Content-Type': 'application/json' });
 
+  getClinicHistory(params: {
+    employeeIdOrCard?: string;
+    fromDate?: string;
+    toDate?: string;
+    mode?: 'DETAIL' | 'DEPARTMENT' | 'MONTHLY' | 'SUMMARY';
+    includePending?: boolean;
+    includeCompleted?: boolean;
+    organizationCode?: string;     // ← add this
+    departmentCode?: string;       // ← add this
+  }): Observable<any[]> {
+    let httpParams = new HttpParams();
+  
+    if (params.employeeIdOrCard) {
+      httpParams = httpParams.set('employeeIdOrCard', params.employeeIdOrCard.trim());
+    }
+    if (params.fromDate) {
+      httpParams = httpParams.set('fromDate', params.fromDate);
+    }
+    if (params.toDate) {
+      httpParams = httpParams.set('toDate', params.toDate);
+    }
+    if (params.mode) {
+      httpParams = httpParams.set('mode', params.mode);
+    }
+    if (params.organizationCode) {
+      httpParams = httpParams.set('organizationCode', params.organizationCode);
+    }
+    if (params.departmentCode) {
+      httpParams = httpParams.set('departmentCode', params.departmentCode);
+    }
+    httpParams = httpParams.set('includePending', (params.includePending ?? true).toString());
+    httpParams = httpParams.set('includeCompleted', (params.includeCompleted ?? true).toString());
+  
+    const url = `${environment.rootPath2}clinic-history`;
+  
+    return this.http.get<any[]>(url, { params: httpParams }).pipe(
+      catchError(error => {
+        console.error('Clinic history fetch error:', error);
+        let msg = 'Failed to load clinic history';
+        if (error.status === 404) msg = 'No records found';
+        else if (error.status === 400) msg = error.error?.message || 'Invalid parameters';
+        return throwError(() => new Error(msg));
+      })
+    );
+  }
+  // Get all organizations
+getOrganizations(): Observable<any[]> {
+  const url = `${environment.rootPath2}clinic-history/organizations`;
+  return this.http.get<any[]>(url).pipe(
+    catchError(err => {
+      console.error('Failed to load organizations', err);
+      return throwError(() => new Error('Could not load organizations'));
+    })
+  );
+}
 
+// Get departments for a specific organization
+getDepartments(organizationCode: string): Observable<any[]> {
+  const url = `${environment.rootPath2}clinic-history/departments`;
+  let params = new HttpParams().set('organizationCode', organizationCode);
+  return this.http.get<any[]>(url, { params }).pipe(
+    catchError(err => {
+      console.error('Failed to load departments', err);
+      return throwError(() => new Error('Could not load departments'));
+    })
+  );
+}
 
   constructor(private http: HttpClient) { }
 
@@ -124,7 +191,7 @@ export class MedicalService {
       'Content-Type': 'application/json'
     });
   }
-  private getUserIdFromUsername(): Observable<string | null> {
+  getUserIdFromUsername(): Observable<string | null> {
     if (!environment.username) {
       console.error('No username defined in environment');
       return from([null]);
@@ -472,8 +539,8 @@ export class MedicalService {
     return this.getUserIdFromUsername().pipe(
       switchMap((userId) => {
         const payload = {
-          status: status,
-          comment: comment,
+          Status: status,
+          Comment: comment,
           approvedBy: userId
         };
         return this.http.put<any>(
@@ -518,8 +585,8 @@ export class MedicalService {
     return this.getUserIdFromUsername().pipe(
       switchMap((userId) => {
         const payload = {
-          status,
-          comment: comment || '',
+          Status: status,
+          Comment: comment || null,
           approvedBy: userId
         };
         return this.http.put(`${this.chmsExpenseReimbursementBase}${id}/status`, payload, { headers: this.headers });
@@ -538,6 +605,51 @@ export class MedicalService {
 
   getReimbursementDocumentDownloadUrl(documentId: number): string {
     return `${this.chmsReimbursementDocumentsBase}download/${documentId}`;
+  }
+  getInvestigationDetails(reimbursementId: number): Observable<ExpenseReimbursementDetail[]> {
+    return this.http.get<any[]>(`${this.chmsExpenseReimbursementBase}${reimbursementId}/details`).pipe(
+      map(details => details.map(d => ({
+        DetailID: d.DetailID,
+        InvestigationType: d.InvestigationType || 'N/A',
+        Location: d.Location || 'N/A',
+        OrderedFrom: d.OrderedFrom || 'N/A',
+        InvoiceNumber: d.InvoiceNumber || 'N/A',
+        Amount: d.Amount || 0,
+        InvestigationDate: d.InvestigationDate ? new Date(d.InvestigationDate) : undefined,
+        status: d.Status || 'pending',
+        comments: d.Comments || '',
+        approvedBy: d.ApprovedBy,
+        approvedDate: d.ApprovedDate ? new Date(d.ApprovedDate) : undefined
+      }))),
+      catchError(this.handleError)
+    );
+  }
+  //Get documents by reimbursement ID
+  getDocumentsByReimbursementId(reimbursementId: number): Observable<ReimbursementDocument[]> {
+    return this.http.get<any[]>(`${this.chmsReimbursementDocumentsBase}by-reimbursement/${reimbursementId}`).pipe(
+      map(documents => documents.map(doc => ({
+        documentID: doc.documentID ?? doc.DocumentID,
+        reimbursementID: doc.reimbursementID ?? doc.ReimbursementID ?? doc.reimbursementId ?? doc.ReimbursementId,
+        reimbursementId: doc.reimbursementID ?? doc.ReimbursementID ?? doc.reimbursementId ?? doc.ReimbursementId,
+        description: doc.description ?? doc.Description ?? null,
+        fileName: doc.fileName ?? doc.FileName,
+        filePath: doc.filePath ?? doc.FilePath ?? null,
+        fileType: doc.fileType ?? doc.FileType,
+        fileSize: doc.fileSize ?? doc.FileSize ?? 0,
+        uploadDate: doc.uploadDate ? new Date(doc.uploadDate) : new Date(), // Ensure default date
+        uploadedBy: doc.uploadedBy ?? doc.UploadedBy ?? null,
+        isActive: doc.isActive ?? doc.IsActive ?? true,
+        createdBy: doc.createdBy ?? doc.CreatedBy ?? null
+      }))),
+      catchError(this.handleError)
+    );
+  }
+
+  uploadSupportingDocument(formData: FormData): Observable<any> {
+    return this.http.post(
+      `${this.chmsReimbursementDocumentsBase}upload-supporting-document`,
+      formData
+    );
   }
 
   private handleError(error: HttpErrorResponse): Observable<never> {
@@ -588,45 +700,24 @@ export class MedicalService {
     );
   }
 
-  // NEW: Get documents by reimbursement ID
-  getDocumentsByReimbursementId(reimbursementId: number): Observable<ReimbursementDocument[]> {
-    return this.http.get<any[]>(`${this.chmsReimbursementDocumentsBase}by-reimbursement/${reimbursementId}`).pipe(
-      map(documents => documents.map(doc => ({
-        documentID: doc.documentID ?? doc.DocumentID,
-        reimbursementID: doc.reimbursementID ?? doc.ReimbursementID ?? doc.reimbursementId ?? doc.ReimbursementId,
-        reimbursementId: doc.reimbursementID ?? doc.ReimbursementID ?? doc.reimbursementId ?? doc.ReimbursementId,
-        description: doc.description ?? doc.Description ?? null,
-        fileName: doc.fileName ?? doc.FileName,
-        filePath: doc.filePath ?? doc.FilePath ?? null,
-        fileType: doc.fileType ?? doc.FileType,
-        fileSize: doc.fileSize ?? doc.FileSize ?? 0,
-        uploadDate: doc.uploadDate ? new Date(doc.uploadDate) : new Date(), // Ensure default date
-        uploadedBy: doc.uploadedBy ?? doc.UploadedBy ?? null,
-        isActive: doc.isActive ?? doc.IsActive ?? true,
-        createdBy: doc.createdBy ?? doc.CreatedBy ?? null
-      }))),
-      catchError(this.handleError)
-    );
-  }
-
-
   getInventoryItems(): Observable<InventoryItem[]> {
     return this.http.get<any[]>(`${this.chmsInventoryBase}items`).pipe(
       map(items =>
         items.map(item => ({
-          id: item.itemID.toString(),
-          itemName: item.itemName,
-          category: item.categoryID.toString(),
-          unit: item.unit,
-          currentStock: item.currentStock,
-          minimumStock: item.minimumStock,
-          price: item.unitPrice,
-          expiryDate: item.expiryDate ? new Date(item.expiryDate) : undefined
+          id: item.ItemID.toString(),
+          itemName: item.ItemName,
+          category: item.CategoryID.toString(),
+          unit: item.Unit,
+          currentStock: item.CurrentStock,
+          minimumStock: item.MinStockLevel,
+          price: item.CurrentUnitPrice,
+          expiryDate: item.HasExpiry ? new Date() : undefined // or handle properly if you have actual expiry date
         }))
       ),
       catchError(this.handleError)
     );
   }
+
 
   getInventoryCategories(): Observable<InventoryCategory[]> {
     return this.http.get<InventoryCategory[]>(`${this.chmsInventoryBase}categories`).pipe(
@@ -755,6 +846,12 @@ export class MedicalService {
     );
   }
 
+  getInventoryItemForMedication(medicationId: number): Observable<{ ItemID: number | null }> {
+    return this.http.get<{ ItemID: number | null }>(
+      `${this.chmsInventoryBase}medication/${medicationId}/inventory-link`
+    ).pipe(catchError(() => of({ ItemID: null })));
+  }
+
   getPatientLaboratoryTestscardNumber(cardNumber: string): Observable<any> {
     return this.http.get<any>(`${this.chmsLaboratoryBase}tests/card/${cardNumber}`).pipe(
       catchError(this.handleError)
@@ -816,6 +913,74 @@ export class MedicalService {
 
   updateLaboratoryTestDetails(testId: number, detail: any): Observable<any> {
     return this.http.put<any>(`${this.chmsLaboratoryBase}tests/${testId}/details`, detail, { headers: this.headers }).pipe(
+      catchError(this.handleError)
+    );
+  }
+  // recordLaboratoryResults(testId: number, model: any): Observable<any> {
+  //   return this.http.put<any>(
+  //     `${this.chmsLaboratoryBase}tests/${testId}/record-results`,
+  //     model,
+  //     { headers: this.headers }
+  //   ).pipe(
+  //     catchError(this.handleError)
+  //   );
+  // }
+  recordLaboratoryResults(testId: number, reportedBy: string): Observable<any> {
+    const payload = { ReportedBy: reportedBy };
+    return this.http.put<any>(
+      `${this.chmsLaboratoryBase}tests/${testId}/record-results`,
+      payload,
+      { headers: this.headers }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  // getLabTestCategories(): Observable<any> {
+  //   return this.http.get<any>(`${this.chmsLaboratoryBase}categories-with-tests`);
+  //   catchError(this.handleError)
+  // }
+  getLabTests(): Observable<any> {
+    return this.http.get<any>(`${this.chmsLaboratoryBase}lab-tests`).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+
+  addLabCategory(data: any): Observable<any> {
+    return this.http.post<any>(
+      `${this.chmsLaboratoryBase}lab-categories`,
+      data,
+      { headers: this.headers }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  addLabTest(data: any): Observable<any> {
+    return this.http.post<any>(
+      `${this.chmsLaboratoryBase}lab-tests`,
+      data,
+      { headers: this.headers }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  deleteLabTest(testId: string): Observable<any> {
+    return this.http.delete<any>(
+      `${this.chmsLaboratoryBase}lab-tests/${testId}`,
+      { headers: this.headers }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  deleteLabCategory(categoryId: string): Observable<any> {
+    return this.http.delete<any>(
+      `${this.chmsLaboratoryBase}lab-categories/${categoryId}`,
+      { headers: this.headers }
+    ).pipe(
       catchError(this.handleError)
     );
   }
@@ -909,13 +1074,36 @@ export class MedicalService {
     );
   }
 
+  rejectWrongAssignment(
+    cardId: number,
+    payload: {
+      rejectionReason: string;
+      rejectedBy: string;
+    }
+  ): Observable<any> {
+    return this.http
+      .put<any>(
+        `${this.chmsPatientsBase}cards/${cardId}/reject-assignment`,
+        payload,
+        { headers: this.headers }
+      )
+      .pipe(
+        catchError(this.handleError)
+      );
+  }
+
+
   addMedication(data: any): Observable<any> {
     return this.http.post(`${this.chmsPharmacyBase}medications`, data).pipe(
       catchError(this.handleError)
     );
   }
   updateMedication(data: any): Observable<any> {
-    return this.http.put(`${this.chmsPharmacyBase}medications/${data.medicationID}`, data).pipe(
+    const id = data.MedicationID || data.medicationID;
+    if (!id) {
+      throw new Error('MedicationID is missing for update');
+    }
+    return this.http.put(`${this.chmsPharmacyBase}medications/${id}`, data).pipe(
       catchError(this.handleError)
     );
   }
@@ -993,6 +1181,7 @@ export class MedicalService {
     );
   }
 
+
   addPrescriptionDetail(prescriptionId: number, detail: any): Observable<any> {
     return this.http.post<any>(`${this.chmsPharmacyBase}prescriptions/${prescriptionId}/details`, detail, { headers: this.headers }).pipe(
       catchError(this.handleError)
@@ -1016,9 +1205,42 @@ export class MedicalService {
     );
   }
 
-  dispensePrescription(id: number, pharmacistId: string): Observable<void> {
-    const request = { PharmacistID: pharmacistId };
-    return this.http.put<void>(`${this.chmsPharmacyBase}prescriptions/${id}/dispense`, request, { headers: this.headers }).pipe(
+  // dispensePrescription(id: number, pharmacistId: string): Observable<void> {
+  //   const request = { PharmacistID: pharmacistId };
+  //   return this.http.put<void>(`${this.chmsPharmacyBase}prescriptions/${id}/dispense`, request, { headers: this.headers }).pipe(
+  //     catchError(this.handleError)
+  //   );
+  // }
+  dispensePrescription(prescriptionID: number, model: any) {
+    return this.http.put(`${this.chmsPharmacyBase}${prescriptionID}/dispense`, model);
+    // return this.http.put(`${this.chmsPharmacyBase}prescriptions/${prescriptionID}/dispense`, model);
+  }
+  acknowledgeOutOfStock(prescriptionID: number, model: any) {
+    return this.http.put(`${this.chmsPharmacyBase}prescriptions/${prescriptionID}/acknowledge-out-of-stock`, model);
+  }
+  getDosageForms(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.chmsPharmacyBase}dosage-forms`).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  getTherapeuticCategories(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.chmsPharmacyBase}therapeutic-categories`).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  addTherapeuticCategory(data: {
+    categoryName: string;
+    description?: string | null;
+    sortOrder?: number;
+    createdBy?: string | null;
+  }): Observable<any> {
+    return this.http.post<any>(
+      `${this.chmsPharmacyBase}therapeutic-categories`,
+      data,
+      { headers: this.getHeaders() }
+    ).pipe(
       catchError(this.handleError)
     );
   }
@@ -1189,195 +1411,66 @@ export class MedicalService {
     );
   }
 
+
   getPatientReferrals(cardNumber: string): Observable<Referral[]> {
-    return this.http.get<any>(`${this.chmsReferralBase}${cardNumber}`).pipe(
-      map(response => {
-        console.log('Raw API response for referrals:', response);
-        // Handle both single referral and array responses
-        let referrals = Array.isArray(response) ? response : [response];
-
-        // Create a map to ensure unique referral IDs
-        const uniqueReferrals = new Map<number, Referral>();
-
-        referrals.forEach((item: any) => {
-          // Ensure ReferralID is properly mapped (support multiple casings from API)
-          const referralID = item.ReferralID || item.referralID || item.referralId;
-
-          if (!referralID || referralID <= 0) {
-            console.error('Invalid referral ID in API response:', item);
-            return;
-          }
-
-          // Skip if we already have a referral with this ID
-          if (uniqueReferrals.has(referralID)) {
-            console.warn('Duplicate referral ID found:', referralID);
-            return;
-          }
-
-          // Extract vital signs properly
-          const vitalSigns = item.VitalSigns || item.vitalSigns || {};
-
-          const referral: Referral = {
-            ReferralID: referralID,
-            PatientID: item.PatientID || item.patientId,
-            CardNumber: item.CardNumber || item.cardNumber,
-            ReferringPhysician: item.ReferringPhysician || item.referringPhysician,
-            Department: item.Department || item.department,
-            ReferralDate: new Date(item.ReferralDate || item.referralDate),
-            Status: item.Status || item.status || 'Pending',
-            Notes: item.Notes || item.notes,
-            ReferenceID: item.ReferenceID || item.referenceId,
-            CreatedBy: item.CreatedBy || item.createdBy,
-            CompletedDate: item.CompletedDate ? new Date(item.CompletedDate) : undefined,
-            // Referral Details
-            ClinicalHistory: item.ClinicalHistory || item.clinicalHistory,
-            CurrentDiagnosis: item.CurrentDiagnosis || item.currentDiagnosis,
-            VitalSignsBloodPressure: vitalSigns.BloodPressure || vitalSigns.bloodPressure,
-            VitalSignsHeartRate: vitalSigns.HeartRate || vitalSigns.heartRate,
-            VitalSignsTemperature: vitalSigns.Temperature || vitalSigns.temperature,
-            VitalSignsWeight: vitalSigns.Weight || vitalSigns.weight,
-            VitalSignsHeight: vitalSigns.Height || vitalSigns.height,
-            CurrentMedications: item.CurrentMedications || item.currentMedications,
-            Allergies: item.Allergies || item.allergies,
-            LabResults: item.LabResults || item.labResults,
-            InsuranceProvider: item.InsuranceProvider || item.insuranceProvider,
-            PolicyNumber: item.PolicyNumber || item.policyNumber,
-            GroupNumber: item.GroupNumber || item.groupNumber,
-            UrgentFollowUp: item.UrgentFollowUp || item.urgentFollowUp || false,
-            TransportationNeeded: item.TransportationNeeded || item.transportationNeeded || false,
-            InterpreterNeeded: item.InterpreterNeeded || item.interpreterNeeded || false,
-            AdditionalNotes: item.AdditionalNotes || item.additionalNotes,
-            PhysicianName: item.PhysicianName || item.physicianName,
-            PhysicianLicense: item.PhysicianLicense || item.physicianLicense,
-            PhysicianPhone: item.PhysicianPhone || item.physicianPhone,
-            PhysicianSignature: item.PhysicianSignature || item.physicianSignature,
-            // Display fields
-            referralNumber: item.referralNumber || `REF-${referralID}`,
-            referredTo: item.Department || item.department,
-            specialty: item.Department || item.department,
-            priority: 'Normal' // Default priority
-          };
-
-          // Add to the map
-          uniqueReferrals.set(referralID, referral);
-        });
-
-        // Convert the map values back to an array
-        return Array.from(uniqueReferrals.values());
-      }),
-      catchError(error => {
-        console.error('Error in getPatientReferrals:', error);
-        this.handleError(error);
-        return throwError(() => new Error('Error in getPatientReferrals'));
-      })
-    );
-  }
-
-
-  getReferralDetails(referralId: number): Observable<Referral> {
-    if (!referralId || referralId <= 0) {
-      return throwError(() => new Error('Invalid referral ID'));
-    }
-
-    return this.http.get<any>(`${this.chmsReferralsBase}${referralId}`).pipe(
-      map(response => {
-        console.log('Raw referral details response:', response);
-
-        // Extract vital signs properly
-        const vitalSigns = response.VitalSigns || response.vitalSigns || {};
-
-        // Map the response to a Referral object with all details
-        return {
-          ReferralID: response.ReferralID || response.referralID,
-          PatientID: response.PatientID || response.patientID,
-          CardNumber: response.CardNumber || response.cardNumber,
-          ReferringPhysician: response.ReferringPhysician || response.referringPhysician,
-          Department: response.Department || response.department,
-          ReferralDate: new Date(response.ReferralDate || response.referralDate),
-          Status: response.Status || response.status || 'Pending',
-          Notes: response.Notes || response.notes,
-          ReferenceID: response.ReferenceID || response.referenceID,
-          CreatedBy: response.CreatedBy || response.createdBy,
-          CompletedDate: response.CompletedDate ? new Date(response.CompletedDate) : undefined,
-          // Referral Details
-          ClinicalHistory: response.ClinicalHistory || response.clinicalHistory,
-          CurrentDiagnosis: response.CurrentDiagnosis || response.currentDiagnosis,
-          VitalSignsBloodPressure: vitalSigns.BloodPressure || vitalSigns.bloodPressure,
-          VitalSignsHeartRate: vitalSigns.HeartRate || vitalSigns.heartRate,
-          VitalSignsTemperature: vitalSigns.Temperature || vitalSigns.temperature,
-          VitalSignsWeight: vitalSigns.Weight || vitalSigns.weight,
-          VitalSignsHeight: vitalSigns.Height || vitalSigns.height,
-          CurrentMedications: response.CurrentMedications || response.currentMedications,
-          Allergies: response.Allergies || response.allergies,
-          LabResults: response.LabResults || response.labResults,
-          InsuranceProvider: response.InsuranceProvider || response.insuranceProvider,
-          PolicyNumber: response.PolicyNumber || response.policyNumber,
-          GroupNumber: response.GroupNumber || response.groupNumber,
-          UrgentFollowUp: response.UrgentFollowUp || response.urgentFollowUp || false,
-          TransportationNeeded: response.TransportationNeeded || response.transportationNeeded || false,
-          InterpreterNeeded: response.InterpreterNeeded || response.interpreterNeeded || false,
-          AdditionalNotes: response.AdditionalNotes || response.additionalNotes,
-          PhysicianName: response.PhysicianName || response.physicianName,
-          PhysicianLicense: response.PhysicianLicense || response.physicianLicense,
-          PhysicianPhone: response.PhysicianPhone || response.physicianPhone,
-          PhysicianSignature: response.PhysicianSignature || response.physicianSignature,
-          // Display fields
-          referralNumber: response.referralNumber || `REF-${response.ReferralID}`,
-          referredTo: response.Department || response.department,
-          specialty: response.Department || response.department,
-          priority: 'Normal'
-        } as Referral;
-      }),
+    return this.http.get<any[]>(`${this.chmsReferralBase}${cardNumber}`).pipe(
+      map(referrals =>
+        referrals.map(r => ({
+          referralID: r.referralID,
+          patientID: r.patientID,
+          cardNumber: r.cardNumber,
+          referringPhysician: r.referringPhysician,
+          referredTo: r.referredTo || 'Not specified',
+          referredToAddress: r.referredToAddress,
+          referredToPhone: r.referredToPhone,
+          reasonForReferral: r.reasonForReferral || '',
+          clinicalFindings: r.clinicalFindings,
+          diagnosis: r.diagnosis,
+          investigationResult: r.investigationResult,
+          rxGiven: r.rxGiven,
+          referralDate: r.referralDate,
+          status: r.status || 'Pending',
+          createdBy: r.createdBy,
+          completedDate: r.completedDate,
+          feedbackFinding: r.feedbackFinding,
+          feedbackDiagnosis: r.feedbackDiagnosis,
+          feedbackRxGiven: r.feedbackRxGiven,
+          feedbackPhysician: r.feedbackPhysician,
+          feedbackDate: r.feedbackDate,
+          feedbackSignature: r.feedbackSignature,
+          referralNumber: r.ReferralNumber || 'N/A'
+        } as Referral))
+      ),
       catchError(this.handleError)
     );
   }
-
-
+  checkHasPendingReferral(cardNumber: string): Observable<boolean> {
+    return this.http.get<boolean>(`${this.chmsReferralBase}${cardNumber}/has-pending`);
+  }
 
   createReferral(referralData: ReferralFormData): Observable<any> {
-    // Transform the form data to match API expectations
+    // New simplified payload matching our updated external referral system
     const apiData = {
       PatientID: referralData.PatientID,
       CardNumber: referralData.CardNumber,
       ReferringPhysician: referralData.ReferringPhysician,
-      Department: referralData.Department,
-      Notes: referralData.Notes,
-      ReferenceID: referralData.ReferenceID,
       CreatedBy: referralData.CreatedBy,
-      // Referral Details
-      ClinicalHistory: referralData.ClinicalHistory,
-      CurrentDiagnosis: referralData.CurrentDiagnosis,
-      VitalSignsBloodPressure: referralData.VitalSignsBloodPressure,
-      VitalSignsHeartRate: referralData.VitalSignsHeartRate,
-      VitalSignsTemperature: referralData.VitalSignsTemperature,
-      VitalSignsWeight: referralData.VitalSignsWeight,
-      VitalSignsHeight: referralData.VitalSignsHeight,
-      CurrentMedications: referralData.CurrentMedications,
-      Allergies: referralData.Allergies,
-      LabResults: referralData.LabResults,
-      InsuranceProvider: referralData.InsuranceProvider,
-      PolicyNumber: referralData.PolicyNumber,
-      GroupNumber: referralData.GroupNumber,
-      UrgentFollowUp: referralData.UrgentFollowUp,
-      TransportationNeeded: referralData.TransportationNeeded,
-      InterpreterNeeded: referralData.InterpreterNeeded,
-      AdditionalNotes: referralData.AdditionalNotes,
-      PhysicianName: referralData.PhysicianName,
-      PhysicianLicense: referralData.PhysicianLicense,
-      PhysicianPhone: referralData.PhysicianPhone,
-      PhysicianSignature: referralData.PhysicianSignature
+      ReferredTo: referralData.ReferredTo,
+      ReferredToAddress: referralData.ReferredToAddress || null,
+      ReferredToPhone: referralData.ReferredToPhone || null,
+      ReasonForReferral: referralData.ReasonForReferral,
+      ClinicalFindings: referralData.ClinicalFindings || null,
+      Diagnosis: referralData.Diagnosis || null,
+      InvestigationResult: referralData.InvestigationResult || null,
+      RxGiven: referralData.RxGiven || null
     };
 
-    return this.http.post(`${this.chmsReferralBase}referral`, apiData).pipe(
+    return this.http.post(`${this.chmsReferralBase}referral`, apiData, { headers: this.headers }).pipe(
       catchError(this.handleError)
     );
   }
 
   updateReferralStatus(referralId: number, statusUpdate: ReferralStatusUpdate): Observable<any> {
-    if (!referralId || referralId <= 0) {
-      return throwError(() => new Error('Invalid referral ID'));
-    }
-
     return this.http.put(`${this.chmsReferralsBase}${referralId}/status`, statusUpdate).pipe(
       catchError(this.handleError)
     );
@@ -1840,7 +1933,7 @@ export class MedicalService {
     );
   }
 
-  createInventoryItem(item: InventoryItemenhanced): Observable<any> {
+  createInventoryItem(item: any): Observable<any> {
     return this.http.post<any>(`${this.chmsInventoryBase}items`, item, { headers: this.headers }).pipe(
       catchError(this.handleError)
     );
@@ -1848,6 +1941,37 @@ export class MedicalService {
 
   addRoomCategory(roomCategory: RoomCategory): Observable<any> {
     return this.http.post<any>(`${this.chmsInventoryBase}room-categories`, roomCategory, { headers: this.headers }).pipe(
+      catchError(this.handleError)
+    );
+  }
+  getAllInventoryItems(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.chmsInventoryBase}items`);
+  }
+  getCategories(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.chmsInventoryBase}categories`);
+  }
+
+  createCategory(category: { categoryName: string; description?: string; isActive?: boolean }): Observable<any> {
+    return this.http.post<any>(`${this.chmsInventoryBase}categories`, category, { headers: this.headers });
+  }
+  receiveStock(data: any): Observable<any> {
+    return this.http.post(`${this.chmsInventoryBase}stock/receive`, data, { headers: this.headers });
+  }
+  updateItem(itemId: number, data: any): Observable<any> {
+    return this.http.put(`${this.chmsInventoryBase}items/${itemId}`, data, { headers: this.headers }).pipe(
+      catchError(this.handleError)
+    );
+  }
+  getMedicationDetails(itemId: number): Observable<any> {
+    return this.http.get<any>(`${this.chmsInventoryBase}items/${itemId}/medication`, { headers: this.headers });
+  }
+
+  addLabTestCategory(data: any): Observable<any> {
+    return this.http.post<any>(`${this.chmsInventoryBase}lab-test-categories`, data, { headers: this.headers });
+  }
+
+  getLabTestCategories(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.chmsInventoryBase}lab-test-categories`).pipe(
       catchError(this.handleError)
     );
   }
@@ -1866,6 +1990,13 @@ export class MedicalService {
     return this.http.post<any>(`${this.chmsFinanceBase}approve-approval/${financeApprovalID}`, payload, { headers: this.headers }).pipe(
       catchError(this.handleError)
     );
+  }
+
+  rejectFinanceApproval(data: { FinanceApprovalID: number, Comments?: string, RejectedBy: string }): Observable<any> {
+    return this.http.post(`${this.chmsFinanceBase}reject-approval/${data.FinanceApprovalID}`, {
+      RejectedBy: data.RejectedBy,
+      Comments: data.Comments
+    });
   }
 
   approveBatchFinanceApprovals(financeApprovalIDs: number[], approvedBy: string): Observable<any> {
@@ -1945,7 +2076,7 @@ export class MedicalService {
   }
 
   getPaymentSummary(): Observable<any> {
-    return this.http.get(`${this.chmsCashierBase}enhanced-payment-summary`).pipe(
+    return this.http.get(`${this.chmsCashierBase}payment-summary`).pipe(
       catchError(error => {
         console.error('Error fetching enhanced payment summary:', error);
         return of({
@@ -1977,6 +2108,17 @@ export class MedicalService {
           paymentMethodStats: []
         });
       })
+    );
+  }
+
+  updatePvNumber(paymentId: number, pvNumber: string) {
+    return this.http.put(`${this.chmsCashierBase}update-pvnumber/${paymentId}`, 
+      { pvNumber });
+  }
+  // this is from CHMSPatientHistory the history okay
+  getPatientFullHistory(cardNumber: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.CHMSPatientHistory}${cardNumber}`).pipe(
+      catchError(this.handleError)
     );
   }
 

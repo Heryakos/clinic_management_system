@@ -2,11 +2,23 @@
   <!-- Supervisor Table -->
   <div class="table-section">
     <h2>Medical Requests</h2>
+
+    <!-- Tabs for Current vs Finished (sick-leave) -->
+    <div class="tabs">
+      <button type="button" class="tab-btn" [class.active-tab]="selectedTab === 'current'"
+        (click)="selectedTab = 'current'">
+        Current Requests
+      </button>
+      <button type="button" class="tab-btn" [class.active-tab]="selectedTab === 'finished'"
+        (click)="selectedTab = 'finished'">
+        Finished (Sick Leave)
+      </button>
+    </div>
     <div class="table-container">
       <table class="requests-table">
         <thead>
           <tr>
-            <th>Request ID</th>
+            <!-- <th>Request ID</th> -->
             <th>Employee Name</th>
             <th>Department</th>
             <th>Request Type</th>
@@ -18,43 +30,47 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let request of medicalRequests">
-            <td>{{ request.requestID }}</td>
+          <!-- Show current requests when current tab is active -->
+          <tr *ngFor="let request of (selectedTab === 'current' ? currentRequests : finishedRequests)">
+            <!-- <td>{{ request.requestID }}</td> -->
             <td>{{ request.employeeName }}</td>
             <td>{{ request.department }}</td>
             <td>{{ request.requestType | titlecase }}</td>
-            <td>{{ request.requestDate | date:'short' }}</td>
-            <td>{{ request.preferredDate | date:'shortDate' }}</td>
-            <td>{{ request.preferredTime }}</td>
+            <td>{{ request.requestDate | ethiopianDate:true }}</td>
+            <td>{{ request.preferredDate | ethiopianDate }}</td>
+            <td>{{ request.preferredTime | ethiopianTime }}</td>            
             <td>
               <span class="status-badge" [ngClass]="request.status.toLowerCase()">
                 {{ request.status | titlecase }}
               </span>
             </td>
             <td>
-              <button type="button"
-                *ngIf="request.reason"
-                class="action-btn view-reason"
+              <!-- View reason is always available if present -->
+              <button type="button" *ngIf="request.reason" class="action-btn view-reason"
                 (click)="openReasonModalinfo(request.reason)">
                 View Reason
               </button>
-              <button type="button"
-                *ngIf="request.reason"
-                class="action-btn clinic-request"
-                (click)="openReasonModal(request.employeeCode)">
+
+              <!-- Clinic request only for current, non-sick-leave requests -->
+              <!-- <button type="button" *ngIf="request.reason && !request.isSickLeave && selectedTab === 'current'"
+                class="action-btn clinic-request" (click)="openReasonModal(request.employeeCode)">
                 ክሊኒክ ህክምና መጠየቂያ
-              </button>
+              </button> -->
+
+              <!-- Approve / Reject only for pending, non-sick-leave, current requests -->
               <button type="button"
-                *ngIf="request.status === 'Pending'"
-                class="action-btn approve"
-                (click)="updateRequestStatus(request.requestID, 'Approved')">
+                *ngIf="request.status === 'Pending' && !request.isSickLeave && selectedTab === 'current'"
+                class="action-btn approve" (click)="updateRequestStatus(request.requestID, 'Approved')">
                 Approve
               </button>
               <button type="button"
-                *ngIf="request.status === 'Pending'"
-                class="action-btn reject"
-                (click)="openRejectModal(request.requestID)">
+                *ngIf="request.status === 'Pending' && !request.isSickLeave && selectedTab === 'current'"
+                class="action-btn reject" (click)="openRejectModal(request.requestID)">
                 Reject
+              </button>
+              <button type="button" *ngIf="selectedTab === 'finished'" class="action-btn view-sick-leave"
+                (click)="openSickLeaveModal(request.employeeCode, request.employeeName)">
+                View Sick Leave Certificates
               </button>
             </td>
           </tr>
@@ -64,12 +80,25 @@
   </div>
 
   <!-- Reason Modal -->
-  <div class="modal" *ngIf="showReasonModal">
+  <!-- <div class="modal" *ngIf="showReasonModal">
     <div class="modal-content">
       <h3>ክሊኒክ ህክምና መጠየቂያ</h3>
       <app-clinic-form [employeeCode]="currentEmployeeCode"></app-clinic-form>
       <div class="modal-actions">
         <button type="button" class="close-btn" (click)="closeReasonModal()">Close</button>
+      </div>
+    </div>
+  </div> -->
+
+  <!--Sick Leave Viewer Modal -->
+  <div class="modal" *ngIf="showSickLeaveModal">
+    <div class="modal-content large-modal">
+      <div class="modal-header">
+        <h3>Sick Leave Certificates - {{ selectedEmployeeName || 'Loading...' }}</h3>
+        <button type="button" class="close-btn" (click)="closeSickLeaveModal()">Close</button>
+      </div>
+      <div class="modal-body">
+        <app-sick-leave-viewer [patientID]="selectedPatientID"></app-sick-leave-viewer>
       </div>
     </div>
   </div>
@@ -94,11 +123,7 @@
       <form [formGroup]="rejectForm" (ngSubmit)="submitRejection()">
         <div class="form-group">
           <label for="comments">Reason for Rejection:</label>
-          <textarea
-            id="comments"
-            formControlName="comments"
-            class="form-control"
-            rows="4"
+          <textarea id="comments" formControlName="comments" class="form-control" rows="4"
             placeholder="Enter reason for rejection"></textarea>
           <div class="error-message" *ngIf="rejectForm.get('comments')?.invalid && rejectForm.get('comments')?.touched">
             Rejection reason is required

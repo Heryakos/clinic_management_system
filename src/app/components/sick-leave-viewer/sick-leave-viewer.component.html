@@ -1,0 +1,182 @@
+<div class="sick-leave-viewer-container">
+    <h2>Sick Leave / Fit to Work Certificates</h2>
+  
+    <!-- List of Certificates -->
+    <div class="sick-leaves-list">
+      <h3>Certificate History</h3>
+  
+      <div class="table-container" *ngIf="sickLeaves.length > 0; else noRecords">
+        <table class="sick-leaves-table">
+          <thead>
+            <tr>
+              <th>Certificate ID</th>
+              <th>Issue Date</th>
+              <th>Type</th>
+              <th>Diagnosis</th>
+              <th>Rest Days</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let leave of sickLeaves">
+              <td>{{ leave.certificateID }}</td>
+              <td>{{ leave.issueDate | date:'mediumDate' }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="leave.status.toLowerCase()">
+                  {{ leave.status === 'FitToWork' ? 'Fit to Work' : 'Sick Leave' }}
+                </span>
+              </td>
+              <td>{{ leave.diagnosis | slice:0:50 }}{{ leave.diagnosis.length > 50 ? '...' : '' }}</td>
+              <td>
+                {{ leave.status === 'FitToWork' ? '0' : leave.totalDays }}
+              </td>
+              <td>
+                <span class="status-badge" [ngClass]="leave.status.toLowerCase()">
+                  {{ leave.status | titlecase }}
+                </span>
+              </td>
+              <td>
+                <button type="button" class="action-btn print" (click)="openPrintPreview(leave)">
+                  View & Print
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+  
+      <ng-template #noRecords>
+        <div class="no-results">No sick leave or fit-to-work certificates issued yet.</div>
+      </ng-template>
+    </div>
+  
+    <!-- Print Preview Modal -->
+    <div class="modal-overlay" *ngIf="showPrintModal" (click)="closePrintModal()">
+      <div class="modal-content certificate-preview" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Medical Certificate</h3>
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" (click)="printCertificate()">🖨️ Print</button>
+            <button type="button" class="btn-secondary" (click)="downloadCertificate()">📥 Download</button>
+            <button type="button" class="btn-close" (click)="closePrintModal()">✕</button>
+          </div>
+        </div>
+  
+        <div class="certificate-container" id="printable-certificate">
+          <div class="certificate-header">
+            <div class="header-left">
+              <div class="logo-container">
+                <img [src]="logoPath" alt="FHC Logo" class="logo-image" />
+              </div>
+            </div>
+            
+            <div class="header-center">
+              <div class="clinic-title">FEDERAL HOUSING COOPERATION MEDIUM CLINIC</div>
+              <div class="clinic-phone">TEL. 011-855-3615</div>
+            </div>
+            
+            <div class="header-right">
+              <div class="card-info">
+                <span class="amharic-text">ካርድ ቁጥር</span>
+                <span class="english-label">Card No</span>
+                <span class="field-line">{{ selectedLeave?.employeeID || '' }}</span>
+              </div>
+            </div>
+          </div>
+  
+          <div class="date-section">
+            <span class="date-label">Date</span>
+            <span class="date-underline">{{ selectedLeave?.issueDate | date:'MM/dd/yyyy' || '' }}</span>
+          </div>
+  
+          <div class="certificate-title">Medical Certificate</div>
+  
+          <div class="form-section">
+            <div class="form-row-cert">
+              <div class="field-group">
+                <span class="amharic-label">ስም</span>/<span class="english-label">Name</span>
+                <span class="field-line">{{ selectedLeave?.employeeName || '' }}</span>
+              </div>
+              <div class="field-group">
+                <span class="amharic-label">ዕድሜ</span>/<span class="english-label">Age</span>
+                <span class="field-line">{{ selectedLeave?.age || '' }}</span>
+              </div>
+              <div class="field-group">
+                <span class="amharic-label">ፆታ</span>/<span class="english-label">Sex</span>
+                <span class="field-line">{{ selectedLeave?.sex || '' }}</span>
+              </div>
+            </div>
+  
+            <div class="form-row-cert single">
+              <div class="field-group full">
+                <span class="amharic-label">አድራሻ</span>/<span class="english-label">Address</span>
+                <span class="field-line long">{{ selectedLeave?.address || '' }}</span>
+              </div>
+            </div>
+  
+            <div class="form-row-cert single">
+              <div class="field-group full">
+                <span class="amharic-label">ተመረመሩበት ቀን</span>/<span class="english-label">Examined on</span>
+                <span class="field-line long">{{ selectedLeave?.examinedOn | date:'MM/dd/yyyy' || '' }}</span>
+              </div>
+            </div>
+  
+            <div class="form-row-cert single">
+              <div class="field-group full">
+                <span class="amharic-label">የምርመራ ውጤት</span>/<span class="english-label">Diagnosis</span>
+                <span class="field-line long">{{ selectedLeave?.diagnosis || '' }}</span>
+              </div>
+            </div>
+  
+            <div class="form-row-cert single">
+              <div class="field-group full">
+                <span class="amharic-label">የሐኪም አስተያየት</span>/<span class="english-label">Doctor's recommendation</span>
+                <span class="field-line long">{{ selectedLeave?.recommendations || '' }}</span>
+              </div>
+            </div>
+  
+            <div class="form-row-cert single" *ngIf="selectedLeave?.status !== 'FitToWork'">
+              <div class="field-group full">
+                <span class="amharic-label">የሚያስፈልገው ዕረፍት</span>/<span class="english-label">Rest required</span>
+                <span class="field-line long">
+                  {{ selectedLeave?.totalDays }} days ({{ selectedLeave?.startDate | date:'MM/dd/yyyy' }} - {{ selectedLeave?.endDate | date:'MM/dd/yyyy' }})
+                </span>
+              </div>
+            </div>
+  
+            <div class="form-row-cert single" *ngIf="selectedLeave?.status === 'FitToWork'">
+              <div class="field-group full">
+                <span class="amharic-label">የሚያስፈልገው ዕረፍት</span>/<span class="english-label">Rest required</span>
+                <span class="field-line long">No rest required - Patient is fit to work</span>
+              </div>
+            </div>
+  
+            <div class="form-row-cert single">
+              <div class="field-group full">
+                <span class="amharic-label">የሐኪሙ ስም</span>/<span class="english-label">Doctor's name</span>
+                <span class="field-line long">{{ selectedLeave?.doctorName || '' }}</span>
+              </div>
+            </div>
+  
+            <div class="form-row-cert single">
+              <div class="field-group full">
+                <span class="amharic-label">ፊርማ</span>/<span class="english-label">Signature</span>
+                <ng-container *ngIf="selectedLeave?.signature">
+                  <img [src]="'data:image/png;base64,' + selectedLeave?.signature" class="signature-image" alt="Signature" />
+                </ng-container>
+                <span *ngIf="!selectedLeave?.signature" class="field-line medium"></span>
+              </div>
+            </div>
+  
+            <div class="form-row-cert single">
+              <div class="field-group full">
+                <span class="amharic-label">ቀን</span>/<span class="english-label">Date</span>
+                <span class="field-line medium">{{ selectedLeave?.issueDate | date:'MM/dd/yyyy' || '' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

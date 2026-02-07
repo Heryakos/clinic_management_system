@@ -10,9 +10,14 @@ import { environment } from 'src/environments/environment';
   styleUrls: ['./supervisor-medical-requests.component.css']
 })
 export class SupervisorMedicalRequestsComponent implements OnInit {
+  selectedPatientID: string | null = null;
+  selectedEmployeeName: string | null = null;
+  showSickLeaveModal = false;
   currentEmployeeCode: string | null = null;
   rejectForm!: FormGroup;
   medicalRequests: MedicalRequestView[] = [];
+  currentRequests: MedicalRequestView[] = [];
+  finishedRequests: MedicalRequestView[] = [];
   showRejectModal = false;
   showReasonModal = false;
   showReasonModalinfo = false;
@@ -22,11 +27,12 @@ export class SupervisorMedicalRequestsComponent implements OnInit {
   approvedBy: string | null = null;
   userRole: 'employee' | 'supervisor' = 'employee';
   selectedEmployeeCode: string | null = null;
+  selectedTab: 'current' | 'finished' = 'current';
 
   constructor(
     private fb: FormBuilder,
     private medicalService: MedicalService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.initializeForms();
@@ -60,6 +66,17 @@ export class SupervisorMedicalRequestsComponent implements OnInit {
       }
     );
   }
+  openSickLeaveModal(employeeCode: string, employeeName: string): void {
+    this.selectedPatientID = employeeCode;
+    this.selectedEmployeeName = employeeName;
+    this.showSickLeaveModal = true;
+  }
+  
+  closeSickLeaveModal(): void {
+    this.showSickLeaveModal = false;
+    this.selectedPatientID = null;
+    this.selectedEmployeeName = null;
+  }
 
   // loadMedicalRequests(): void {
   //   this.medicalService.getAllMedicalRequests().subscribe(
@@ -76,7 +93,11 @@ export class SupervisorMedicalRequestsComponent implements OnInit {
   loadMedicalRequests(payrolId: string): void {
     this.medicalService.getAllMedicalRequestsTeamleader(payrolId).subscribe(
       (requests: MedicalRequestView[]) => {
-        this.medicalRequests = requests;
+        this.medicalRequests = requests || [];
+
+        // Split into current (no sick-leave yet) and finished (sick-leave done)
+        this.currentRequests = this.medicalRequests.filter(r => !r.isSickLeave);
+        this.finishedRequests = this.medicalRequests.filter(r => r.isSickLeave);
       },
       error => {
         console.error('Error loading medical requests:', error);

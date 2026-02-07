@@ -1,11 +1,25 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ReferralFormData } from '../interfaces/patient.interface';
 import { PatientSummary } from '../../models/medical.model';
 import jsPDF from 'jspdf';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { environment } from 'src/environments/environment';
 import { MedicalService } from 'src/app/medical.service';
+import { environment } from 'src/environments/environment';
+
+interface ReferralFormData {
+  PatientID: number;
+  CardNumber: string;
+  ReferringPhysician: string;
+  CreatedBy: string;
+  ReferredTo: string;
+  ReferredToAddress?: string;
+  ReferredToPhone?: string;
+  ReasonForReferral: string;
+  ClinicalFindings?: string;
+  Diagnosis?: string;
+  InvestigationResult?: string;
+  RxGiven?: string;
+}
 
 @Component({
   selector: 'app-referral-modal',
@@ -21,410 +35,176 @@ export class ReferralModalComponent implements OnInit {
 
   referralForm!: FormGroup;
   physicianName: string = '';
-  physicianPhone: string = '';
-  referredToOptions: string[] = ['Clinic/Hospital/HealthOffice'];
 
-  // Updated departments to match API constraints
-  departments: string[] = [
-    'Doctor',
-  ];
-
-  priorities: string[] = ['Normal', 'Urgent', 'STAT'];
-
-  constructor(private fb: FormBuilder, private snackBar: MatSnackBar, private medicalService: MedicalService) {}
+  constructor(
+    private fb: FormBuilder,
+    private snackBar: MatSnackBar,
+    private medicalService: MedicalService
+  ) {}
 
   ngOnInit(): void {
     this.initializeForm();
-    this.loadUserData();
+    this.loadPhysicianData();
   }
 
   private initializeForm(): void {
     const currentDate = new Date().toISOString().split('T')[0];
-    const referralNumber = `REF${Date.now().toString().slice(-6)}`;
-
+    const referralNumber = `REF-${Date.now().toString().slice(-8)}`;
+  
     this.referralForm = this.fb.group({
-      // Patient Information (read-only)
       patientName: [this.patient?.FullName || '', Validators.required],
       patientId: [this.patient?.PatientID || ''],
       cardNumber: [this.patient?.CardNumber || ''],
       age: [this.patient?.Age?.toString() || ''],
-      gender: [this.patient?.Gender || ''],
-      phoneNumber: [this.patient?.phone || ''],
+      gender: [this.patient?.gender || ''],
       address: [this.patient?.Address || ''],
-
-      // Referral Details
-      referringPhysician: [this.createdBy || '', Validators.required],
+      occupation: [''],
+      woreda: [''],
+      kebele: [''],
+      houseNo: [''],
+  
       referralDate: [currentDate],
       referralNumber: [referralNumber],
-      department: ['', Validators.required], // Must be Laboratory, Pharmacy, or Injection
-      referredTo: ['Clinic/Hospital/HealthOffice', Validators.required],
+  
+      referredTo: ['', Validators.required],
       referredToAddress: [''],
       referredToPhone: [''],
-      priority: ['Normal', Validators.required],
-      notes: [''],
-      referenceId: [''],
-
-      // Clinical Information
+  
+      clinicalFindings: [''],
+      diagnosis: [''],
+      investigationResult: [''],
+      rxGiven: [''],
       reasonForReferral: ['', Validators.required],
-      clinicalHistory: [''],
-      currentDiagnosis: [''],
-      
-      // Vital Signs
-      bloodPressure: [''],
-      heartRate: [''],
-      temperature: [''],
-      weight: [''],
-      height: [''],
-      
-      currentMedications: [''],
-      allergies: [''],
-      labResults: [''],
-
-      // Insurance Information
-      insuranceProvider: [''],
-      policyNumber: [''],
-      groupNumber: [''],
-
-      // Additional Information
-      urgentFollowUp: [false],
-      transportationNeeded: [false],
-      interpreterNeeded: [false],
-      additionalNotes: [''],
-
-      // Physician Information
-      physicianName: ['', Validators.required],
-      physicianLicense: [''],
-      physicianPhone: [''],
+  
+      physicianName: [''],
       physicianSignature: [''],
-      
-      // Created By
-      createdBy: [this.createdBy || '', Validators.required]
+  
+      referringPhysician: [this.createdBy || ''],
+      createdBy: [this.createdBy || '']
     });
   }
 
-
-  debugForm(): void {
-    console.log('Form valid:', this.referralForm.valid);
-    console.log('Form errors:', this.referralForm.errors);
-    
-    // Log each control's status
-    Object.keys(this.referralForm.controls).forEach(key => {
-      const control = this.referralForm.get(key);
-      console.log(`${key}: valid=${control?.valid}, errors=${JSON.stringify(control?.errors)}, value=${control?.value}`);
-      
-      // If the field is invalid, log more details
-      if (control && control.invalid) {
-        console.log(`  - Dirty: ${control.dirty}, Touched: ${control.touched}`);
-        if (control.errors) {
-          Object.keys(control.errors).forEach(errorKey => {
-            console.log(`  - Error: ${errorKey}, Value: ${control.errors?.[errorKey]}`);
-          });
-        }
-      }
-    });
-  }
-  
-  
-
-  loadUserData(): void {
-    this.medicalService.getEmployeeById(environment.username).subscribe(
-      (response: any) => {
+  private loadPhysicianData(): void {
+    this.medicalService.getEmployeeById(environment.username).subscribe({
+      next: (response: any) => {
         const employee = response?.c_Employees?.[0];
         if (employee) {
-          // Construct physician name from first, middle, and last names
           this.physicianName = `${employee.fName || ''} ${employee.mName || ''} ${employee.lName || ''}`.trim();
-          this.physicianPhone = employee.workPhone || '';
-          
-          // Make sure you're getting the user_ID as a GUID
           const physicianGuid = employee.user_ID;
-          
-          // Update the form with the physician data
-          if (this.referralForm) {
-            this.referralForm.patchValue({
-              physicianName: this.physicianName,
-              physicianPhone: this.physicianPhone,
-              referringPhysician: physicianGuid, // Use the GUID, not the name
-              createdBy: physicianGuid
-            });
-          }
+
+          this.referralForm.patchValue({
+            physicianName: this.physicianName,
+            referringPhysician: physicianGuid,
+            createdBy: physicianGuid
+          });
         }
       },
-      error => {
-        console.error('Error loading user data:', error);
-        this.snackBar.open('Error loading physician information', 'Close', { duration: 3000 });
+      error: () => {
+        this.snackBar.open('Could not load physician name', 'Close', { duration: 3000 });
       }
-    );
+    });
   }
-  
 
   onSubmit(): void {
     if (this.referralForm.valid && this.patient) {
-        // Get the values directly from the form
-        const referringPhysician = this.referralForm.value.referringPhysician || '';
-        const createdBy = this.referralForm.value.createdBy || '';
-        
-        // Validate that we have non-empty values
-        if (!referringPhysician || !createdBy) {
-            this.snackBar.open('Invalid physician or creator ID', 'Close', { duration: 3000 });
-            return;
-        }
+      const formValue = this.referralForm.value;
 
-        const formData: ReferralFormData = {
-            PatientID: this.patient.PatientID,
-            CardNumber: this.patient.CardNumber,
-            ReferringPhysician: referringPhysician,
-            Department: this.referralForm.value.department,
-            Notes: this.referralForm.value.notes,
-            ReferenceID: this.referralForm.value.referenceId ? parseInt(this.referralForm.value.referenceId) : undefined,
-            CreatedBy: createdBy,
-            
-            // Clinical Details
-            ClinicalHistory: this.referralForm.value.clinicalHistory,
-            CurrentDiagnosis: this.referralForm.value.currentDiagnosis,
-            VitalSignsBloodPressure: this.referralForm.value.bloodPressure,
-            VitalSignsHeartRate: this.referralForm.value.heartRate,
-            VitalSignsTemperature: this.referralForm.value.temperature,
-            VitalSignsWeight: this.referralForm.value.weight,
-            VitalSignsHeight: this.referralForm.value.height,
-            CurrentMedications: this.referralForm.value.currentMedications,
-            Allergies: this.referralForm.value.allergies,
-            LabResults: this.referralForm.value.labResults,
-            
-            // Insurance
-            InsuranceProvider: this.referralForm.value.insuranceProvider,
-            PolicyNumber: this.referralForm.value.policyNumber,
-            GroupNumber: this.referralForm.value.groupNumber,
-            
-            // Additional Info
-            UrgentFollowUp: this.referralForm.value.urgentFollowUp,
-            TransportationNeeded: this.referralForm.value.transportationNeeded,
-            InterpreterNeeded: this.referralForm.value.interpreterNeeded,
-            AdditionalNotes: this.referralForm.value.additionalNotes,
-            
-            // Physician Info
-            PhysicianName: this.referralForm.value.physicianName,
-            PhysicianLicense: this.referralForm.value.physicianLicense,
-            PhysicianPhone: this.referralForm.value.physicianPhone,
-            PhysicianSignature: this.referralForm.value.physicianSignature,
-            
-            referralDate: this.referralForm.value.referralDate
-        };
-        
-        this.submitReferral.emit(formData);
+      const data: ReferralFormData = {
+        PatientID: this.patient.PatientID,
+        CardNumber: this.patient.CardNumber,
+        ReferringPhysician: formValue.referringPhysician,
+        CreatedBy: formValue.createdBy,
+        ReferredTo: formValue.referredTo,
+        ReferredToAddress: formValue.referredToAddress || undefined,
+        ReferredToPhone: formValue.referredToPhone || undefined,
+        ReasonForReferral: formValue.reasonForReferral,
+        ClinicalFindings: formValue.clinicalFindings || undefined,
+        Diagnosis: formValue.diagnosis || undefined,
+        InvestigationResult: formValue.investigationResult || undefined,
+        RxGiven: formValue.rxGiven || undefined
+      };
+
+      this.submitReferral.emit(data);
     } else {
-        this.markFormGroupTouched();
-        this.snackBar.open('Please fill in all required fields', 'Close', { duration: 3000 });
+      this.markFormTouched();
+      this.snackBar.open('Please fill all required fields', 'Close', { duration: 4000 });
     }
-}
-
-  
+  }
 
   onClose(): void {
     this.closeModal.emit();
   }
 
-  // Export methods
-  onExportDetailedPDF(): void {
-    this.generateDetailedPDF();
-  }
+  onExportPDF(): void {
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const form = this.referralForm.value;
 
-  onExportSummaryPDF(): void {
-    this.generateSummaryPDF();
-  }
-
-  onPrintDetailed(): void {
-    this.printDetailed();
-  }
-
-  onPrintSummary(): void {
-    this.printSummary();
-  }
-
-  private generateDetailedPDF(): void {
-    const doc = new jsPDF();
-    const formData = this.referralForm.value;
+    let y = 15;
 
     // Header
+    doc.setFontSize(18);
+    doc.text('Federal Housing corporation Medium Clinic', 105, y, { align: 'center' });
+    y += 8;
     doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('PATIENT REFERRAL FORM', 105, 20, { align: 'center' });
-    
-    // Patient Information
+    doc.text('Patient Referral Slip', 105, y, { align: 'center' });
+    y += 10;
+
+    doc.setFontSize(11);
+    doc.text(`Ref. No: ${form.referralNumber}`, 20, y);
+    doc.text(`Date: ${new Date(form.referralDate).toLocaleDateString()}`, 140, y);
+    y += 12;
+
+    // To
     doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text('PATIENT INFORMATION', 20, 40);
-    doc.setFont('helvetica', 'normal');
-    
-    let yPos = 50;
-    doc.text(`Name: ${formData.patientName}`, 20, yPos);
-    doc.text(`Card Number: ${formData.cardNumber}`, 120, yPos);
-    yPos += 10;
-    doc.text(`Age: ${formData.age}`, 20, yPos);
-    doc.text(`Gender: ${formData.gender}`, 120, yPos);
-    yPos += 10;
-    doc.text(`Phone: ${formData.phoneNumber}`, 20, yPos);
-    yPos += 15;
+    doc.text('To:', 20, y);
+    doc.setFontSize(11);
+    doc.text(form.referredTo || '', 50, y);
+    y += 7;
+    if (form.referredToAddress) doc.text(form.referredToAddress, 50, y), y += 6;
+    if (form.referredToPhone) doc.text(`Phone: ${form.referredToPhone}`, 50, y), y += 10;
 
-    // Referral Details
-    doc.setFont('helvetica', 'bold');
-    doc.text('REFERRAL DETAILS', 20, yPos);
-    doc.setFont('helvetica', 'normal');
-    yPos += 10;
-    
-    doc.text(`Department: ${formData.department}`, 20, yPos);
-    doc.text(`Priority: ${formData.priority}`, 120, yPos);
-    yPos += 10;
-    doc.text(`Referring Physician: ${formData.physicianName}`, 20, yPos);
-    yPos += 10;
-    doc.text(`Date: ${formData.referralDate}`, 20, yPos);
-    yPos += 15;
-
-    // Clinical Information
-    doc.setFont('helvetica', 'bold');
-    doc.text('CLINICAL INFORMATION', 20, yPos);
-    doc.setFont('helvetica', 'normal');
-    yPos += 10;
-    
-    if (formData.clinicalHistory) {
-      doc.text('Clinical History:', 20, yPos);
-      yPos += 5;
-      const splitHistory = doc.splitTextToSize(formData.clinicalHistory, 170);
-      doc.text(splitHistory, 20, yPos);
-      yPos += splitHistory.length * 5 + 5;
-    }
-    
-    if (formData.currentDiagnosis) {
-      doc.text('Current Diagnosis:', 20, yPos);
-      yPos += 5;
-      const splitDiagnosis = doc.splitTextToSize(formData.currentDiagnosis, 170);
-      doc.text(splitDiagnosis, 20, yPos);
-      yPos += splitDiagnosis.length * 5 + 5;
-    }
-
-    // Vital Signs
-    if (yPos > 250) {
-      doc.addPage();
-      yPos = 20;
-    }
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('VITAL SIGNS', 20, yPos);
-    doc.setFont('helvetica', 'normal');
-    yPos += 10;
-    
-    doc.text(`Blood Pressure: ${formData.bloodPressure || 'N/A'}`, 20, yPos);
-    doc.text(`Heart Rate: ${formData.heartRate || 'N/A'}`, 120, yPos);
-    yPos += 10;
-    doc.text(`Temperature: ${formData.temperature || 'N/A'}`, 20, yPos);
-    doc.text(`Weight: ${formData.weight || 'N/A'}`, 120, yPos);
-    yPos += 10;
-    doc.text(`Height: ${formData.height || 'N/A'}`, 20, yPos);
-
-    // Save the PDF
-    doc.save(`referral_${formData.cardNumber}_detailed.pdf`);
-    this.snackBar.open('Detailed referral exported as PDF!', 'Close', { duration: 3000 });
-  }
-
-  private generateSummaryPDF(): void {
-    const doc = new jsPDF();
-    const formData = this.referralForm.value;
-
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Referral Summary', 105, 20, { align: 'center' });
-    
+    // Patient Info
     doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Patient: ${formData.patientName}`, 20, 40);
-    doc.text(`Card Number: ${formData.cardNumber}`, 20, 50);
-    doc.text(`Department: ${formData.department}`, 20, 60);
-    doc.text(`Date: ${formData.referralDate}`, 20, 70);
-    doc.text(`Referring Physician: ${formData.physicianName}`, 20, 80);
-    doc.text(`Priority: ${formData.priority}`, 20, 90);
+    doc.text('Patient Information', 20, y);
+    y += 8;
+    doc.setFontSize(11);
+    doc.text(`Name: ${form.patientName}`, 20, y); y += 6;
+    doc.text(`Age: ${form.age}   Sex: ${form.gender}`, 20, y); y += 6;
+    doc.text(`Occupation: ${form.occupation || 'N/A'}`, 20, y); y += 6;
+    doc.text(`Address: ${form.address || 'N/A'}`, 20, y); y += 6;
+    doc.text(`Woreda: ${form.woreda || 'N/A'}   Kebele: ${form.kebele || 'N/A'}   House No: ${form.houseNo || 'N/A'}`, 20, y);
+    y += 12;
 
-    doc.save(`referral_${formData.cardNumber}_summary.pdf`);
-    this.snackBar.open('Summary referral exported as PDF!', 'Close', { duration: 3000 });
+    // Clinical
+    const addText = (label: string, value: string) => {
+      if (value) {
+        if (y > 270) { doc.addPage(); y = 20; }
+        doc.text(`${label}:`, 20, y);
+        const lines = doc.splitTextToSize(value, 170);
+        doc.text(lines, 25, y + 6);
+        y += lines.length * 6 + 10;
+      }
+    };
+
+    addText('Clinical Findings', form.clinicalFindings);
+    addText('Diagnosis', form.diagnosis);
+    addText('Investigation Result', form.investigationResult);
+    addText('Rx. Given', form.rxGiven);
+    addText('Reason for Referral', form.reasonForReferral);
+
+    // Physician
+    doc.text(`Referred by: ${form.physicianName}`, 20, y);
+    y += 8;
+    doc.text(`Signature: ___________________________`, 20, y);
+
+    // Save
+    doc.save(`Referral_${form.cardNumber}_${form.referralNumber}.pdf`);
+    this.snackBar.open('Referral slip exported as PDF!', 'Close', { duration: 3000 });
   }
 
-  private printDetailed(): void {
-    const printContent = document.querySelector('.referral-modal-content')?.innerHTML;
-    if (printContent) {
-      const printWindow = window.open('', '_blank');
-      printWindow?.document.write(`
-        <html>
-          <head>
-            <title>Print Detailed Referral</title>
-            <style>${this.getPrintStyles()}</style>
-          </head>
-          <body>${printContent}</body>
-        </html>
-      `);
-      printWindow?.document.close();
-      printWindow?.print();
-    }
-  }
-
-  private printSummary(): void {
-    const formData = this.referralForm.value;
-    const printContent = `
-      <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
-        <h2 style="text-align: center;">Referral Summary</h2>
-        <p><strong>Patient:</strong> ${formData.patientName}</p>
-        <p><strong>Card Number:</strong> ${formData.cardNumber}</p>
-        <p><strong>Department:</strong> ${formData.department}</p>
-        <p><strong>Date:</strong> ${formData.referralDate}</p>
-        <p><strong>Referring Physician:</strong> ${formData.physicianName}</p>
-        <p><strong>Priority:</strong> ${formData.priority}</p>
-        <p><strong>Notes:</strong> ${formData.notes || 'N/A'}</p>
-      </div>
-    `;
-    const printWindow = window.open('', '_blank');
-    printWindow?.document.write(`
-      <html>
-        <head>
-          <title>Print Summary Referral</title>
-          <style>body { font-family: Arial, sans-serif; }</style>
-        </head>
-        <body>${printContent}</body>
-      </html>
-    `);
-    printWindow?.document.close();
-    printWindow?.print();
-  }
-
-  private getPrintStyles(): string {
-    return `
-      body { font-family: Arial, sans-serif; padding: 20px; }
-      .referral-modal-content { max-width: 800px; margin: 0 auto; }
-      .form-section { margin-bottom: 20px; }
-      .form-section h3 { font-size: 18px; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
-      .form-group { margin-bottom: 15px; }
-      .form-group label { font-weight: bold; }
-      .form-control { border: none; background: transparent; }
-      .modal-actions { display: none; }
-      .close-btn { display: none; }
-    `;
-  }
-
-  private markFormGroupTouched(): void {
+  private markFormTouched(): void {
     Object.keys(this.referralForm.controls).forEach(key => {
-      const control = this.referralForm.get(key);
-      if (control) control.markAsTouched();
+      this.referralForm.get(key)?.markAsTouched();
     });
-  }
-
-  isFieldInvalid(fieldName: string): boolean {
-    const field = this.referralForm.get(fieldName);
-    return field ? (field.invalid && (field.dirty || field.touched)) : false;
-  }
-
-  getFieldErrors(fieldName: string): any {
-    const field = this.referralForm.get(fieldName);
-    return field ? field.errors : null;
-  }
-
-  isVitalSignFieldInvalid(fieldName: string): boolean {
-    const field = this.referralForm.get(fieldName);
-    return field ? (field.invalid && (field.dirty || field.touched)) : false;
   }
 }

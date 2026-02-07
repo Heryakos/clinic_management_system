@@ -1,0 +1,151 @@
+<div class="history-container">
+
+    <!-- Loading / Error -->
+    <ng-container *ngIf="loading">
+      <div class="status-message">
+        <p>Loading patient history...</p>
+      </div>
+    </ng-container>
+  
+    <ng-container *ngIf="error">
+      <div class="status-message error">
+        <p>{{ error }}</p>
+        <button (click)="loadPatientHistory(cardNumber)" class="retry-btn">Try Again</button>
+      </div>
+    </ng-container>
+  
+    <!-- Main Content -->
+    <ng-container *ngIf="!loading && !error && patient">
+  
+      <!-- Action Buttons -->
+      <div class="report-actions">
+        <button (click)="generatePDF()" class="btn-pdf">
+          📄 Download PDF Report
+        </button>
+        <button (click)="printReport()" class="btn-print">
+          🖨️ Print Report
+        </button>
+      </div>
+  
+      <!-- Printable Report -->
+      <div #reportContent class="printable-report">
+  
+        <!-- Hospital Header -->
+        <div class="report-header">
+          <div class="hospital-info">
+            <h1>FHC Clinic</h1>
+            <p>Management System</p>
+            <p>Addis Ababa, Ethiopia</p>
+          </div>
+          <div class="report-title">
+            <h2>Official Medical History Report</h2>
+            <p>Generated: {{ today | date:'medium' }}</p>
+          </div>
+        </div>
+  
+        <!-- Patient Header -->
+        <div class="patient-header-card">
+          <div class="header-gradient">
+            <div class="photo-section">
+              <img 
+                *ngIf="patient.Photo; else placeholder"
+                [src]="'data:image/jpeg;base64,' + patient.Photo"
+                alt="Patient"
+                class="patient-photo"
+              />
+              <ng-template #placeholder>
+                <div class="photo-placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                </div>
+              </ng-template>
+            </div>
+  
+            <div class="header-info">
+              <h2>{{ patient.FullName }}</h2>
+              <div class="meta">
+                <span><strong>Card #:</strong> {{ patient.CardNumber }}</span>
+                <span><strong>Age:</strong> {{ patient.Age }} yrs</span>
+                <span><strong>Gender:</strong> {{ patient?.genderDisplay || '—' }}</span>
+                <!-- <span><strong>Gender:</strong> {{ getGenderDisplay(patient.gender) }}</span> -->
+                <span><strong>Blood Type:</strong> {{ patient.BloodType || '—' }}</span>
+              </div>
+              <div class="contact">
+                <span>📞 {{ patient.phone || '—' }}</span>
+                <span>📍 {{ patient.Address || '—' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Timeline -->
+        <div class="timeline-print" *ngIf="history.length > 0; else noHistory">
+          <h3>Medical History Timeline</h3>
+          <div class="timeline-item" *ngFor="let item of history">
+            <div class="timeline-marker" [style.background-color]="getTimelineColor(item.Section)"></div>
+            <div class="timeline-content">
+              <div class="timeline-header">
+                <div class="icon-title">
+                  <span class="icon">{{ getTimelineIcon(item.Section) }}</span>
+                  <h3>{{ item.Section === 'LabDetail' ? 'Lab Result' : item.Section }}</h3>
+                </div>
+                <span class="date">{{ formatDate(item.SortDate) }}</span>
+              </div>
+  
+              <div class="timeline-body">
+                <ng-container *ngIf="item.Section === 'Visit'">
+                  <p><strong>Diagnosis:</strong> {{ item.VisitDiagnosis || 'Not recorded' }}</p>
+                  <p><strong>Doctor:</strong> {{ item.DoctorFullName || item.DoctorUserName || '—' }}</p>
+                </ng-container>
+  
+                <ng-container *ngIf="item.Section === 'MedicalHistory'">
+                  <p><strong>Chief Complaint:</strong> {{ item.ChiefComplaint || '—' }}</p>
+                  <p><strong>Allergies:</strong> {{ item.Allergies || 'None reported' }}</p>
+                  <p><strong>Medical History:</strong> {{ item.MedicalHistory || '—' }}</p>
+                </ng-container>
+  
+                <ng-container *ngIf="item.Section === 'LabTest'">
+                  <p><strong>Test #:</strong> {{ item.LabTestNumber }}</p>
+                  <p><strong>Category:</strong> {{ item.LabTestCategory }}</p>
+                </ng-container>
+  
+                <ng-container *ngIf="item.Section === 'LabDetail'">
+                  <div class="lab-result">
+                    <strong>{{ item.LabTestName }}</strong>
+                    <span class="result">{{ item.LabResult }}</span>
+                    <span class="range">({{ item.LabNormalRange }}) {{ item.LabUnit }}</span>
+                    <span class="abnormal" *ngIf="item.LabIsAbnormal">⚠ Abnormal</span>
+                  </div>
+                </ng-container>
+  
+                <ng-container *ngIf="item.Section === 'Injection'">
+                  <p><strong>Injection #:</strong> {{ item.InjectionNumber }}</p>
+                  <p><strong>Dose:</strong> {{ item.InjectionDose }} via {{ item.InjectionRoute }} ({{ item.InjectionSite }})</p>
+                  <p><strong>Status:</strong>
+                    <span class="status-badge" [class.pending]="item.InjectionStatus === 'Pending'"
+                          [class.administered]="item.InjectionStatus === 'Administered'">
+                      {{ item.InjectionStatus }}
+                    </span>
+                  </p>
+                </ng-container>
+              </div>
+            </div>
+          </div>
+        </div>
+  
+        <ng-template #noHistory>
+          <div class="no-history">
+            <p>No medical history found for this patient.</p>
+          </div>
+        </ng-template>
+  
+        <!-- Footer -->
+        <div class="report-footer">
+          <p>This is an official medical record from FHC Clinic.</p>
+          <p>For verification: Contact Administration • Phone: +251-XXX-XXX-XXXX</p>
+        </div>
+      </div>
+    </ng-container>
+  </div>

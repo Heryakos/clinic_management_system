@@ -2,7 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PatientDoctorCard } from '../../models/medical.model';
 
-// Interface to match the API response structure
+// Interface to match the API response structure (fixed casing to match API exactly)
 interface ExtendedPatientDoctorCard {
   PatientID?: number;
   CardNumber?: string;
@@ -13,8 +13,8 @@ interface ExtendedPatientDoctorCard {
   GrandFatherName?: string;
   DateOfBirth?: string;
   Age?: number;
-  Gender?: string;
-  Phone?: string;
+  gender?: string; // Lowercase to match API
+  phone?: string; // Lowercase to match API
   Address?: string;
   Region?: string;
   SubCity?: string;
@@ -60,8 +60,11 @@ export class PatientCardComponent {
   }
 
   getGenderDisplay(): string {
-    if (!this.patient?.Gender) return 'N/A';
-    return this.patient.Gender === 'M' ? 'Male' : this.patient.Gender === 'F' ? 'Female' : this.patient.Gender;
+    if (!this.patient?.gender) return 'N/A';
+    const g = this.patient.gender.toUpperCase();
+    if (g.includes('MALE') || g.includes('ወንድ') || g === 'M') return 'Male';
+    if (g.includes('FEMALE') || g.includes('ሴት') || g === 'F') return 'Female';
+    return this.patient.gender; // Fallback to raw value if not matched
   }
 
   formatDate(date: string | Date | null | undefined): string {

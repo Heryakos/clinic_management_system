@@ -1,0 +1,20 @@
+.container { max-width: 900px; margin: 20px auto; padding: 20px; }
+.form-group { margin-bottom: 20px; }
+.form-control, .qty-input { width: 100%; padding: 8px; }
+.required { color: red; }
+.error { color: red; font-size: 12px; margin-top: 4px; }
+.loading { text-align: center; font-size: 18px; color: #666; padding: 40px; }
+.items-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+.items-table th, .items-table td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+.add-btn, .remove-btn { padding: 6px 12px; margin-top: 10px; }
+.submit-btn {
+  padding: 12px 24px;
+  font-size: 16px;
+  background: #1976d2;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+.submit-btn:disabled { background: #aaa; }
+.success-snackbar { background: green; color: white; }
+.error-snackbar { background: red; color: white; }

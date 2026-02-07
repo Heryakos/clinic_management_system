@@ -1,166 +1,181 @@
 <div class="app-container">
-  <!-- Top Header -->
-  <!-- <header class="top-header" *ngIf="showSidebar">
-    <div class="header-center">
-      <h1>FHC Clinic Management System</h1>
-      <p *ngIf="employeeName" class="employee-welcome">Welcome, {{ employeeName }}</p>
-    </div>
-  
-    <div class="header-right">
-      <app-notification-bell></app-notification-bell>
-    </div>
-  </header> -->
-  
+  <!-- Top Header (full width, fixed) -->
+  <header class="top-header" *ngIf="!hideHeader">
+    <div class="header-content">
+      <!-- Logo + App Name (centered) -->
+      <div class="header-logo">
+        <img [src]="logoPath" alt="FHC Logo" class="header-logo-img" />
+        <div class="header-logo-text">
+          <h2>FHC Clinic</h2>
+          <p>Management System</p>
+          <p *ngIf="employeeName" class="employee-name">{{ employeeName }}</p>
+        </div>
+      </div>
 
-  <nav class="sidebar" *ngIf="showSidebar">
-    <div class="logo">
-      <img [src]="logoPath" alt="FHC Logo" class="logo-img" />
-      <div class="logo-text">
-        <h2>FHC Clinic</h2>
-        <p>Management System</p>
-        <p *ngIf="employeeName" class="employee-name">{{ employeeName }}</p>
+      <!-- Notification Bell (right side) -->
+      <div class="header-notifications">
+        <app-notification-bell></app-notification-bell>
+        <span class="notification-text">Notifications</span>
       </div>
     </div>
+  </header>
 
+  <!-- Sidebar (below header) -->
+  <nav class="sidebar" *ngIf="showSidebar">
     <div class="sidebar-content">
       <ul class="nav-menu">
         <li *ngIf="showEmployeeRegistered">
-          <a routerLink="/fhcerp/en-us/users" routerLinkActive="active">
+          <a routerLink="users" routerLinkActive="active">
             <span class="icon">💼</span>
             <span class="text">Employee Registered</span>
           </a>
         </li>
-        
+
         <li *ngIf="showSupervisor">
-          <a routerLink="/fhcerp/en-us/supervisor-medical-requests" routerLinkActive="active">
+          <a routerLink="supervisor-medical-requests" routerLinkActive="active">
             <span class="icon">👥</span>
             <span class="text">Supervisor</span>
           </a>
         </li>
-        
+
         <li *ngIf="showMedicalRequests">
-          <a routerLink="/fhcerp/en-us/medical-request" routerLinkActive="active">
+          <a routerLink="clinic_request" routerLinkActive="active">
             <span class="icon">📝</span>
             <span class="text">Medical Requests</span>
           </a>
         </li>
-        
+
         <li *ngIf="showMedicalRequests">
-          <a routerLink="/fhcerp/en-us/reimbursement-document-upload" routerLinkActive="active">
+          <a routerLink="reimbursement-document-upload" routerLinkActive="active">
             <span class="icon">📤</span>
             <span class="text">Medical File Upload</span>
           </a>
         </li>
-        
+
         <li *ngIf="showPatientCards">
-          <a routerLink="/fhcerp/en-us/patient-history-card" routerLinkActive="active">
+          <a routerLink="patient-history-card" routerLinkActive="active">
             <span class="icon">💳</span>
             <span class="text">Patient Cards</span>
           </a>
         </li>
-        
+
         <li *ngIf="showDoctorRegistration">
-          <a routerLink="/fhcerp/en-us/doctor" routerLinkActive="active">
+          <a routerLink="doctor" routerLinkActive="active">
             <span class="icon">👤</span>
             <span class="text">Doctor Registration</span>
           </a>
         </li>
-        
+
         <li *ngIf="showLaboratory">
-          <a routerLink="/fhcerp/en-us/laboratory" routerLinkActive="active">
+          <a routerLink="laboratory" routerLinkActive="active">
             <span class="icon">🔬</span>
             <span class="text">Laboratory</span>
           </a>
         </li>
-        
+
         <li *ngIf="showPharmacy">
-          <a routerLink="/fhcerp/en-us/pharmacy" routerLinkActive="active">
+          <a routerLink="pharmacy" routerLinkActive="active">
             <span class="icon">💊</span>
             <span class="text">Pharmacy</span>
           </a>
         </li>
-        
+
         <li *ngIf="showInjection">
-          <a routerLink="/fhcerp/en-us/injection" routerLinkActive="active">
+          <a routerLink="injection" routerLinkActive="active">
             <span class="icon">💉</span>
             <span class="text">Procedure Room</span>
           </a>
         </li>
-        
+
         <li *ngIf="showPatientAssignment">
-          <a routerLink="/fhcerp/en-us/patient-assignment" routerLinkActive="active">
+          <a routerLink="patient-assignment" routerLinkActive="active">
             <span class="icon">👥</span>
             <span class="text">Patient Assignment</span>
           </a>
         </li>
-        
+
         <li *ngIf="showSickLeave">
-          <a routerLink="/fhcerp/en-us/sick-leave" routerLinkActive="active">
+          <a routerLink="sick-leave" routerLinkActive="active">
             <span class="icon">🏥</span>
             <span class="text">Sick Leave</span>
           </a>
         </li>
-        
+
         <li *ngIf="showExpenses">
-          <a routerLink="/fhcerp/en-us/expense-reimbursement" routerLinkActive="active">
+          <a routerLink="expense-reimbursement" routerLinkActive="active">
             <span class="icon">💰</span>
             <span class="text">Expenses</span>
           </a>
         </li>
 
         <li *ngIf="showFinanceApproval">
-          <a routerLink="/fhcerp/en-us/finance-approval" routerLinkActive="active">
+          <a routerLink="finance-approval" routerLinkActive="active">
             <span class="icon">✅</span>
             <span class="text">Finance Approval</span>
           </a>
         </li>
-        
+
         <li *ngIf="showCashierPayment">
-          <a routerLink="/fhcerp/en-us/cashier-payment" routerLinkActive="active">
+          <a routerLink="cashier-payment" routerLinkActive="active">
             <span class="icon">💳</span>
             <span class="text">Cashier Payment</span>
           </a>
         </li>
-        
+
         <li *ngIf="showInventoryRequest">
-          <a routerLink="/fhcerp/en-us/inventory-request" routerLinkActive="active">
+          <a routerLink="inventory-request" routerLinkActive="active">
             <span class="icon">📋</span>
             <span class="text">Inventory Request</span>
           </a>
         </li>
-        
+
         <li *ngIf="showInventoryManagement">
-          <a routerLink="/fhcerp/en-us/inventory-management" routerLinkActive="active">
+          <a routerLink="inventory-management" routerLinkActive="active">
             <span class="icon">🛠️</span>
             <span class="text">Inventory Management</span>
           </a>
         </li>
-        
+
         <li *ngIf="showItemReceiving">
-          <a routerLink="/fhcerp/en-us/item-receiving" routerLinkActive="active">
+          <a routerLink="item-receiving" routerLinkActive="active">
             <span class="icon">📥</span>
             <span class="text">Item Receiving</span>
           </a>
         </li>
-        
+
         <li *ngIf="showReports">
-          <a routerLink="/fhcerp/en-us/reports" routerLinkActive="active">
+          <a routerLink="reports" routerLinkActive="active">
             <span class="icon">📑</span>
             <span class="text">Reports</span>
           </a>
         </li>
-        
+
+        <li *ngIf="showcliniccontroller && !showClinicHistoryReports">
+          <a routerLink="clinic-history" routerLinkActive="active">
+            <span class="icon">🩺</span>
+            <span class="text">Clinic History</span>
+          </a>
+        </li>
+
         <li *ngIf="showSupervisorDashboard">
-          <a routerLink="/fhcerp/en-us/supervisor-dashboard" routerLinkActive="active">
+          <a routerLink="supervisor-dashboard" routerLinkActive="active">
             <span class="icon">📋</span>
             <span class="text">Supervisor Dashboard</span>
           </a>
         </li>
+
+        <li *ngIf="showDoctorRegistration">
+          <a routerLink="patient-history" routerLinkActive="active">
+            <span class="icon">🩺</span>
+            <span class="text">Patient History</span>
+          </a>
+        </li>
       </ul>
-  </div>
+    </div>
   </nav>
 
-  <main class="main-content" [class.with-header]="showSidebar">
+  <!-- Main Content Area -->
+  <main class="main-content">
     <router-outlet></router-outlet>
   </main>
 </div>

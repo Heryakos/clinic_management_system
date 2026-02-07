@@ -1,6 +1,6 @@
 <div class="item-tree-dropdown" #dropdownContainer>
     <div 
-      class="dropdown-trigger" 
+      class="clinic-dropdown-trigger" 
       [class.error]="error" 
       [class.disabled]="disabled"
       [class.open]="isOpen"
@@ -8,12 +8,12 @@
       <span class="display-value" [class.placeholder]="!selectedItem">
         {{ displayValue }}
       </span>
-      <span class="dropdown-arrow" [class.rotated]="isOpen">▼</span>
+      <span class="clinic-dropdown-arrow" [class.rotated]="isOpen">▼</span>
     </div>
   
     <div class="error-message" *ngIf="error">{{ error }}</div>
   
-    <div class="dropdown-menu" *ngIf="isOpen">
+    <div class="clinic-dropdown-menu" *ngIf="isOpen">
       <!-- Search Input -->
       <div class="search-container">
         <input 

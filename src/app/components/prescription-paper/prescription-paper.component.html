@@ -29,8 +29,24 @@
     </div>
 
     <div class="form-actions">
-      <button type="button" class="action-btn print-btn" (click)="printPrescription()">Print</button>
-      <button type="button" class="action-btn pdf-btn" (click)="exportToPDF()">Export to PDF</button>
+      <!-- <div class="print-options" style="margin: 16px 0; text-align: center;">
+        <button mat-raised-button color="primary" (click)="printPrescription('full')">
+          Print Full Prescription (All Items)
+        </button>
+    
+        <button mat-raised-button color="warn" (click)="printPrescription('out-of-stock')" 
+                *ngIf="hasOutOfStockItems()">
+          Print Out-of-Stock List Only
+        </button>
+      </div> -->
+    
+      <!-- Optional: keep your old buttons if you want fallback -->
+      <!-- <button type="button" class="action-btn print-btn" (click)="printPrescription('full')">Print</button> -->
+      <button type="button" class="action-btn pdf-btn" (click)="exportToPDF('full')">Export to PDF (Full)</button>
+      <button type="button" class="action-btn pdf-btn" (click)="exportToPDF('out-of-stock')" 
+              *ngIf="hasOutOfStockItems()">
+        Export Out-of-Stock PDF
+      </button>
     </div>
 
     <div class="patient-section">
@@ -39,7 +55,7 @@
           <div class="form-group">
             <label>Patient's Full Name:</label>
             <div class="input-container">
-              <input type="text" class="underline-input form-control" formControlName="FullName" readonly />
+              <input type="text" class="underline-input form-control" formControlName="PatientName" readonly />
             </div>
           </div>
           <div class="form-group">

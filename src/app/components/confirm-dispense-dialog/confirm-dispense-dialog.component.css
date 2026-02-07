@@ -1,0 +1,17 @@
+.warning {
+    color: #d32f2f;
+    font-weight: bold;
+  }
+  
+  .in-stock {
+    color: #2e7d32;
+  }
+  
+  .out-stock {
+    color: #d32f2f;
+    text-decoration: line-through;
+  }
+  
+  .full-width {
+    width: 100%;
+  }

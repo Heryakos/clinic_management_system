@@ -6,6 +6,7 @@ import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
 export interface FinanceApproval {
+  FinanceApprovalID: number;
   ReimbursementID: number;
   ReimbursementNumber: string;
   PatientName: string;
@@ -43,6 +44,9 @@ export interface FinanceApprovalDetail {
   styleUrls: ['./finance-approval.component.css']
 })
 export class FinanceApprovalComponent implements OnInit {
+  showDocumentsModal: boolean = false;
+  currentViewedReimbursementId: number = 0;
+  currentViewedReimbursementNumber: string = '';
   approvedReimbursements: FinanceApproval[] = [];
   filteredReimbursements: FinanceApproval[] = [];
   pendingApprovals: any[] = [];
@@ -59,7 +63,7 @@ export class FinanceApprovalComponent implements OnInit {
   isLoading: boolean = true;
   activeTab: 'new' | 'pending' = 'new';
   approvalApprovedBy: string = '';
-  
+
   // User data
   currentUserId: string | null = null;
   employeeName: string = 'Unknown';
@@ -82,7 +86,7 @@ export class FinanceApprovalComponent implements OnInit {
     private sanitizer: DomSanitizer,
     private snackBar: MatSnackBar,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadUserData();
@@ -98,15 +102,15 @@ export class FinanceApprovalComponent implements OnInit {
           this.currentUserId = employee.user_ID ?? null;
           this.employeeName = employee.en_name ?? 'Unknown';
           this.payrollNumber = employee.employee_Id ?? null;
-          console.log('Loaded employee data:', { 
-            currentUserId: this.currentUserId, 
-            employeeName: this.employeeName, 
-            payrollNumber: this.payrollNumber 
+          console.log('Loaded employee data:', {
+            currentUserId: this.currentUserId,
+            employeeName: this.employeeName,
+            payrollNumber: this.payrollNumber
           });
           // Set default values for form fields
           this.preparedBy = this.employeeName;
           this.checkedBy = this.employeeName;
-          this.individualPreparedBy = this.employeeName;
+          this.individualPreparedBy = '';
           this.individualCheckedBy = this.employeeName;
           this.approvalApprovedBy = this.employeeName;
         } else {
@@ -143,7 +147,7 @@ export class FinanceApprovalComponent implements OnInit {
           PayrollNumber: a.payrollNumber || a.PayrollNumber,
           Department: a.department || a.Department,
           TotalAmount: a.totalAmount || a.TotalAmount || 0,
-          ApprovedAmount: a.approvedAmount || a.ApprovedAmount || 0,
+          ApprovedAmount: a.approvedAmount || a.TotalAmount || 0,
           PreparedBy: a.preparedBy || a.PreparedBy,
           CheckedBy: a.checkedBy || a.CheckedBy,
           PreparedDate: this.parseDate(a.preparedDate || a.PreparedDate),
@@ -182,15 +186,16 @@ export class FinanceApprovalComponent implements OnInit {
     this.medicalService.getFinanceApprovedReimbursements().subscribe(
       (reimbursements) => {
         console.log('Finance Approved Reimbursements:', reimbursements);
-        
+
         this.approvedReimbursements = (reimbursements as any[]).map((r: any) => ({
+          FinanceApprovalID:r.financeApprovalID || r.FinanceApprovalID,
           ReimbursementID: r.reimbursementID || r.ReimbursementID,
           ReimbursementNumber: r.reimbursementNumber || r.ReimbursementNumber,
           PatientName: r.patientName || r.PatientName,
           PayrollNumber: r.payrollNumber || r.PayrollNumber,
           Department: r.department || r.Department,
           TotalAmount: r.totalAmount || r.TotalAmount || 0,
-          ApprovedAmount: r.approvedAmount || r.ApprovedAmount || 0,
+          ApprovedAmount: r.approvedAmount || r.TotalAmount || 0,
           Status: r.status || r.Status || 'Approved',
           SubmissionDate: this.parseDate(r.submissionDate || r.SubmissionDate),
           Comments: r.comments || r.Comments,
@@ -198,7 +203,7 @@ export class FinanceApprovalComponent implements OnInit {
           CreatedDate: this.parseDate(r.createdDate || r.CreatedDate),
           selected: false
         }));
-        
+
         this.filteredReimbursements = [...this.approvedReimbursements];
         console.log('Mapped reimbursements:', this.filteredReimbursements);
 
@@ -212,6 +217,24 @@ export class FinanceApprovalComponent implements OnInit {
         this.cdr.detectChanges();
       }
     );
+  }
+
+  openDocumentsModal(reimbursementId: number): void {
+    // Optional: find the number for better title
+    const found = this.approvedReimbursements.find(r => r.ReimbursementID === reimbursementId) ||
+      this.pendingApprovals.find(a => a.ReimbursementID === reimbursementId);
+
+    this.currentViewedReimbursementId = reimbursementId;
+    this.currentViewedReimbursementNumber = found?.ReimbursementNumber || 'Unknown';
+
+    this.showDocumentsModal = true;
+  }
+
+  // Close method
+  closeDocumentsModal(): void {
+    this.showDocumentsModal = false;
+    this.currentViewedReimbursementId = 0;
+    this.currentViewedReimbursementNumber = '';
   }
 
   filterReimbursements(): void {
@@ -241,7 +264,7 @@ export class FinanceApprovalComponent implements OnInit {
 
   openIndividualApprovalDialog(reimbursement: FinanceApproval): void {
     this.selectedReimbursement = reimbursement;
-    this.individualApprovedAmount = reimbursement.ApprovedAmount;
+    this.individualApprovedAmount = reimbursement.ApprovedAmount || reimbursement.TotalAmount || 0;
     this.individualPreparedBy = this.employeeName;
     this.individualCheckedBy = this.employeeName;
     this.individualComments = '';
@@ -261,7 +284,7 @@ export class FinanceApprovalComponent implements OnInit {
       this.showErrorMessage('Please select at least one reimbursement for batch approval.');
       return;
     }
-    
+
     this.batchName = `Batch Approval - ${new Date().toLocaleDateString()}`;
     this.preparedBy = this.employeeName;
     this.checkedBy = this.employeeName;
@@ -281,15 +304,19 @@ export class FinanceApprovalComponent implements OnInit {
   }
 
   createIndividualApproval(): void {
-    if (!this.selectedReimbursement || !this.individualPreparedBy.trim() || !this.individualCheckedBy.trim()) {
-      this.showErrorMessage('Please fill in all required fields.');
+    if (!this.selectedReimbursement || this.individualApprovedAmount <=0) {
+      this.showErrorMessage('Please enter a valid approved amount.')
       return;
     }
+    // if (!this.selectedReimbursement || !this.individualPreparedBy.trim() || !this.individualCheckedBy.trim()) {
+    //   this.showErrorMessage('Please fill in all required fields.');
+    //   return;
+    // }
 
     const approvalData = {
       ReimbursementID: this.selectedReimbursement.ReimbursementID,
       ApprovedAmount: this.individualApprovedAmount,
-      PreparedBy: this.individualPreparedBy,
+      PreparedBy: null,
       CheckedBy: this.individualCheckedBy,
       Comments: this.individualComments,
       CreatedBy: this.currentUserId || 'Unknown'
@@ -297,6 +324,7 @@ export class FinanceApprovalComponent implements OnInit {
 
     this.medicalService.createFinanceApproval(approvalData).subscribe(
       (response: any) => {
+        console.log('doseresponse',response);
         this.showSuccessMessage('Finance approval created successfully');
         this.closeApprovalDialog();
         this.loadApprovedReimbursements();
@@ -316,7 +344,7 @@ export class FinanceApprovalComponent implements OnInit {
 
     const batchData = {
       ReimbursementIDs: this.selectedReimbursements.map(r => r.ReimbursementID),
-      PreparedBy: this.preparedBy,
+      PreparedBy: null,
       CheckedBy: this.checkedBy,
       BatchName: this.batchName,
       CreatedBy: this.currentUserId || 'Unknown'
@@ -396,7 +424,38 @@ export class FinanceApprovalComponent implements OnInit {
       }
     );
   }
+  rejectIndividualApproval(): void {
+    if (!this.selectedReimbursement) {
+      this.showErrorMessage('No reimbursement selected.');
+      return;
+    }
 
+    const reason = this.individualComments.trim() || 'Rejected by finance -no reason provided'
+    if (!confirm(`Reject this approval?\nReason: ${reason}`)){
+      return;
+    }
+
+    // Call reject endpoint (we'll create it next)
+    const rejectData = {
+      FinanceApprovalID: this.selectedReimbursement.FinanceApprovalID || 0,
+      ReimbursementID:this.selectedReimbursement.ReimbursementID,
+      Status:'Rejected',
+      Comments: this.individualComments || 'Rejected by finance',
+      RejectedBy: this.employeeName
+    };
+
+    this.medicalService.rejectFinanceApproval(rejectData).subscribe(
+      () => {
+        this.showSuccessMessage('Finance approval rejected successfully');
+        this.closeApprovalDialog();
+        this.loadApprovedReimbursements(); // Refresh list
+      },
+      (error) => {
+        console.error('Reject failed:', error);
+        this.showErrorMessage('Failed to reject approval');
+      }
+    );
+  }
   approveBatchPendingApprovals(): void {
     if (this.selectedPendingApprovals.length === 0) {
       this.showErrorMessage('Please select at least one approval to approve.');
@@ -461,7 +520,7 @@ export class FinanceApprovalComponent implements OnInit {
   }
 
   private showSuccessMessage(message: string): void {
-    this.snackBar.open(message, 'Close', {  
+    this.snackBar.open(message, 'Close', {
       duration: 5000,
       panelClass: ['success-snackbar']
     });

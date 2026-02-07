@@ -9,77 +9,45 @@ export interface PatientSummary {
 }
 
 export interface Referral {
-    ReferralID: number;
-    PatientID: number;
-    CardNumber: string;
-    ReferringPhysician: string; // GUID as string for Angular
-    Department: string;
-    ReferralDate: Date;
-    Status: string;
-    Notes?: string;
-    ReferenceID?: number;
-    CreatedBy: string; // GUID as string
-    CompletedDate?: Date;
-    // Fields from ReferralDetails table
-    ClinicalHistory?: string;
-    CurrentDiagnosis?: string;
-    VitalSignsBloodPressure?: string;
-    VitalSignsHeartRate?: string;
-    VitalSignsTemperature?: string;
-    VitalSignsWeight?: string;
-    VitalSignsHeight?: string;
-    CurrentMedications?: string;
-    Allergies?: string;
-    LabResults?: string;
-    InsuranceProvider?: string;
-    PolicyNumber?: string;
-    GroupNumber?: string;
-    UrgentFollowUp: boolean;
-    TransportationNeeded: boolean;
-    InterpreterNeeded: boolean;
-    AdditionalNotes?: string;
-    PhysicianName?: string;
-    PhysicianLicense?: string;
-    PhysicianPhone?: string;
-    PhysicianSignature?: string;
-    
-    // Additional fields for display
-    referralNumber?: string;
-    referredTo?: string;
-    specialty?: string;
-    priority?: string;
+    referralID: number;
+    patientID: number;
+    cardNumber: string;
+    referringPhysician: string;
+    referredTo: string;
+    referredToAddress?: string;
+    referredToPhone?: string;
+    reasonForReferral: string;
+    clinicalFindings?: string;
+    diagnosis?: string;
+    investigationResult?: string;
+    rxGiven?: string;
+    referralDate: string | Date;
+    status: string;
+    createdBy: string;
+    completedDate?: string | Date | null;
+
+    feedbackFinding?: string;
+    feedbackDiagnosis?: string;
+    feedbackRxGiven?: string;
+    feedbackPhysician?: string;
+    feedbackDate?: string | Date | null;
+    feedbackSignature?: string;
+    referralNumber: string;
 }
 
 export interface ReferralFormData {
     PatientID: number;
     CardNumber: string;
-    ReferringPhysician: string; // GUID as string
-    Department: string;
-    Notes?: string;
-    ReferenceID?: number;
-    CreatedBy: string; // GUID as string
-    ClinicalHistory?: string;
-    CurrentDiagnosis?: string;
-    VitalSignsBloodPressure?: string;
-    VitalSignsHeartRate?: string;
-    VitalSignsTemperature?: string;
-    VitalSignsWeight?: string;
-    VitalSignsHeight?: string;
-    CurrentMedications?: string;
-    Allergies?: string;
-    LabResults?: string;
-    InsuranceProvider?: string;
-    PolicyNumber?: string;
-    GroupNumber?: string;
-    UrgentFollowUp: boolean;
-    TransportationNeeded: boolean;
-    InterpreterNeeded: boolean;
-    AdditionalNotes?: string;
-    PhysicianName?: string;
-    PhysicianLicense?: string;
-    PhysicianPhone?: string;
-    PhysicianSignature?: string;
-    referralDate?: string;
+    ReferringPhysician: string;
+    CreatedBy: string;
+    ReferredTo: string;
+    ReferredToAddress?: string;
+    ReferredToPhone?: string;
+    ReasonForReferral: string;
+    ClinicalFindings?: string;
+    Diagnosis?: string;
+    InvestigationResult?: string;
+    RxGiven?: string;
 }
 
 export interface VitalSigns {
@@ -92,5 +60,5 @@ export interface VitalSigns {
 
 export interface ReferralStatusUpdate {
     Status: string;
-    CompletedDate?: Date;
+    CompletedDate?: Date | null;
 }

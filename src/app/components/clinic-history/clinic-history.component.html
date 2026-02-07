@@ -1,0 +1,373 @@
+<div class="container">
+    <mat-card>
+        <mat-card-header>
+            <mat-card-title>Clinic & Medical History</mat-card-title>
+            <mat-card-subtitle>Comprehensive health records management for HR personnel</mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+            <mat-tab-group [(selectedIndex)]="selectedTab" (selectedTabChange)="onTabChange($event)">
+
+                <!-- ============================================ -->
+                <!-- Tab 1: My Personal History -->
+                <!-- ============================================ -->
+                <mat-tab label="My History">
+                    <div class="my-history-section">
+
+                        <!-- Employee Header (shown when data exists) -->
+                        <div class="employee-header" *ngIf="hasMyHistoryData && (myPhoto || myName)">
+                            <img *ngIf="myPhoto" [src]="myPhoto" alt="Profile Photo" class="profile-photo" />
+                            <div class="header-info">
+                                <h2>{{ myName || 'My Clinic Records' }}</h2>
+                                <p><strong>Employee ID:</strong> {{ myEmployeeId }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Quick Date Filter Buttons -->
+                        <div class="quick-actions">
+                            <button type="button" mat-raised-button color="accent"
+                                (click)="loadClinicVisitors('today')">
+                                Today
+                            </button>
+                            <button type="button" mat-raised-button color="accent" (click)="loadClinicVisitors('week')">
+                                This Week
+                            </button>
+                            <button type="button" mat-raised-button color="accent"
+                                (click)="loadClinicVisitors('month')">
+                                This Month
+                            </button>
+                        </div>
+
+                        <!-- Loading State -->
+                        <mat-spinner *ngIf="loading"></mat-spinner>
+
+                        <!-- Data Table -->
+                        <mat-table [dataSource]="myDetailData" *ngIf="myDetailData.length > 0 && !loading"
+                            class="data-table">
+                            <ng-container matColumnDef="RecordType">
+                                <mat-header-cell *matHeaderCellDef>Type</mat-header-cell>
+                                <mat-cell *matCellDef="let row">{{ row.RecordType }}</mat-cell>
+                            </ng-container>
+
+                            <ng-container matColumnDef="EventDate">
+                                <mat-header-cell *matHeaderCellDef>Date</mat-header-cell>
+                                <mat-cell *matCellDef="let row">{{ row.EventDate | date:'mediumDate' }}</mat-cell>
+                            </ng-container>
+
+                            <ng-container matColumnDef="RequestType">
+                                <mat-header-cell *matHeaderCellDef>Request Type</mat-header-cell>
+                                <mat-cell *matCellDef="let row">{{ row.RequestType }}</mat-cell>
+                            </ng-container>
+
+                            <ng-container matColumnDef="Reason">
+                                <mat-header-cell *matHeaderCellDef>Reason / Diagnosis</mat-header-cell>
+                                <mat-cell *matCellDef="let row">{{ row.Reason || '—' }}</mat-cell>
+                            </ng-container>
+
+                            <ng-container matColumnDef="CurrentStatus">
+                                <mat-header-cell *matHeaderCellDef>Status</mat-header-cell>
+                                <mat-cell *matCellDef="let row">
+                                    <span [class.status-pending]="row.CurrentStatus?.includes('Pending')"
+                                        [class.status-completed]="row.CurrentStatus?.includes('Completed')"
+                                        [class.status-approved]="row.CurrentStatus?.includes('Approved')">
+                                        {{ row.CurrentStatus }}
+                                    </span>
+                                </mat-cell>
+                            </ng-container>
+
+                            <ng-container matColumnDef="DepartmentEnglish">
+                                <mat-header-cell *matHeaderCellDef>Department</mat-header-cell>
+                                <mat-cell *matCellDef="let row">{{ row.DepartmentEnglish }}</mat-cell>
+                            </ng-container>
+
+                            <ng-container matColumnDef="OrganizationEnglish">
+                                <mat-header-cell *matHeaderCellDef>Organization</mat-header-cell>
+                                <mat-cell *matCellDef="let row">{{ row.OrganizationEnglish }}</mat-cell>
+                            </ng-container>
+
+                            <ng-container matColumnDef="Position">
+                                <mat-header-cell *matHeaderCellDef>Position</mat-header-cell>
+                                <mat-cell *matCellDef="let row">{{ row.Position }}</mat-cell>
+                            </ng-container>
+
+                            <ng-container matColumnDef="DoctorName">
+                                <mat-header-cell *matHeaderCellDef>Doctor</mat-header-cell>
+                                <mat-cell *matCellDef="let row">{{ row.DoctorName || '—' }}</mat-cell>
+                            </ng-container>
+
+                            <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+                            <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+                        </mat-table>
+
+                        <!-- No Data State -->
+                        <div *ngIf="!loading && myDetailData.length === 0" class="no-data">
+                            <strong>No clinic records found</strong>
+                            <small>You don't have any clinic visits in the selected date range.</small>
+                        </div>
+                    </div>
+                </mat-tab>
+
+                <!-- ============================================ -->
+                <!-- Tab 2: Search & Reports -->
+                <!-- ============================================ -->
+                <mat-tab label="Search / Reports" *ngIf="hasReportRole" [disabled]="!hasReportRole">
+
+                    <!-- Search by Employee -->
+                    <div class="search-bar">
+                        <mat-form-field appearance="outline">
+                            <mat-label>Search by Employee ID or Card Number</mat-label>
+                            <input matInput [(ngModel)]="searchEmployeeIdOrCard"
+                                placeholder="e.g. 10378 or 10217 — leave empty to view all employees">
+                            <!-- <mat-icon matSuffix>search</mat-icon>
+                            <mat-hint>Leave empty to view organization-wide records</mat-hint> -->
+                        </mat-form-field>
+                    </div>
+
+                    <!-- Advanced Filters -->
+                    <div class="filters">
+                        <mat-form-field appearance="outline">
+                            <mat-label>Organization</mat-label>
+                            <mat-select [(ngModel)]="selectedOrganization" (selectionChange)="onOrganizationChange()">
+                                <mat-option [value]="null">All Organizations</mat-option>
+                                <mat-option *ngFor="let org of organizations" [value]="org.OrganizationCode">
+                                    {{ org.NameEn }} ({{ org.NameAm }})
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                            <mat-label>Department</mat-label>
+                            <mat-select [(ngModel)]="selectedDepartment"
+                                [disabled]="!selectedOrganization || departments.length === 0">
+                                <mat-option [value]="null">All Departments</mat-option>
+                                <mat-option *ngFor="let dep of departments" [value]="dep.DepartmentCode">
+                                    {{ dep.NameEn }} ({{ dep.NameAm }})
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                            <mat-label>Gender</mat-label>
+                            <mat-select [(ngModel)]="genderFilter" (selectionChange)="onGenderChange()">
+                                <mat-option value="All">All Genders</mat-option>
+                                <mat-option value="Male">male</mat-option>
+                                <mat-option value="Female">female</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                            <mat-label>From Date</mat-label>
+                            <input matInput [matDatepicker]="fromPicker" [(ngModel)]="fromDate">
+                            <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+                            <mat-datepicker #fromPicker></mat-datepicker>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                            <mat-label>To Date</mat-label>
+                            <input matInput [matDatepicker]="toPicker" [(ngModel)]="toDate">
+                            <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+                            <mat-datepicker #toPicker></mat-datepicker>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                            <mat-label>View Mode</mat-label>
+                            <mat-select [(ngModel)]="mode" (selectionChange)="onModeChange()">
+                                <mat-option value="DETAIL">Detailed Timeline (Table)</mat-option>
+                                <mat-option value="MONTHLY">Monthly Activity (Chart)</mat-option>
+                                <mat-option value="DEPARTMENT">By Department (Pie / Bar)</mat-option>
+                                <mat-option value="GENDER">Gender Distribution (Pie Chart)</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+
+                        <button type="button" mat-raised-button color="primary" (click)="search()" [disabled]="loading">
+                            {{ loading ? 'Searching...' : 'Search' }}
+                        </button>
+                    </div>
+
+                    <!-- Loading State -->
+                    <mat-spinner *ngIf="loading"></mat-spinner>
+
+                    <!-- ============================================ -->
+                    <!-- DETAIL MODE RESULTS -->
+                    <!-- ============================================ -->
+                    <ng-container *ngIf="mode === 'DETAIL' && !loading">
+
+                        <!-- Export Buttons (only show when there's data) -->
+                        <div class="action-buttons" *ngIf="detailData.length > 0">
+                            <button type="button" mat-raised-button color="primary" (click)="exportToPDF()">
+                                Export PDF
+                            </button>
+                            <button type="button" mat-stroked-button (click)="printTable()">
+                                Print
+                            </button>
+                        </div>
+
+                        <!-- Single Employee View: Show Header -->
+                        <div class="employee-header"
+                            *ngIf="searchEmployeeIdOrCard?.trim() && detailData.length > 0 && (detailData[0]?.Photo || detailData[0]?.EmployeeName)">
+                            <img *ngIf="detailData[0]?.Photo" [src]="'data:image/jpeg;base64,' + detailData[0].Photo"
+                                alt="Employee Profile" class="profile-photo" />
+                            <div class="header-info">
+                                <h2>{{ detailData[0]?.EmployeeName || 'Employee Records' }}</h2>
+                                <p><strong>ID/Card:</strong> {{ searchEmployeeIdOrCard }}</p>
+                                <p *ngIf="detailData[0]?.DepartmentEnglish">
+                                    <strong>Department:</strong> {{ detailData[0].DepartmentEnglish }}
+                                </p>
+                                <p *ngIf="detailData[0]?.OrganizationEnglish">
+                                    <strong>Organization:</strong> {{ detailData[0].OrganizationEnglish }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Organization-Wide View: Section Title -->
+                        <div *ngIf="!searchEmployeeIdOrCard?.trim() && detailData.length > 0" class="section-title">
+                            <h3>Recent Clinic Activity — All Employees</h3>
+                            <p>
+                                Showing {{ detailData.length }} records from
+                                {{ fromDate | date:'mediumDate' }} to {{ toDate | date:'mediumDate' }}
+                            </p>
+                        </div>
+
+                        <!-- Data Table -->
+                        <mat-table [dataSource]="detailData" *ngIf="detailData.length > 0" class="data-table">
+                            <ng-container matColumnDef="RecordType">
+                                <mat-header-cell *matHeaderCellDef>Type</mat-header-cell>
+                                <mat-cell *matCellDef="let row">{{ row.RecordType }}</mat-cell>
+                            </ng-container>
+
+                            <ng-container matColumnDef="EventDate">
+                                <mat-header-cell *matHeaderCellDef>Date</mat-header-cell>
+                                <mat-cell *matCellDef="let row">{{ row.EventDate | date:'mediumDate' }}</mat-cell>
+                            </ng-container>
+
+                            <ng-container matColumnDef="EmployeeName">
+                                <mat-header-cell *matHeaderCellDef>Employee</mat-header-cell>
+                                <mat-cell *matCellDef="let row">{{ row.EmployeeName }}</mat-cell>
+                            </ng-container>
+
+                            <ng-container matColumnDef="RequestType">
+                                <mat-header-cell *matHeaderCellDef>Request Type</mat-header-cell>
+                                <mat-cell *matCellDef="let row">{{ row.RequestType }}</mat-cell>
+                            </ng-container>
+
+                            <ng-container matColumnDef="Reason">
+                                <mat-header-cell *matHeaderCellDef>Reason / Diagnosis</mat-header-cell>
+                                <mat-cell *matCellDef="let row">{{ row.Reason || '—' }}</mat-cell>
+                            </ng-container>
+
+                            <ng-container matColumnDef="CurrentStatus">
+                                <mat-header-cell *matHeaderCellDef>Status</mat-header-cell>
+                                <mat-cell *matCellDef="let row">
+                                    <span [class.status-pending]="row.CurrentStatus?.includes('Pending')"
+                                        [class.status-completed]="row.CurrentStatus?.includes('Completed')"
+                                        [class.status-approved]="row.CurrentStatus?.includes('Approved')">
+                                        {{ row.CurrentStatus }}
+                                    </span>
+                                </mat-cell>
+                            </ng-container>
+
+                            <ng-container matColumnDef="DepartmentEnglish">
+                                <mat-header-cell *matHeaderCellDef>Department</mat-header-cell>
+                                <mat-cell *matCellDef="let row">{{ row.DepartmentEnglish || '—' }}</mat-cell>
+                            </ng-container>
+
+                            <ng-container matColumnDef="DoctorName">
+                                <mat-header-cell *matHeaderCellDef>Doctor</mat-header-cell>
+                                <mat-cell *matCellDef="let row">{{ row.DoctorName || '—' }}</mat-cell>
+                            </ng-container>
+
+
+
+                            <ng-container matColumnDef="PreferredDate">
+                                <mat-header-cell *matHeaderCellDef>Preferred Date</mat-header-cell>
+                                <mat-cell *matCellDef="let row">
+                                    {{ row.PreferredDate | date:'mediumDate' || '—' }}
+                                </mat-cell>
+                            </ng-container>
+
+                            <ng-container matColumnDef="SickLeaveStart">
+                                <mat-header-cell *matHeaderCellDef>Sick Leave From</mat-header-cell>
+                                <mat-cell *matCellDef="let row">{{ row.SickLeaveStart | date:'mediumDate' || '—'
+                                    }}</mat-cell>
+                            </ng-container>
+
+                            <ng-container matColumnDef="SickLeaveEnd">
+                                <mat-header-cell *matHeaderCellDef>Sick Leave To</mat-header-cell>
+                                <mat-cell *matCellDef="let row">{{ row.SickLeaveEnd | date:'mediumDate' || '—'
+                                    }}</mat-cell>
+                            </ng-container>
+
+                            <mat-header-row *matHeaderRowDef="displayedColumnsSearch"></mat-header-row>
+                            <mat-row *matRowDef="let row; columns: displayedColumnsSearch"></mat-row>
+                        </mat-table>
+
+                        <!-- No Data State -->
+                        <div *ngIf="detailData.length === 0" class="no-data">
+                            <strong>No records found</strong>
+                            <small>
+                                Try adjusting your search criteria or date range.<br>
+                                Remove the employee ID to see all organization records.
+                            </small>
+                        </div>
+
+                    </ng-container>
+
+                    <!-- MONTHLY CHART -->
+                    <ng-container *ngIf="mode === 'MONTHLY' && !loading">
+                        <div class="chart-container" id="monthlyChart">
+                            <div echarts [options]="monthlyChartOption" class="chart"></div>
+                        </div>
+
+                        <div class="action-buttons" style="margin-top: 16px; justify-content: center;">
+                            <button type="button" mat-raised-button color="primary"
+                                (click)="exportChartToPDF('monthlyChart', 'Monthly Clinic Activity')">
+                                Export PDF
+                            </button>
+                            <button type="button" mat-stroked-button (click)="printChart('monthlyChart')">
+                                Print
+                            </button>
+                        </div>
+                    </ng-container>
+
+                    <!-- DEPARTMENT CHART -->
+                    <ng-container *ngIf="mode === 'DEPARTMENT' && !loading">
+                        <div class="chart-container" id="departmentChart">
+                            <div echarts [options]="departmentChartOption" class="chart"></div>
+                        </div>
+
+                        <div class="action-buttons" style="margin-top: 16px; justify-content: center;">
+                            <button type="button" mat-raised-button color="primary"
+                                (click)="exportChartToPDF('departmentChart', 'Clinic Activity by Department')">
+                                Export PDF
+                            </button>
+                            <button type="button" mat-stroked-button (click)="printChart('departmentChart')">
+                                Print
+                            </button>
+                        </div>
+                    </ng-container>
+
+                    <!-- GENDER CHART -->
+                    <ng-container *ngIf="mode === 'GENDER' && !loading">
+                        <div class="chart-container" id="genderChart">
+                            <div echarts [options]="genderChartOption" class="chart"></div>
+                        </div>
+
+                        <div class="action-buttons" style="margin-top: 16px; justify-content: center;">
+                            <button type="button" mat-raised-button color="primary"
+                                (click)="exportChartToPDF('genderChart', 'Gender Distribution')">
+                                Export PDF
+                            </button>
+                            <button type="button" mat-stroked-button (click)="printChart('genderChart')">
+                                Print
+                            </button>
+                        </div>
+                    </ng-container>
+
+                    <!-- Loading spinner (shared for all charts) -->
+                    <mat-spinner *ngIf="loading" style="margin: 40px auto;"></mat-spinner>
+
+                </mat-tab>
+            </mat-tab-group>
+        </mat-card-content>
+    </mat-card>
+</div>

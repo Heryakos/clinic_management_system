@@ -14,6 +14,7 @@ export interface CashierApproval {
   PayrollNumber: string;
   Department: string;
   ApprovedAmount: number;
+  pvNumber:string;
   PreparedBy: string;
   CheckedBy: string;
   PreparedDate: Date;
@@ -21,6 +22,10 @@ export interface CashierApproval {
   Status: string;
   Comments?: string;
   selected?: boolean;
+  nameEn: string;
+  bankAccountNo: number;
+  gender: string;
+  age: string;
 }
 
 export interface PaymentHistory {
@@ -39,6 +44,13 @@ export interface PaymentHistory {
   Comments?: string;
   PreparedBy: string;
   CheckedBy: string;
+  nameEn: string;
+  bankAccountNo: number;
+  gender: string;
+  age: string;
+  pvNumber?: string;           
+  isEditing?: boolean;     
+  editPvNumber?: string;
 }
 
 export interface PaymentSummary {
@@ -52,6 +64,11 @@ export interface PaymentSummary {
   styleUrls: ['./cashier-payment.component.css']
 })
 export class CashierPaymentComponent implements OnInit {
+  individualPvNumber: string = '';
+  batchPvNumber: string = '';
+  showDocumentsModal: boolean = false;
+  currentViewedReimbursementId: number = 0;
+  currentViewedReimbursementNumber: string = '';
   // Voucher language
   voucherLang: 'en' | 'am' = 'en';
 
@@ -192,7 +209,13 @@ export class CashierPaymentComponent implements OnInit {
             CheckedDate: this.parseDate(a.checkedDate ?? a.CheckedDate),
             Status: a.status ?? a.Status ?? 'Approved',
             Comments: a.comments ?? a.Comments,
-            selected: false
+            selected: false,
+            nameEn: a.nameEn ?? a.nameEn ?? 'Unknown nameEn',
+            bankAccountNo: a.bankAccountNo ?? a.bankAccountNo ?? 'Unknown bankAccountNo',
+            gender: a.gender ?? a.gender ?? 'Unknown gender',
+            age: a.age ?? a.age ?? 'Unknown age',
+            pvNumber: a.pvNumber ?? a.pvNumber ?? 0
+
           };
 
           console.log('Mapped approval:', mappedApproval);
@@ -259,7 +282,10 @@ export class CashierPaymentComponent implements OnInit {
       (history) => {
         console.log('Payment History:', history);
 
-        this.paymentHistory = (history as any[]).map((h: any) => ({
+        this.paymentHistory = (history as any[]).map(h => ({
+          ...h,
+          isEditing: false,
+          editPvNumber: h.pvNumber || '',
           PaymentID: h.paymentID || h.PaymentID,
           ReimbursementID: h.reimbursementID || h.ReimbursementID,
           ReimbursementNumber: h.reimbursementNumber || h.ReimbursementNumber,
@@ -274,7 +300,12 @@ export class CashierPaymentComponent implements OnInit {
           Status: h.status || h.Status,
           Comments: h.comments || h.Comments,
           PreparedBy: h.preparedBy || h.PreparedBy || this.employeeName,
-          CheckedBy: h.checkedBy || h.CheckedBy || this.employeeName
+          CheckedBy: h.checkedBy || h.CheckedBy || this.employeeName,
+          age: h.age || h.age,
+          gender: h.gender || h.gender,
+          bankAccountNo: h.bankAccountNo || h.bankAccountNo,
+          nameEn: h.nameEn || h.nameEn,
+
         }));
 
         console.log('Mapped payment history:', this.paymentHistory);
@@ -285,6 +316,35 @@ export class CashierPaymentComponent implements OnInit {
         this.showErrorMessage('Failed to load payment history');
       }
     );
+  }
+
+  startEditPv(payment: any) {
+    payment.isEditing = true;
+    payment.editPvNumber = payment.pvNumber || '';
+  }
+  
+  cancelEditPv(payment: any) {
+    payment.isEditing = false;
+  }
+  
+  async savePvNumber(payment: any, index: number) {
+    if (!payment.editPvNumber?.trim()) {
+      this.showErrorMessage('pvNumber cannot be empty');
+      return;
+    }
+  
+    try {
+      await this.medicalService.updatePvNumber(payment.PaymentID, payment.editPvNumber).toPromise();
+  
+      // Update local data
+      payment.pvNumber = payment.editPvNumber;
+      payment.isEditing = false;
+  
+      this.showSuccessMessage('pvNumber updated successfully');
+    } catch (err) {
+      console.error('Update failed:', err);
+      this.showErrorMessage('Failed to update pvNumber');
+    }
   }
 
   loadPaymentSummary(): void {
@@ -298,6 +358,24 @@ export class CashierPaymentComponent implements OnInit {
         console.error('Error loading payment summary:', error);
       }
     );
+  }
+
+  // Open documents modal
+  openDocumentsModal(reimbursementId: number): void {
+    // Try to find the reimbursement number for better title
+    const found = this.approvalsForPayment.find(a => a.ReimbursementID === reimbursementId);
+
+    this.currentViewedReimbursementId = reimbursementId;
+    this.currentViewedReimbursementNumber = found?.ReimbursementNumber || 'Unknown';
+
+    this.showDocumentsModal = true;
+  }
+
+  // Close documents modal
+  closeDocumentsModal(): void {
+    this.showDocumentsModal = false;
+    this.currentViewedReimbursementId = 0;
+    this.currentViewedReimbursementNumber = '';
   }
 
   filterApprovals(): void {
@@ -329,6 +407,7 @@ export class CashierPaymentComponent implements OnInit {
     this.selectedApproval = approval;
     this.individualPaymentAmount = approval.ApprovedAmount;
     this.individualPaidBy = this.employeeName;
+    this.individualPvNumber = approval.pvNumber || '';
 
     // Auto-select correct method
     const allowed = this.getAllowedPaymentMethods(this.individualPaymentAmount);
@@ -359,6 +438,7 @@ export class CashierPaymentComponent implements OnInit {
     this.batchComments = '';
     this.showBatchPaymentDialog = true;
   }
+
 
   openVoucherForm(): void {
     const total = this.selectedApproval
@@ -463,7 +543,7 @@ export class CashierPaymentComponent implements OnInit {
   }
   getAllowedPaymentMethods(amount: number): { value: string; label: string }[] {
     if (amount <= 3000) {
-      return [{ value: 'Cash', label: 'Cash' }];
+      return [{ value: 'Bank Transfer', label: 'Bank Transfer' }];
     } else {
       return [{ value: 'Check', label: 'Check' }];
     }
@@ -640,7 +720,12 @@ export class CashierPaymentComponent implements OnInit {
       CreatedBy: this.currentUserId || 'Unknown',
       // Add cash-specific fields
       AmountTendered: this.individualPaymentMethod === 'Cash' ? this.individualAmountTendered : null,
-      ChangeGiven: this.individualPaymentMethod === 'Cash' ? this.individualChangeGiven : null
+      ChangeGiven: this.individualPaymentMethod === 'Cash' ? this.individualChangeGiven : null,
+      pvNumber: this.individualPvNumber,
+      PayeeAge: this.selectedApproval?.age,
+      PayeeGender: this.selectedApproval?.gender,
+      PayeeBankAccountNo: this.selectedApproval?.bankAccountNo,
+      PayeeNameEn: this.selectedApproval?.nameEn
     };
 
     this.medicalService.createCashierPayment(paymentData).subscribe(

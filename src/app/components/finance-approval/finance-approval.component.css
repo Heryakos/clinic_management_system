@@ -3,7 +3,26 @@
   margin: 0 auto;
   padding: 20px;
 }
+.modal.large-modal {
+  max-width: 90%;
+  width: 1200px;
+}
 
+.modal.large-modal .modal-body {
+  max-height: 75vh;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.view-docs {
+  background-color: #2196f3;
+  color: white;
+  margin-right: 8px;
+}
+
+.view-docs:hover {
+  background-color: #1976d2;
+}
 .finance-container h2 {
   color: #2c3e50;
   margin-bottom: 10px;

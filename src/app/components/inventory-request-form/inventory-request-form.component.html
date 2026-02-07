@@ -1,0 +1,82 @@
+<div class="container">
+  <h2>Create Inventory Request</h2>
+
+  <div *ngIf="isLoading" class="loading">Loading inventory data...</div>
+
+  <form [formGroup]="requestForm" (ngSubmit)="submitRequest()" *ngIf="!isLoading">
+    <!-- Requested From -->
+    <div class="form-group">
+      <label>Requested From <span class="required">*</span></label>
+      <select formControlName="requestedFrom" class="form-control">
+        <option value="" disabled>Select room</option>
+        <option *ngFor="let room of roomNames" [value]="room">{{ room }}</option>
+      </select>
+      <div class="error" *ngIf="requestForm.get('requestedFrom')?.invalid && requestForm.get('requestedFrom')?.touched">
+        Please select a room.
+      </div>
+    </div>
+
+    <!-- Reason -->
+    <div class="form-group">
+      <label>Reason for Request <span class="required">*</span></label>
+      <app-reason-tree-dropdown
+        [reasons]="reasons"
+        (selectionChange)="onReasonSelect($event)"
+        [placeholder]="'Select reason'">
+      </app-reason-tree-dropdown>
+      <div class="error" *ngIf="requestForm.get('reason')?.invalid && requestForm.get('reason')?.touched">
+        Reason is required.
+      </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="items-section" formArrayName="items">
+      <h3>Requested Items</h3>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th>Job Order #</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of items.controls; let i = index" [formGroupName]="i">
+            <td>{{ i + 1 }}</td>
+            <td>
+              <app-item-tree-dropdown
+                [items]="categories"
+                (itemSelected)="onItemSelect($event, i)"
+                [placeholder]="'Select item'">
+              </app-item-tree-dropdown>
+              <div class="error" *ngIf="item.get('itemId')?.invalid && item.get('itemId')?.touched">
+                Item required
+              </div>
+            </td>
+            <td>
+              <input type="number" formControlName="quantity" min="1" class="qty-input">
+              <div class="error" *ngIf="item.get('quantity')?.invalid && item.get('quantity')?.touched">
+                Minimum 1
+              </div>
+            </td>
+            <td>
+              <input formControlName="jobOrderNumber" placeholder="Optional">
+            </td>
+            <td>
+              <button type="button" class="remove-btn" (click)="removeItem(i)" [disabled]="items.length === 1">
+                Remove
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <button type="button" class="add-btn" (click)="addItem()">+ Add Item</button>
+    </div>
+
+    <button type="submit" class="submit-btn" [disabled]="isSubmitting || requestForm.invalid">
+      {{ isSubmitting ? 'Submitting...' : 'Submit Request' }}
+    </button>
+  </form>
+</div>

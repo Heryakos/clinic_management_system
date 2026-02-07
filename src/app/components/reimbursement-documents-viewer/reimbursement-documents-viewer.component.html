@@ -1,0 +1,110 @@
+<div class="documents-viewer">
+    <h4>{{ title }} <span *ngIf="documents.length > 0">({{ documents.length }})</span></h4>
+  
+    <!-- Loading -->
+    <div *ngIf="isLoading" class="loading-state text-center py-4">
+      <mat-spinner diameter="40" class="mx-auto"></mat-spinner>
+      <p class="mt-2 text-muted">Loading documents...</p>
+    </div>
+  
+    <!-- Error -->
+    <div *ngIf="hasError && !isLoading" class="error-state text-center py-4">
+      <mat-icon color="warn">error_outline</mat-icon>
+      <p class="text-danger mt-2">{{ errorMessage }}</p>
+      <button mat-raised-button color="primary" (click)="loadDocuments()" class="mt-2">
+        Retry
+      </button>
+    </div>
+  
+    <!-- No documents -->
+    <div *ngIf="!isLoading && !hasError && documents.length === 0" class="empty-state text-center py-4">
+      <mat-icon class="text-muted">folder_open</mat-icon>
+      <p class="mt-2 text-muted">No documents have been uploaded for this reimbursement yet.</p>
+    </div>
+  
+    <!-- Documents list -->
+    <div *ngIf="!isLoading && !hasError && documents.length > 0" class="documents-list mt-3">
+      <!-- Clinic Form (highlighted) -->
+      <ng-container *ngFor="let formDoc of clinicForms">
+        <div class="document-card primary">
+          <div class="card-header">
+            <div class="title">
+              <span class="icon">📋</span>
+              <strong>Clinic Medical Expense Refund Form</strong>
+            </div>
+            <button mat-icon-button color="primary" (click)="downloadDocument(formDoc)" matTooltip="Download Form">
+              <mat-icon>download</mat-icon>
+            </button>
+          </div>
+  
+          <div class="card-body">
+            <div class="details">
+              <span><strong>File:</strong> {{ formDoc.FileName }}</span>
+              <span><strong>Size:</strong> {{ formatFileSize(formDoc.FileSize) }}</span>
+              <span><strong>Uploaded:</strong> {{ formDoc.uploadDate | date:'medium' }} by {{ formDoc.UploadedBy }}</span>
+            </div>
+  
+            <!-- PDF Preview -->
+            <div *ngIf="formDoc.previewType === 'pdf'" class="preview-section">
+              <div class="preview-header">Form Preview</div>
+              <div class="preview-frame">
+                <div *ngIf="pdfLoading[formDoc.DocumentID]" class="loading-overlay">
+                  <mat-spinner diameter="30"></mat-spinner>
+                  <span>Loading...</span>
+                </div>
+  
+                <div *ngIf="pdfLoadErrors[formDoc.DocumentID]" class="error-overlay">
+                  <p>⚠️ {{ pdfLoadErrors[formDoc.DocumentID] }}</p>
+                  <button mat-stroked-button color="warn" (click)="retryPdfLoad(formDoc)">Retry</button>
+                  <button mat-stroked-button (click)="downloadDocument(formDoc)">Download Instead</button>
+                </div>
+  
+                <embed *ngIf="!pdfLoading[formDoc.DocumentID] && !pdfLoadErrors[formDoc.DocumentID]"
+                       [src]="getPdfPreviewUrl(formDoc)"
+                       type="application/pdf" width="100%" height="500px" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+  
+      <!-- Supporting Documents -->
+      <div *ngIf="supportingDocuments.length > 0" class="supporting-section mt-4">
+        <h5>Supporting Documents ({{ supportingDocuments.length }})</h5>
+        <div class="documents-grid">
+          <div *ngFor="let doc of supportingDocuments" class="document-card">
+            <div class="card-header">
+              <div class="title">
+                <span class="icon">🧾</span>
+                {{ doc.DocumentDescription || doc.FileName }}
+              </div>
+              <button mat-icon-button color="primary" (click)="downloadDocument(doc)" matTooltip="Download">
+                <mat-icon>download</mat-icon>
+              </button>
+            </div>
+  
+            <div class="card-body">
+              <div class="details small">
+                <span>File: {{ doc.FileName }}</span>
+                <span>Size: {{ formatFileSize(doc.FileSize) }}</span>
+                <span>Uploaded: {{ doc.uploadDate | date:'mediumDate' }}</span>
+              </div>
+  
+              <!-- Preview -->
+              <div *ngIf="doc.previewType !== 'none'" class="preview-mini">
+                <ng-container *ngIf="doc.previewType === 'pdf'">
+                  <div class="mini-preview" (click)="downloadDocument(doc)">
+                    <mat-icon>picture_as_pdf</mat-icon>
+                    <span>PDF Preview (click to download)</span>
+                  </div>
+                </ng-container>
+                <ng-container *ngIf="doc.previewType === 'image'">
+                  <img [src]="getPdfPreviewUrl(doc)" alt="Preview" class="mini-image" />
+                </ng-container>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

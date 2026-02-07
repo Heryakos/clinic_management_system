@@ -1,310 +1,488 @@
-<!-- src/app/components/inventory-management/inventory-management.component.html -->
-
-<div class="inventory-management">
-  <h2>Inventory Management</h2>
+<div class="inventory-v2">
+  <h2>Inventory Management - Centralized Version</h2>
 
   <div class="tabs">
-    <button type="button" [class.active]="selectedTab === 'categories'" (click)="selectTab('categories')">Categories</button>
-    <button type="button" [class.active]="selectedTab === 'items'" (click)="selectTab('items')">Items</button>
-    <button type="button" [class.active]="selectedTab === 'medications'" (click)="selectTab('medications')">Medications</button>
+    <button type="button" [class.active]="activeTab === 'items'" (click)="activeTab = 'items'">Items Master</button>
+    <button type="button" [class.active]="activeTab === 'receive'" (click)="activeTab = 'receive'">Receive Stock</button>
+    <!-- <button type="button" [class.active]="activeTab === 'requests'" (click)="activeTab = 'requests'">Requests</button>
+    <button type="button" [class.active]="activeTab === 'stock'" (click)="activeTab = 'stock'">Stock Overview</button> -->
   </div>
 
   <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
   <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
 
-  <div *ngIf="selectedTab === 'categories'" class="section">
-    <h3>Add New Category</h3>
-    <form [formGroup]="categoryForm" (ngSubmit)="onAddCategory()">
-      <div class="form-group">
-        <label for="categoryName">Category Name</label>
-        <input id="categoryName" formControlName="categoryName" type="text" required>
-      </div>
-      <div class="form-group">
-        <label for="description">Description</label>
-        <textarea id="description" formControlName="description"></textarea>
-      </div>
-      <button type="submit" [disabled]="categoryForm.invalid">Add Category</button>
-    </form>
-  </div>
+  <!-- ITEMS MASTER -->
+  <div *ngIf="activeTab === 'items'" class="tab-content">
+    <h3>Manage All Items</h3>
 
-  <div *ngIf="selectedTab === 'items'" class="section">
-    <h3>Add New Item</h3>
-    <form [formGroup]="itemForm" (ngSubmit)="onAddItem()">
-      <div class="form-group">
-        <label for="itemCode">Item Code</label>
-        <input id="itemCode" formControlName="itemCode" type="text" required>
-      </div>
-      <div class="form-group">
-        <label for="itemName">Item Name</label>
-        <input id="itemName" formControlName="itemName" type="text" required>
-      </div>
-      <div class="form-group">
-        <label for="categoryID">Category</label>
-        <select id="categoryID" formControlName="categoryID" required>
-          <option *ngFor="let cat of categories" [value]="cat.categoryID">{{ cat.categoryName }}</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="unit">Unit</label>
-        <input id="unit" formControlName="unit" type="text" required>
-      </div>
-      <div class="form-group">
-        <label for="minimumStock">Minimum Stock</label>
-        <input id="minimumStock" formControlName="minimumStock" type="number" required>
-      </div>
-      <div class="form-group">
-        <label for="maximumStock">Maximum Stock</label>
-        <input id="maximumStock" formControlName="maximumStock" type="number">
-      </div>
-      <div class="form-group">
-        <label for="unitPrice">Unit Price</label>
-        <input id="unitPrice" formControlName="unitPrice" type="number" step="0.01">
-      </div>
-      <div class="form-group">
-        <label for="expiryDate">Expiry Date</label>
-        <input id="expiryDate" formControlName="expiryDate" type="date">
-      </div>
-      <div class="form-group">
-        <label for="manufacturer">Manufacturer</label>
-        <input id="manufacturer" formControlName="manufacturer" type="text">
-      </div>
-      <div class="form-group">
-        <label for="batchNumber">Batch Number</label>
-        <input id="batchNumber" formControlName="batchNumber" type="text">
-      </div>
-      <button type="submit" [disabled]="itemForm.invalid">Add Item</button>
-    </form>
-  </div>
-
-  <div *ngIf="selectedTab === 'medications'" class="section">
-    <h3>Manage Medications</h3>
-
-    <!-- Add New Medication Form -->
-    <div class="subsection">
-      <h4>Add New Medication</h4>
-      <form [formGroup]="medicationForm" (ngSubmit)="onAddMedication()">
-        <div class="form-group">
-          <label for="medicationName">Medication Name</label>
-          <input id="medicationName" formControlName="medicationName" type="text" required>
-        </div>
-        <div class="form-group">
-          <label for="genericName">Generic Name</label>
-          <input id="genericName" formControlName="genericName" type="text">
-        </div>
-        <div class="form-group">
-          <label for="strength">Strength</label>
-          <input id="strength" formControlName="strength" type="text">
-        </div>
-        <div class="form-group">
-          <label for="dosageForm">Dosage Form</label>
-          <select id="dosageForm" formControlName="dosageForm" required>
-            <option value="Tablet">Tablet</option>
-            <option value="Capsule">Capsule</option>
-            <option value="Vial">Vial</option>
-            <option value="Injection">Injection</option>
-            <option value="Inhaler">Inhaler</option>
-            <option value="Syrup">Syrup</option>
-            <option value="Drops">Drops</option>
-            <option value="Cream">Cream</option>
-            <option value="Ointment">Ointment</option>
-            <option value="Effervescent Tablet">Effervescent Tablet</option>
-            <option value="Patch">Patch</option>
-            <option value="Prefilled Syringe">Prefilled Syringe</option>
-            <option value="Suppository">Suppository</option>
-            <option value="Pessary">Pessary</option>
-            <option value="Suspension">Suspension</option>
-            <option value="Implant">Implant</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="manufacturer">Manufacturer</label>
-          <input id="manufacturer" formControlName="manufacturer" type="text">
-        </div>
-        <div class="form-group">
-          <label for="category">Category</label>
-          <select id="category" formControlName="category" required>
-            <option value="Analgesics">Analgesics</option>
-            <option value="Antibiotics">Antibiotics</option>
-            <option value="Antidiabetic">Antidiabetic</option>
-            <option value="Antihypertensives">Antihypertensives</option>
-            <option value="Proton Pump Inhibitor">Proton Pump Inhibitor</option>
-            <option value="Antiplatelet">Antiplatelet</option>
-            <option value="Antidepressants">Antidepressants</option>
-            <option value="Antipsychotics">Antipsychotics</option>
-            <option value="Antifungals">Antifungals</option>
-            <option value="Antivirals">Antivirals</option>
-            <option value="Steroids">Steroids</option>
-            <option value="Antacids & Antigastric">Antacids & Antigastric</option>
-            <option value="Vitamins & Supplements">Vitamins & Supplements</option>
-            <option value="Hormonal Treatments">Hormonal Treatments</option>
-            <option value="Immunosuppressants">Immunosuppressants</option>
-            <option value="Sedatives & Hypnotics">Sedatives & Hypnotics</option>
-            <option value="Diuretics">Diuretics</option>
-            <option value="Local Anesthetics">Local Anesthetics</option>
-            <option value="Muscle Relaxants">Muscle Relaxants</option>
-            <option value="Bronchodilators">Bronchodilators</option>
-            <option value="Cough and Cold Medications">Cough and Cold Medications</option>
-            <option value="Antiemetics">Antiemetics</option>
-            <option value="Anticonvulsants">Anticonvulsants</option>
-            <option value="Antihistamines">Antihistamines</option>
-            <option value="Laxatives & Stool Softeners">Laxatives & Stool Softeners</option>
-            <option value="Anthelmintics">Anthelmintics</option>
-            <option value="Antituberculars">Antituberculars</option>
-            <option value="Antimalarials">Antimalarials</option>
-            <option value="Antineoplastics">Antineoplastics</option>
-            <option value="Statins">Statins</option>
-            <option value="Ophthalmic Agents">Ophthalmic Agents</option>
-            <option value="Topical Dermatologicals">Topical Dermatologicals</option>
-            <option value="Antispasmodics">Antispasmodics</option>
-            <option value="Expectorants">Expectorants</option>
-            <option value="Biologics">Biologics</option>
-            <option value="Anticoagulants">Anticoagulants</option>
-            <option value="Vaccines">Vaccines</option>
-            <option value="Enzyme Replacement Therapies">Enzyme Replacement Therapies</option>
-            <option value="Smoking Cessation">Smoking Cessation</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="unitPrice">Unit Price</label>
-          <input id="unitPrice" formControlName="unitPrice" type="number" step="0.01" required>
-        </div>
-        <button type="submit" [disabled]="medicationForm.invalid">Add Medication</button>
+    <!-- Add Category (small form) -->
+    <div class="add-category">
+      <h4>Add Category</h4>
+      <form [formGroup]="categoryForm" (ngSubmit)="onAddCategory()" class="inline-form">
+        <mat-form-field>
+          <mat-label>Category Name *</mat-label>
+          <input matInput formControlName="categoryName" required>
+        </mat-form-field>
+        <button type="button" mat-raised-button color="primary" type="submit" [disabled]="categoryForm.invalid">Add</button>
+      </form>
+    </div>
+    <!-- Add Therapeutic Category -->
+    <div class="add-therapeutic">
+      <h4>Add Therapeutic Category</h4>
+      <form [formGroup]="therapeuticForm" (ngSubmit)="onAddTherapeuticCategory()" class="inline-form">
+        <mat-form-field>
+          <mat-label>Category Name *</mat-label>
+          <input matInput formControlName="categoryName" required>
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Description</mat-label>
+          <input matInput formControlName="description">
+        </mat-form-field>
+        <button type="button" mat-raised-button color="primary" type="submit" [disabled]="therapeuticForm.invalid">
+          Add Therapeutic Category
+        </button>
+      </form>
+    </div>
+    <!-- Add Lab Test Category -->
+    <div class="add-lab-category">
+      <h4>Add Lab Test Category</h4>
+      <form [formGroup]="labCategoryForm" (ngSubmit)="onAddLabCategory()" class="inline-form">
+        <mat-form-field>
+          <mat-label>Category Name *</mat-label>
+          <input matInput formControlName="categoryName" required>
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Description</mat-label>
+          <input matInput formControlName="description">
+        </mat-form-field>
+        <button type="button" mat-raised-button color="primary" type="submit" [disabled]="labCategoryForm.invalid">
+          Add Lab Test Category
+        </button>
       </form>
     </div>
 
-    <!-- Edit Medication Form -->
-    <div *ngIf="selectedMedication" class="subsection">
-      <h4>Edit Medication: {{ selectedMedication.medicationName }}</h4>
-      <form [formGroup]="editMedicationForm" (ngSubmit)="onUpdateMedication()">
-        <div class="form-group">
-          <label for="editMedicationID">Medication ID</label>
-          <input id="editMedicationID" formControlName="medicationID" type="text" readonly>
-        </div>
-        <div class="form-group">
-          <label for="editMedicationName">Medication Name</label>
-          <input id="editMedicationName" formControlName="medicationName" type="text" required>
-        </div>
-        <div class="form-group">
-          <label for="editGenericName">Generic Name</label>
-          <input id="editGenericName" formControlName="genericName" type="text">
-        </div>
-        <div class="form-group">
-          <label for="editStrength">Strength</label>
-          <input id="editStrength" formControlName="strength" type="text">
-        </div>
-        <div class="form-group">
-          <label for="editDosageForm">Dosage Form</label>
-          <select id="editDosageForm" formControlName="dosageForm" required>
-            <option value="Tablet">Tablet</option>
-            <option value="Capsule">Capsule</option>
-            <option value="Vial">Vial</option>
-            <option value="Injection">Injection</option>
-            <option value="Inhaler">Inhaler</option>
-            <option value="Syrup">Syrup</option>
-            <option value="Drops">Drops</option>
-            <option value="Cream">Cream</option>
-            <option value="Ointment">Ointment</option>
-            <option value="Effervescent Tablet">Effervescent Tablet</option>
-            <option value="Patch">Patch</option>
-            <option value="Prefilled Syringe">Prefilled Syringe</option>
-            <option value="Suppository">Suppository</option>
-            <option value="Pessary">Pessary</option>
-            <option value="Suspension">Suspension</option>
-            <option value="Implant">Implant</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="editManufacturer">Manufacturer</label>
-          <input id="editManufacturer" formControlName="manufacturer" type="text">
-        </div>
-        <div class="form-group">
-          <label for="editCategory">Category</label>
-          <select id="editCategory" formControlName="category" required>
-            <option value="Analgesics">Analgesics</option>
-            <option value="Antibiotics">Antibiotics</option>
-            <!-- Add all categories as above -->
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="editUnitPrice">Unit Price</label>
-          <input id="editUnitPrice" formControlName="unitPrice" type="number" step="0.01" required>
-        </div>
-        <button type="submit" [disabled]="editMedicationForm.invalid">Update Medication</button>
-        <button type="button" (click)="onCancelEdit()">Cancel</button>
-      </form>
-    </div>
+    <!-- Add Item Form -->
+    <form [formGroup]="itemForm" (ngSubmit)="onAddItem()" class="item-form">
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Item Code *</mat-label>
+          <input matInput formControlName="itemCode" required placeholder="e.g. GLV-NIT-100">
+        </mat-form-field>
 
-    <!-- Medications List -->
-    <div class="subsection">
-      <h4>Existing Medications</h4>
-    
-      <!-- Search -->
-      <mat-form-field appearance="outline" class="search-field">
-        <mat-label>Search medications</mat-label>
-        <input matInput (keyup)="applyFilter($event)" placeholder="Search..." />
-      </mat-form-field>
-    
-      <!-- Material table -->
-      <table mat-table [dataSource]="dataSource" class="mat-elevation-z2">
-    
-        <ng-container matColumnDef="medicationID">
-          <th mat-header-cell *matHeaderCellDef>ID</th>
-          <td mat-cell *matCellDef="let med">{{ med.medicationID }}</td>
-        </ng-container>
-    
-        <ng-container matColumnDef="medicationName">
-          <th mat-header-cell *matHeaderCellDef>Name</th>
-          <td mat-cell *matCellDef="let med">{{ med.medicationName }}</td>
-        </ng-container>
-    
-        <ng-container matColumnDef="genericName">
-          <th mat-header-cell *matHeaderCellDef>Generic Name</th>
-          <td mat-cell *matCellDef="let med">{{ med.genericName || '-' }}</td>
-        </ng-container>
-    
-        <ng-container matColumnDef="strength">
-          <th mat-header-cell *matHeaderCellDef>Strength</th>
-          <td mat-cell *matCellDef="let med">{{ med.strength || '-' }}</td>
-        </ng-container>
-    
-        <ng-container matColumnDef="dosageForm">
-          <th mat-header-cell *matHeaderCellDef>Dosage Form</th>
-          <td mat-cell *matCellDef="let med">{{ med.dosageForm }}</td>
-        </ng-container>
-    
-        <ng-container matColumnDef="manufacturer">
-          <th mat-header-cell *matHeaderCellDef>Manufacturer</th>
-          <td mat-cell *matCellDef="let med">{{ med.manufacturer || '-' }}</td>
-        </ng-container>
-    
-        <ng-container matColumnDef="category">
-          <th mat-header-cell *matHeaderCellDef>Category</th>
-          <td mat-cell *matCellDef="let med">{{ med.category }}</td>
-        </ng-container>
-    
-        <ng-container matColumnDef="unitPrice">
-          <th mat-header-cell *matHeaderCellDef>Unit Price</th>
-          <td mat-cell *matCellDef="let med">{{ med.unitPrice | number:'1.2-2' }}</td>
-        </ng-container>
-    
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef>Actions</th>
-          <td mat-cell *matCellDef="let med">
-            <button type="button" (click)="onEditMedication(med)">Edit</button>
+        <mat-form-field appearance="outline">
+          <mat-label>Item Name *</mat-label>
+          <input matInput formControlName="itemName" required placeholder="e.g. Paracetamol 500mg Tablet">
+        </mat-form-field>
+      </div>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Category *</mat-label>
+          <mat-select formControlName="categoryID" required>
+            <mat-option value="">Select Category</mat-option>
+            <mat-option *ngFor="let cat of categories" [value]="cat.categoryID">
+              {{ cat.categoryName }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Unit *</mat-label>
+          <input matInput formControlName="unit" required placeholder="e.g. Tablet, Box, Vial">
+        </mat-form-field>
+      </div>
+
+      <!-- Medication-specific fields - ONLY show when Category = Medications (ID 1) -->
+      <div class="medication-fields" *ngIf="selectedCategoryId === 1">
+        <h4 style="margin: 16px 0 8px; color: #1976d2;">Medication Details</h4>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Generic Name</mat-label>
+            <input matInput formControlName="genericName">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Strength</mat-label>
+            <input matInput formControlName="strength" placeholder="e.g. 500mg">
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Dosage Form</mat-label>
+            <input matInput formControlName="dosageForm" placeholder="e.g. Tablet, Capsule">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Manufacturer</mat-label>
+            <input matInput formControlName="manufacturer">
+          </mat-form-field>
+        </div>
+
+        <!-- Therapeutic Category (add dropdown if you have list) -->
+        <!-- Inside the medication-fields div (after Dosage Form) -->
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Therapeutic Category *</mat-label>
+            <mat-select formControlName="therapeuticCategoryID" required>
+              <mat-option value="">Select Category</mat-option>
+              <mat-option *ngFor="let cat of therapeuticCategories" [value]="cat.therapeuticCategoryID">
+                {{ cat.categoryName }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="itemForm.get('therapeuticCategoryID')?.hasError('required')">
+              Therapeutic category is required for medications
+            </mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+      <!-- Lab -->
+      <div class="lab-fields" *ngIf="isLabCategory(selectedCategoryId)">
+        <h4 style="margin: 16px 0 8px; color: #d81b60;">Laboratory Test Details</h4>
+
+        <!-- <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Normal Range *</mat-label>
+            <input matInput formControlName="normalRange" required>
+            <mat-error *ngIf="itemForm.get('normalRange')?.hasError('required')">
+              Normal Range is required for lab tests
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Lab Test Category *</mat-label>
+            <mat-select formControlName="labTestCategoryID" required>
+              <mat-option value="">Select Category</mat-option>
+              <mat-option *ngFor="let cat of labTestCategories" [value]="cat.categoryID">
+                {{ cat.categoryName }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="itemForm.get('labTestCategoryID')?.hasError('required')">
+              Lab category is required
+            </mat-error>
+          </mat-form-field>
+        </div> -->
+        <!-- Add Lab Test -->
+        <div class="add-lab-test" style="margin-top: 20px;">
+          <h4>Add New Lab Test</h4>
+          <form [formGroup]="labTestForm" (ngSubmit)="onAddLabTest()" class="inline-form">
+            <mat-form-field>
+              <mat-label>Lab Test Name *</mat-label>
+              <input matInput formControlName="testName" required placeholder="e.g. Blood Glucose">
+            </mat-form-field>
+
+            <mat-form-field>
+              <mat-label>Lab Test Category *</mat-label>
+              <mat-select formControlName="categoryID" required>
+                <mat-option value="">Select Category</mat-option>
+                <mat-option *ngFor="let cat of labTestCategories" [value]="cat.categoryID">
+                  {{ cat.categoryName }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field>
+              <mat-label>Normal Range</mat-label>
+              <input matInput formControlName="normalRange" placeholder="e.g. 70-100 mg/dL">
+            </mat-form-field>
+
+            <mat-form-field>
+              <mat-label>Unit</mat-label>
+              <input matInput formControlName="unit" placeholder="e.g. mg/dL">
+            </mat-form-field>
+
+            <button type="button" mat-raised-button color="primary" type="submit" [disabled]="labTestForm.invalid">
+              Add Lab Test
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Common fields -->
+      <div class="form-row toggle-row">
+        <mat-slide-toggle formControlName="hasExpiry">
+          This item requires batch & expiry tracking
+        </mat-slide-toggle>
+      </div>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Minimum Stock Level</mat-label>
+          <input matInput type="number" formControlName="minStockLevel" min="0">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Reference Unit Price (ETB)</mat-label>
+          <input matInput type="number" step="0.01" formControlName="currentUnitPrice">
+        </mat-form-field>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" mat-raised-button color="primary" type="submit" [disabled]="itemForm.invalid">
+          Add New Item
+        </button>
+        <button type="button" mat-stroked-button type="button" (click)="itemForm.reset()">
+          Clear Form
+        </button>
+      </div>
+    </form>
+
+    <!-- Items Table -->
+    <div class="table-section">
+      <h4>Items List</h4>
+      <table mat-table [dataSource]="itemsDataSource" multiTemplateDataRows>
+        <ng-container matColumnDef="details">
+          <th mat-header-cell *matHeaderCellDef>Details</th>
+          <td mat-cell *matCellDef="let item">
+            <button type="button" *ngIf="item.categoryName === 'Medications'" mat-icon-button color="primary"
+              (click)="showMedicationDetails(item)" matTooltip="View medication details">
+              <mat-icon>info</mat-icon>
+            </button>
           </td>
         </ng-container>
-    
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+        <ng-container matColumnDef="itemCode">
+          <th mat-header-cell *matHeaderCellDef>Code</th>
+          <td mat-cell *matCellDef="let item">{{item.itemCode}}</td>
+        </ng-container>
+        <ng-container matColumnDef="itemName">
+          <th mat-header-cell *matHeaderCellDef>Name</th>
+          <td mat-cell *matCellDef="let item">{{item.itemName}}</td>
+        </ng-container>
+        <ng-container matColumnDef="categoryName">
+          <th mat-header-cell *matHeaderCellDef>Category</th>
+          <td mat-cell *matCellDef="let item">{{item.categoryName}}</td>
+        </ng-container>
+        <ng-container matColumnDef="unit">
+          <th mat-header-cell *matHeaderCellDef>Unit</th>
+          <td mat-cell *matCellDef="let item">{{item.unit}}</td>
+        </ng-container>
+        <ng-container matColumnDef="hasExpiry">
+          <th mat-header-cell *matHeaderCellDef>Expiry</th>
+          <td mat-cell *matCellDef="let item">{{item.hasExpiry ? 'Yes' : 'No'}}</td>
+        </ng-container>
+        <ng-container matColumnDef="minStockLevel">
+          <th mat-header-cell *matHeaderCellDef>Min Level</th>
+          <td mat-cell *matCellDef="let item">{{item.minStockLevel}}</td>
+        </ng-container>
+        <ng-container matColumnDef="currentStock">
+          <th mat-header-cell *matHeaderCellDef> Current Stock </th>
+          <td mat-cell *matCellDef="let item">
+            {{ item.currentStock || 0 }}
+          </td>
+        </ng-container>
+
+        <!-- Actions column (now with two buttons) -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef> Actions </th>
+          <td mat-cell *matCellDef="let item">
+            <button type="button" mat-icon-button color="primary" (click)="editItem(item)" title="Edit settings">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button type="button" mat-icon-button color="accent" (click)="adjustStock(item)" title="Adjust current stock">
+              <mat-icon>inventory</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="expandedDetail">
+          <td mat-cell *matCellDef="let row" [attr.colspan]="displayedItemColumns.length">
+            <div class="detail-content" *ngIf="row.categoryName === 'Medications'">
+
+              <ng-container *ngIf="row.medicationDetails; else loadingBlock">
+                <strong>Generic Name:</strong> {{ row.medicationDetails.GenericName || 'N/A' }} <br>
+                <strong>Strength:</strong> {{ row.medicationDetails.Strength || 'N/A' }} <br>
+                <strong>Dosage Form:</strong> {{ row.medicationDetails.DosageForm || 'N/A' }} <br>
+                <strong>Manufacturer:</strong> {{ row.medicationDetails.Manufacturer || 'N/A' }}
+              </ng-container>
+
+              <ng-template #loadingBlock>
+                <mat-progress-spinner diameter="24" mode="indeterminate"></mat-progress-spinner>
+                Loading medication details...
+              </ng-template>
+
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Main row -->
+        <tr mat-row *matRowDef="let row; columns: displayedItemColumns" class="element-row"
+          [class.expanded]="expandedItem === row">
+        </tr>
+
+        <!-- Expanded detail row -->
+        <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"
+          [class.hidden]="expandedItem !== row">
+        </tr>
+
       </table>
-    
-      <!-- Pagination -->
-      <mat-paginator [pageSizeOptions]="[5, 10, 25, 50]" showFirstLastButtons></mat-paginator>
+      <mat-paginator [pageSizeOptions]="[10, 25, 50]"></mat-paginator>
+
+      <!-- Edit Form -->
+      <div *ngIf="editingItem" class="edit-panel">
+        <h4>Edit: {{ editingItem.itemName }}</h4>
+        <form [formGroup]="editForm" (ngSubmit)="saveItemEdit()">
+          <mat-form-field>
+            <mat-label>Min Stock</mat-label>
+            <input matInput type="number" formControlName="minStockLevel">
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Unit Price</mat-label>
+            <input matInput type="number" step="0.01" formControlName="currentUnitPrice">
+          </mat-form-field>
+          <mat-slide-toggle formControlName="isActive">Active</mat-slide-toggle>
+          <button type="button" mat-raised-button color="primary" type="submit">Save</button>
+          <button type="button" mat-button (click)="cancelEdit()">Cancel</button>
+        </form>
+      </div>
+      <!-- Stock Adjustment Panel -->
+      <div *ngIf="adjustingItem" class="adjust-section mat-elevation-z4">
+        <h4>Adjust Stock: {{ adjustingItem.itemName }}</h4>
+        <p>Current stock: <strong>{{ adjustingItem.currentStock || 0 }}</strong></p>
+
+        <form [formGroup]="adjustmentForm" (ngSubmit)="saveStockAdjustment()">
+          <div class="form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Adjustment (+/-)</mat-label>
+              <input matInput type="number" formControlName="adjustmentQuantity" required>
+              <mat-hint>Positive = add, Negative = remove</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Reason *</mat-label>
+              <mat-select formControlName="reason" required>
+                <mat-option *ngFor="let r of adjustmentReasons" [value]="r.value">
+                  {{ r.label }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Comments</mat-label>
+            <textarea matInput formControlName="comments"></textarea>
+          </mat-form-field>
+
+          <div class="actions">
+            <button type="button" mat-raised-button color="accent" type="submit" [disabled]="adjustmentForm.invalid">
+              Apply Adjustment
+            </button>
+            <button type="button" mat-button (click)="cancelAdjustment()">Cancel</button>
+          </div>
+        </form>
+      </div>
     </div>
-    
   </div>
 
-  <div *ngIf="selectedTab === 'medications'" class="section">
-    <!-- Medications management content -->
+  <!-- RECEIVE STOCK -->
+  <div *ngIf="activeTab === 'receive'" class="tab-content">
+    <h3>Receive New Stock into Central Pharmacy</h3>
+
+    <form [formGroup]="receiveForm" (ngSubmit)="onReceiveStock()" class="receive-form">
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Select Item *</mat-label>
+          <mat-select formControlName="itemID" required panelClass="large-select-panel">
+            <!-- <mat-option>
+            <ngx-mat-select-search placeholderLabel="Search item..." noEntriesFoundLabel="No item found"></ngx-mat-select-search>
+          </mat-option> -->
+            <mat-option *ngFor="let item of items" [value]="item.ItemID">
+              {{ item.ItemName }} <small>({{ item.ItemCode }})</small>
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Batch Number *</mat-label>
+          <input matInput formControlName="batchNumber" required>
+        </mat-form-field>
+      </div>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Manufacturer</mat-label>
+          <input matInput formControlName="manufacturer">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Expiry Date</mat-label>
+          <input matInput [matDatepicker]="picker" formControlName="expiryDate">
+          <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+      </div>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Quantity Received *</mat-label>
+          <input matInput type="number" formControlName="quantityReceived" required min="1">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Unit Cost (ETB) *</mat-label>
+          <input matInput type="number" step="0.01" formControlName="unitCost" required min="0.01">
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Comments</mat-label>
+        <textarea matInput formControlName="comments" rows="3"></textarea>
+      </mat-form-field>
+
+      <div class="form-actions">
+        <button type="button" mat-raised-button color="primary" type="submit" [disabled]="receiveForm.invalid">
+          Receive Stock
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- STOCK OVERVIEW -->
+  <div *ngIf="activeTab === 'stock'" class="tab-content">
+    <h3>Central Stock Overview</h3>
+
+    <div class="stock-cards">
+      <div class="card low-stock">
+        <h4>Low Stock Items</h4>
+        <p>{{ lowStockItems.length }} items below minimum level</p>
+      </div>
+      <div class="card near-expiry">
+        <h4>Near Expiry</h4>
+        <p>Coming soon...</p>
+      </div>
+      <div class="card total-stock">
+        <h4>Total Items in Stock</h4>
+        <p>{{ totalStockItems }}</p>
+      </div>
+    </div>
+
+    <table mat-table [dataSource]="lowStockItems" *ngIf="lowStockItems.length > 0">
+      <ng-container matColumnDef="itemName">
+        <th mat-header-cell *matHeaderCellDef>Item</th>
+        <td mat-cell *matCellDef="let item">{{item.ItemName || item.itemName}}</td>
+      </ng-container>
+
+      <!-- Add more columns if you want -->
+      <ng-container matColumnDef="currentStock">
+        <th mat-header-cell *matHeaderCellDef>Current Stock</th>
+        <td mat-cell *matCellDef="let item">{{item.CurrentStock || 0}}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="minLevel">
+        <th mat-header-cell *matHeaderCellDef>Min Level</th>
+        <td mat-cell *matCellDef="let item">{{item.MinStockLevel || item.minStockLevel}}</td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="['itemName', 'currentStock', 'minLevel']"></tr>
+      <tr mat-row *matRowDef="let row; columns: ['itemName', 'currentStock', 'minLevel'];"></tr>
+    </table>
+  </div>
+
+  <!-- Requests (placeholder) -->
+  <div *ngIf="activeTab === 'requests'" class="tab-content">
+    <h3>Inventory Requests</h3>
+    <p>Full request management coming soon...</p>
   </div>
 </div>

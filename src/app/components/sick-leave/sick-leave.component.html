@@ -178,19 +178,40 @@
                   {{ leave.status | titlecase }}
                 </span>
               </td>
+              <!-- <td>
+                <button type="button" 
+                        *ngIf="leave.status === 'Active'" 
+                        class="action-btn cancel"
+                        (click)="confirmCancel(leave)">
+                  Cancel
+                </button>
+              
+                <button type="button" 
+                        *ngIf="leave.status === 'Active'" 
+                        class="action-btn fit"
+                        (click)="issueFitToWorkOverride(leave)">
+                  Fit to Work Now
+                </button>
+              
+                <button type="button" 
+                        class="action-btn print" 
+                        (click)="openPrintModal(leave)">
+                  Print
+                </button>
+              </td> -->
               <td>
-                <!-- <button type="button" *ngIf="leave.status === 'Active'" class="action-btn complete"
+                <button type="button" *ngIf="leave.status === 'Active'" class="action-btn complete"
                   (click)="updateLeaveStatus(leave.certificateID, 'Completed')">
                   Mark Complete
-                </button> -->
+                </button>
                 <button type="button" *ngIf="leave.status === 'Active'" class="action-btn cancel"
                   (click)="updateLeaveStatus(leave.certificateID, 'Cancelled')">
                   Cancel
                 </button>
-                <!-- <button type="button" *ngIf="leave.status === 'Active'" class="action-btn fit"
+                <button type="button" *ngIf="leave.status === 'Active'" class="action-btn fit"
                   (click)="updateLeaveStatus(leave.certificateID, 'FitToWork')">
                   Fit to Work
-                </button> -->
+                </button>
                 <button type="button" class="action-btn print" (click)="openPrintModal(leave)">Print</button>
               </td>
             </tr>

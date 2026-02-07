@@ -318,8 +318,8 @@ export class ReportsComponent implements OnInit {
         // ---------- COLUMNS ----------
         this.detailColumns = [
           { field: 'CardNumber',       header: 'Card #' },
-          { field: 'FullName',         header: 'Full Name' },
-          { field: 'FatherName',       header: 'Father Name' },
+          { field: 'FullName',         header: 'Name' },
+          // { field: 'FatherName',       header: 'Father Name' },
           { field: 'Gender',           header: 'Gender' },
           { field: 'Age',              header: 'Age' },
           { field: 'Phone',            header: 'Phone' },

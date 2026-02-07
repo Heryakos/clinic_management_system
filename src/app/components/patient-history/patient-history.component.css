@@ -1,0 +1,81 @@
+.patient-history-page {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .page-title {
+    font-size: 2.2em;
+    color: #1f2937;
+    margin-bottom: 30px;
+    text-align: center;
+    font-weight: 600;
+  }
+  
+  .search-section {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+  }
+  
+  .search-input {
+    padding: 14px 20px;
+    font-size: 1.1em;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    width: 320px;
+    max-width: 100%;
+    transition: all 0.3s ease;
+  }
+  
+  .search-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+  }
+  
+  .search-btn {
+    padding: 14px 30px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .search-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+  }
+  
+  .welcome-message {
+    text-align: center;
+    font-size: 1.3em;
+    color: #6b7280;
+    margin-top: 100px;
+    font-style: italic;
+  }
+  
+  .history-content {
+    margin-top: 20px;
+  }
+  
+  @media (max-width: 768px) {
+    .search-section {
+      flex-direction: column;
+      align-items: center;
+    }
+  
+    .search-input {
+      width: 100%;
+    }
+  
+    .page-title {
+      font-size: 1.8em;
+    }
+  }

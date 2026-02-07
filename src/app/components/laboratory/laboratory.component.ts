@@ -14,7 +14,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   styleUrls: ['./laboratory.component.css']
 })
 export class LaboratoryComponent implements OnInit {
-  availableTestCategories: string[] = ['Chemistry', 'Bacteriology', 'Fluid_Analysis', 'Hematology', 'Serology'];
+  availableTestCategories: string[] = ['Chemistry', 'Bacteriology', 'Fluid_Analysis', 'Hematology', 'Serology', 'UrineAnalysis', 'HormonTest', 'Stool_Examination'];
   selectedTestData: any = null;
   laboratoryForm!: FormGroup;
   laboratoryTests: LaboratoryTest[] = [];
@@ -492,6 +492,13 @@ export class LaboratoryComponent implements OnInit {
       Promise.all(updatePromises).then(() => {
         this.isSubmitting = false;
         
+        this.medicalService.recordLaboratoryResults(this.cardSearchResult.testID, this.reportedById).subscribe({
+          next: () => {
+            this.showSuccessMessage('Results recorded and reagents deducted!');
+            this.loadPendingQueue();
+          },
+          error: () => this.showErrorMessage('Error recording results.')
+        });
         // Mark the test as completed and refresh queue - use reportedById instead of reportedByName
         this.medicalService.updateLaboratoryTestStatus(testID, 'Completed', this.reportedById).subscribe({
           next: () => {

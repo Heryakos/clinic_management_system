@@ -1,0 +1,46 @@
+<h2 mat-dialog-title>Confirm Dispense - #{{data.prescription?.PrescriptionNumber || 'N/A'}}</h2>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+
+  <!-- Normal dispense button - only when something available -->
+  <button mat-raised-button color="primary" *ngIf="hasAnyInStock" (click)="onConfirm()">
+    Dispense Available Items Only
+  </button>
+
+  <!-- New button when NOTHING available -->
+  <button mat-raised-button color="warn" *ngIf="!hasAnyInStock" (click)="onAcknowledgeOutOfStock()">
+    Mark as Out of Stock & Close
+  </button>
+</mat-dialog-actions>
+<mat-dialog-content>
+  <p>Review stock before dispensing:</p>
+
+  <h3>Available to dispense:</h3>
+
+  <ul *ngIf="data.details?.length; else noItems">
+    <li *ngFor="let item of data.details" [ngClass]="{'in-stock': item.isInStock, 'out-stock': !item.isInStock}">
+      {{item.MedicationName || 'Unknown'}} × {{item.Quantity || 1}}
+      <strong>{{item.isInStock ? '(In Stock)' : '(Out of Stock)'}}</strong>
+    </li>
+  </ul>
+
+  <ng-template #noItems>
+    <p>No medications found in this prescription.</p>
+  </ng-template>
+
+  <p *ngIf="outOfStockCount > 0" class="warning">
+    {{outOfStockCount}} item(s) out of stock — will be marked as unavailable.
+  </p>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Notes for out-of-stock items (optional)</mat-label>
+    <textarea matInput [(ngModel)]="notes" rows="3"></textarea>
+  </mat-form-field>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-raised-button color="primary" (click)="onConfirm()" [disabled]="!hasAnyInStock">
+    Dispense Available Items Only
+  </button>
+</mat-dialog-actions>

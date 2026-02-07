@@ -1,6 +1,8 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { RoleGuard } from './role.guard';
+import { FinanceRoleGuard } from './finance-role.guard';
+import { CashierRoleGuard } from './cashier-role.guard';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { MedicalRequestComponent } from './components/medical-request/medical-request.component';
 import { DoctorComponent } from './components/Doctor/Doctor.component';
@@ -25,176 +27,75 @@ import { ReimbursementDocumentUploadComponent } from './components/reimbursement
 import { FinanceApprovalComponent } from './components/finance-approval/finance-approval.component';
 import { CashierPaymentComponent } from './components/cashier-payment/cashier-payment.component';
 import { CashierReportsComponent } from './components/cashier-reports/cashier-reports.component';
+import { PatientHistoryComponent } from './components/patient-history/patient-history.component'; // Add this import
+import { ClinicHistoryComponent } from './components/clinic-history/clinic-history.component';
+import { AccessDeniedComponent } from './components/access-denied/access-denied.component';
 
-export const routes: Routes = [
-  // ✅ 1. EMPTY PATH
-  { path: '', redirectTo: '/fhcerp/en-us/clinic_management_system', pathMatch: 'full' },
+// import { RedirectFhcerpComponent } from './redirect-fhcerp';
 
-  // ✅ 2. PUBLIC ROUTES - NO GUARD
+const routes: Routes = [
+  // { path: '**', component: RedirectFhcerpComponent, pathMatch: 'full' },
+  // PUBLIC (DNN-hosted)
+  { path: 'clinic_request', component: MedicalRequestComponent },
+  { path: 'reimbursement-document-upload', component: ReimbursementDocumentUploadComponent },
   {
-    path: 'fhcerp/en-us/clinic_request',
-    component: MedicalRequestComponent,
+    path: 'finance-approval',
+    component: FinanceApprovalComponent,
+    canActivate: [FinanceRoleGuard]   
   },
   {
-    path: 'fhcerp/en-us/reimbursement-document-upload',
-    component: ReimbursementDocumentUploadComponent,
+    path: 'cashier-payment',
+    component: CashierPaymentComponent,
+    canActivate: [CashierRoleGuard]   
+  },
+  {
+    path: 'access-denied',
+    component: AccessDeniedComponent
+  },  
+
+  // PROTECTED (Angular App)
+  {
+    path: '',
+    canActivate: [RoleGuard],
+    children: [
+      { path: 'dashboard', component: DashboardComponent },
+      { path: 'supervisor-medical-requests', component: SupervisorMedicalRequestsComponent },
+      { path: 'supervisor-dashboard', component: SupervisorDashboardComponent },
+      { path: 'patient-history-card', component: PatientHistoryCardComponent },
+      { path: 'patient-assignment', component: PatientAssignmentComponent },
+      { path: 'doctor', component: DoctorComponent },
+      { path: 'laboratory', component: LaboratoryComponent },
+      { path: 'pharmacy', component: PharmacyComponent },
+      { path: 'injection', component: InjectionComponent },
+      { path: 'patient-history', component: PatientHistoryComponent },
+
+      // ← ADD THESE MISSING ONES
+      { path: 'inventory', component: InventoryComponent },
+      { path: 'supervisor-inventory', component: SupervisorInventoryComponent },
+      { path: 'expense-reimbursement', component: ExpenseReimbursementComponent },  // Fixes Expenses
+      { path: 'sick-leave', component: SickLeaveComponent },                        // Fixes Sick Leave
+      { path: 'cashier-reports', component: CashierReportsComponent },              // Fixes Cashier Reports
+      { path: 'notifications', component: NotificationCardComponent },              // Optional – if you want a full page
+
+      // existing ones continue...
+      { path: 'inventory-request', component: InventoryRequestComponent },
+      { path: 'inventory-management', component: InventoryManagementComponent },
+      { path: 'item-receiving', component: ItemReceivingComponent },
+      { path: 'reports', component: ReportsComponent },
+      { path: 'users', component: UsersComponent },
+      // { path: 'finance-approval', component: FinanceApprovalComponent },
+      // { path: 'cashier-payment', component: CashierPaymentComponent },
+      { path: 'clinic-history', component: ClinicHistoryComponent }
+    ]
   },
 
-  // ✅ 3. PROTECTED ROUTES - WITH GUARD
-  {
-    path: 'fhcerp/en-us/dashboard',
-    component: DashboardComponent,
-    canActivate: [RoleGuard],
-    data: { expectedRole: '5b574f73-d45d-416d-a029-67f9fc0de049' },
-  },
-  {
-    path: 'fhcerp/en-us/supervisor-medical-requests',
-    component: SupervisorMedicalRequestsComponent,
-    canActivate: [RoleGuard],
-    data: { expectedRoles: [
-      '96c1ab25-d15c-42cf-92ff-9f041ae6ae10',
-      '46dc8001-85ca-4e4f-921b-91d145f607a8'
-    ] },
-  },
-  {
-    path: 'fhcerp/en-us/supervisor-dashboard',
-    component: SupervisorDashboardComponent,
-    canActivate: [RoleGuard],
-    data: { expectedRoles: [
-      '96c1ab25-d15c-42cf-92ff-9f041ae6ae10',
-      '46dc8001-85ca-4e4f-921b-91d145f607a8'
-    ] },
-  },
-  {
-    path: 'fhcerp/en-us/patient-history-card',
-    component: PatientHistoryCardComponent,
-    canActivate: [RoleGuard],
-    data: { expectedRole: 'cc1afad4-4cd7-435a-b100-fc6b62f264d1' },
-  },
-  {
-    path: 'fhcerp/en-us/patient-assignment',
-    component: PatientAssignmentComponent,
-    canActivate: [RoleGuard],
-    data: { expectedRole: 'cc1afad4-4cd7-435a-b100-fc6b62f264d1' },
-  },
-  {
-    path: 'fhcerp/en-us/doctor',
-    component: DoctorComponent,
-    canActivate: [RoleGuard],
-    data: { expectedRoles: [
-      '05cdc20a-24c4-4ead-aaa5-b913b7d5c1e7',
-      '91f72e71-8392-4fee-9398-5155d6581559',
-      'f694f00d-676e-4d9f-a0a3-845edd449b33'
-    ] },
-  },
-  {
-    path: 'fhcerp/en-us/laboratory',
-    component: LaboratoryComponent,
-    canActivate: [RoleGuard],
-    data: { expectedRole: '2c27c2f5-f0af-4e88-8e93-d09bcbc77731' },
-  },
-  {
-    path: 'fhcerp/en-us/pharmacy',
-    component: PharmacyComponent,
-    canActivate: [RoleGuard],
-    data: { expectedRole: 'd14cdfed-4011-4086-b9c6-3ac6da444ff8' },
-  },
-  {
-    path: 'fhcerp/en-us/injection',
-    component: InjectionComponent,
-    canActivate: [RoleGuard],
-    data: { expectedRole: '095e17ff-4497-4fa0-8be9-74dc4979de58' },
-  },
-  {
-    path: 'fhcerp/en-us/expense-reimbursement',
-    component: ExpenseReimbursementComponent,
-    canActivate: [RoleGuard],
-    data: { expectedRoles: [
-      '96c1ab25-d15c-42cf-92ff-9f041ae6ae10',
-      '46dc8001-85ca-4e4f-921b-91d145f607a8'
-    ] },
-  },
-  {
-    path: 'fhcerp/en-us/inventory',
-    component: InventoryComponent,
-    canActivate: [RoleGuard],
-    data: { expectedRole: 'e0e5db04-7418-4cfb-8786-a72f70ccc557' },
-  },
-  {
-    path: 'fhcerp/en-us/inventory-request',
-    component: InventoryRequestComponent,
-    canActivate: [RoleGuard],
-    data: { expectedRoles: [
-      '05cdc20a-24c4-4ead-aaa5-b913b7d5c1e7',
-      '91f72e71-8392-4fee-9398-5155d6581559',
-      'f694f00d-676e-4d9f-a0a3-845edd449b33',
-      '2c27c2f5-f0af-4e88-8e93-d09bcbc77731',
-      'd14cdfed-4011-4086-b9c6-3ac6da444ff8',
-      '095e17ff-4497-4fa0-8be9-74dc4979de58'
-    ] },
-  },
-  {
-    path: 'fhcerp/en-us/inventory-management',
-    component: InventoryManagementComponent,
-    canActivate: [RoleGuard],
-    data: { expectedRole: 'e0e5db04-7418-4cfb-8786-a72f70ccc557' },
-  },
-  {
-    path: 'fhcerp/en-us/item-receiving',
-    component: ItemReceivingComponent,
-    canActivate: [RoleGuard],
-    data: { expectedRole: 'd14cdfed-4011-4086-b9c6-3ac6da444ff8' },
-  },
-  {
-    path: 'fhcerp/en-us/supervisor-inventory',
-    component: SupervisorInventoryComponent,
-    canActivate: [RoleGuard],
-    data: { expectedRole: 'e0e5db04-7418-4cfb-8786-a72f70ccc557' },
-  },
-  {
-    path: 'fhcerp/en-us/sick-leave',
-    component: SickLeaveComponent,
-    canActivate: [RoleGuard],
-    data: { expectedRole: 'unknown' },
-  },
-  {
-    path: 'fhcerp/en-us/reports',
-    component: ReportsComponent,
-    canActivate: [RoleGuard],
-    data: { expectedRole: 'ef06de41-276b-496f-b966-16849fe629f5' },
-  },
-  {
-    path: 'fhcerp/en-us/notifications',
-    component: NotificationCardComponent,
-    canActivate: [RoleGuard],
-    data: { expectedRole: '46dc8001-85ca-4e4f-921b-91d145f607a8' },
-  },
-  // Add these routes in your routes array
-{
-  path: 'fhcerp/en-us/finance-approval',
-  component: FinanceApprovalComponent,
-  canActivate: [RoleGuard],
-  data: { expectedRole: '7263ca4e-76b2-489d-aa0a-0cf57892c7ae' }, // Replace with actual role ID
-},
-{
-  path: 'fhcerp/en-us/cashier-payment',
-  component: CashierPaymentComponent,
-  canActivate: [RoleGuard],
-  data: { expectedRole: '7263ca4e-76b2-489d-aa0a-0cf57892c7ae' }, // Replace with actual role ID
-},
-{
-  path: 'fhcerp/en-us/cashier-reports',
-  component: CashierReportsComponent,
-  canActivate: [RoleGuard],
-  data: { expectedRole: '7263ca4e-76b2-489d-aa0a-0cf57892c7ae' }, // Same as cashier-payment
-},
-
-  // ✅ 4. WILDCARD LAST
-  { path: '**', redirectTo: '/fhcerp/en-us/clinic_management_system' }
+  { path: '**', redirectTo: 'clinic_request' }
 ];
 
+
 @NgModule({
-  imports: [RouterModule.forRoot(routes)],
-  exports: [RouterModule],
+  imports: [RouterModule.forRoot(routes)
+  ],
+  exports: [RouterModule]
 })
-export class AppRoutingModule {}
+export class AppRoutingModule { }
